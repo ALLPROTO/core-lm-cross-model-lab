@@ -1,0 +1,203 @@
+name: Linux cross-model regression
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-cross-model-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  real-model:
+    name: ${{ matrix.model }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        model:
+          - qwen2.5-0.5b
+          - gpt2-medium
+          - pythia-410m-deduped
+          - bloom-560m
+    env:
+      CORELM_LINUX_PYTHON: python
+      CORELM_LINUX_RUNTIME: ${{ runner.temp }}/corelm-linux-runtime
+      CORELM_LINUX_HF_HOME: ${{ runner.temp }}/corelm-codec-assets
+      CROSS_MODEL_RUNS: ${{ runner.temp }}/cross-model-runs
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
+      TOKENIZERS_PARALLELISM: "false"
+      OMP_NUM_THREADS: "2"
+      OPENBLAS_NUM_THREADS: "2"
+      MKL_NUM_THREADS: "2"
+      NUMEXPR_NUM_THREADS: "2"
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out the lab source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check out the exact codec source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ALLPROTO/core-lm-benchmark
+          ref: 61afcf1a44007dec54bd1c56e3403bc74182a400
+          path: codec-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up exact Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.13"
+
+      - name: Verify the frozen codec checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=61afcf1a44007dec54bd1c56e3403bc74182a400
+          observed=$(git -C codec-source rev-parse HEAD)
+          test "$observed" = "$expected"
+          test -z "$(git -C codec-source status --porcelain --untracked-files=no)"
+
+      - name: Build the hash-locked Linux runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./codec-source/corelm linux doctor
+          ./codec-source/corelm linux build
+
+      - name: Run the pinned real-model cell
+        id: run_cell
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$CORELM_LINUX_RUNTIME/bin/python" -I -B run_cross_model.py \
+            --model "${{ matrix.model }}" \
+            --device cpu \
+            --start-block 64 \
+            --blocks 8 \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            --cache-dir "$CORELM_LINUX_HF_HOME" \
+            --output-root "$CROSS_MODEL_RUNS"
+
+      - name: Locate the single completed result
+        if: steps.run_cell.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t results < <(
+            find "$CROSS_MODEL_RUNS/${{ matrix.model }}" \
+              -mindepth 2 -maxdepth 2 -type f -name result.json -print
+          )
+          test "${#results[@]}" -eq 1
+          printf 'RESULT_PATH=%s\n' "${results[0]}" >> "$GITHUB_ENV"
+
+      - name: Independently verify every container and aggregate
+        id: verify_cell
+        if: steps.run_cell.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_dir=$(dirname "$RESULT_PATH")
+          "$CORELM_LINUX_RUNTIME/bin/python" -I -B verify_run.py \
+            "$RESULT_PATH" \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            >"$run_dir/verification.json" \
+            2>"$run_dir/verification.stderr"
+          test ! -s "$run_dir/verification.stderr"
+          "$CORELM_LINUX_RUNTIME/bin/python" -I -B -m json.tool \
+            "$run_dir/verification.json"
+
+      - name: Record environment and evidence hashes
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          model_root="$CROSS_MODEL_RUNS/${{ matrix.model }}"
+          evidence="$model_root/_workflow"
+          mkdir -p "$evidence"
+          {
+            printf 'model=%s\n' '${{ matrix.model }}'
+            printf 'workflow_repository=%s\n' "$GITHUB_REPOSITORY"
+            printf 'workflow_commit=%s\n' "$GITHUB_SHA"
+            printf 'workflow_run_id=%s\n' "$GITHUB_RUN_ID"
+            printf 'workflow_run_attempt=%s\n' "$GITHUB_RUN_ATTEMPT"
+            printf 'codec_commit=%s\n' \
+              61afcf1a44007dec54bd1c56e3403bc74182a400
+            uname -a
+            lscpu
+            free -h
+            df -h
+            "$CORELM_LINUX_RUNTIME/bin/python" -VV
+          } >"$evidence/environment.txt" 2>&1
+          "$CORELM_LINUX_RUNTIME/bin/python" -I -B -m pip freeze --all \
+            >"$evidence/python-packages.txt"
+          (
+            cd "$model_root"
+            find . -type f ! -path './_workflow/SHA256SUMS' -print0 \
+              | sort -z \
+              | xargs -0 sha256sum \
+              >_workflow/SHA256SUMS
+          )
+
+      - name: Publish cell summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '### `%s`\n\n' '${{ matrix.model }}' >> "$GITHUB_STEP_SUMMARY"
+          printf -- '- producer: `%s`\n' '${{ steps.run_cell.outcome }}' \
+            >> "$GITHUB_STEP_SUMMARY"
+          printf -- '- verifier: `%s`\n' '${{ steps.verify_cell.outcome }}' \
+            >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "${RESULT_PATH:-}" ] && [ -f "$RESULT_PATH" ]; then
+            "$CORELM_LINUX_RUNTIME/bin/python" -I -B - "$RESULT_PATH" \
+              >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          result = json.loads(pathlib.Path(sys.argv[1]).read_text())
+          aggregate = result["aggregate"]
+          print()
+          print("| blocks | decisions | ratio | delta NLL | top-1 | diagnostic |")
+          print("|---:|---:|---:|---:|---:|:---:|")
+          print(
+              f'| {aggregate["blocks"]} '
+              f'| {aggregate["predictionTokens"]} '
+              f'| {aggregate["compressionRatioVsBF16"]:.9f}x '
+              f'| {aggregate["deltaNLLNatPerToken"]:.9f} '
+              f'| {aggregate["top1Agreement"]:.9f} '
+              f'| {result["diagnosticVerdict"]} |'
+          )
+          print()
+          print("Exploratory public-validation regression; not blind evidence.")
+          PY
+          else
+            printf '\nNo completed result was produced. Inspect `failure.json` and logs.\n' \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the complete cell evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: corelm-cross-model-${{ matrix.model }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.CROSS_MODEL_RUNS }}/${{ matrix.model }}
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Enforce producer and verifier status
+        if: always()
+        shell: bash
+        run: |
+          test '${{ steps.run_cell.outcome }}' = success
+          test '${{ steps.verify_cell.outcome }}' = success

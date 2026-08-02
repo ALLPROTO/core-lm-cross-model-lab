@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "corelm-cross-model-matrix-v1",
+  "models": {
+    "qwen2.5-0.5b": {
+      "repository": "Qwen/Qwen2.5-0.5B",
+      "revision": "060db6499f32faf8b98477b0a26969ef7d8b9987",
+      "license": "apache-2.0",
+      "role": "regression-control",
+      "architecture": {
+        "modelType": "qwen2",
+        "class": "Qwen2ForCausalLM",
+        "layers": 24,
+        "hiddenSize": 896,
+        "attentionHeads": 14,
+        "kvHeads": 2,
+        "headDimension": 64,
+        "contextTokens": 32768
+      },
+      "files": {
+        "config.json": {"bytes": 681, "sha256": "479dcf0c5286339e41ad3992cd08ae88a467c4187587936248e2b7c96283484b"},
+        "generation_config.json": {"bytes": 138, "sha256": "8c970692323e3ea0e9b8b0a4dca79388d31226e41f83c9fd6014804280ebf6e8"},
+        "merges.txt": {"bytes": 1671839, "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3"},
+        "model.safetensors": {"bytes": 988097824, "sha256": "88c142557820ccad55bb59756bfcfcf891de9cc6202816bd346445188a0ed342"},
+        "tokenizer.json": {"bytes": 7031645, "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539"},
+        "tokenizer_config.json": {"bytes": 7228, "sha256": "c91efca15ceff6e9ee9424db58a6f59cd41294e550a86cbd07e3c1fb500b34f9"},
+        "vocab.json": {"bytes": 2776833, "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"}
+      }
+    },
+    "gpt2-medium": {
+      "repository": "openai-community/gpt2-medium",
+      "revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+      "license": "mit",
+      "role": "prospective-transfer",
+      "architecture": {
+        "modelType": "gpt2",
+        "class": "GPT2LMHeadModel",
+        "layers": 24,
+        "hiddenSize": 1024,
+        "attentionHeads": 16,
+        "kvHeads": 16,
+        "headDimension": 64,
+        "contextTokens": 1024
+      },
+      "files": {
+        "config.json": {"bytes": 718, "sha256": "ef1a44d889ad1a0acc7731c78134f1b87d2d222f110e97dd10fd4117331caf22"},
+        "generation_config.json": {"bytes": 124, "sha256": "b90eadacf585a743a30ea51e8b5c88b8d282a2a34dc0c7e556d0987cdbd68805"},
+        "merges.txt": {"bytes": 456318, "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5"},
+        "model.safetensors": {"bytes": 1519984962, "sha256": "fc5a354a19255ad494f3d71549390baca1ccf61d1d822b9408971705c687c9cd"},
+        "tokenizer.json": {"bytes": 1355256, "sha256": "8414cab924d8b9b33013f0d221c5862f365ee9be39c5c2bfae8a5a9e970478a6"},
+        "tokenizer_config.json": {"bytes": 26, "sha256": "5e04eb606e3a1583530a42e36c2a6b6615c86f34fe77e44d9ddeb43ff940931f"},
+        "vocab.json": {"bytes": 1042301, "sha256": "196139668be63f3b5d6574427317ae82f612a97c5d1cdaf36ed2256dbf636783"}
+      }
+    },
+    "pythia-410m-deduped": {
+      "repository": "EleutherAI/pythia-410m-deduped",
+      "revision": "c4fc8d586d62df497f1f9b69d66d3ca419992d3e",
+      "license": "apache-2.0",
+      "role": "prospective-transfer",
+      "architecture": {
+        "modelType": "gpt_neox",
+        "class": "GPTNeoXForCausalLM",
+        "layers": 24,
+        "hiddenSize": 1024,
+        "attentionHeads": 16,
+        "kvHeads": 16,
+        "headDimension": 64,
+        "contextTokens": 2048
+      },
+      "files": {
+        "config.json": {"bytes": 570, "sha256": "d4c11e84a59c8af4d88446bba53b718f7aef740daa070ded08fd6a9a3aca4fc6"},
+        "model.safetensors": {"bytes": 911373632, "sha256": "e7ae132489f63d5d86009a8178a75c7d5d195410d067fca01a3160623e370fae"},
+        "special_tokens_map.json": {"bytes": 99, "sha256": "6f50ab5a5a509a1c309d6171f339b196a900dc9c99ad0408ff23bb615fdae7ad"},
+        "tokenizer.json": {"bytes": 2113710, "sha256": "c24618a1b3e6a38167beff1c72cffd126c3a66254347304b50547d12c5f25624"},
+        "tokenizer_config.json": {"bytes": 396, "sha256": "70e38394e494931c6f773ba41e19460dd4436526b852207367f04341b4066d3f"}
+      }
+    },
+    "bloom-560m": {
+      "repository": "bigscience/bloom-560m",
+      "revision": "ac2ae5fab2ce3f9f40dc79b5ca9f637430d24971",
+      "license": "bigscience-bloom-rail-1.0",
+      "role": "prospective-transfer",
+      "architecture": {
+        "modelType": "bloom",
+        "class": "BloomForCausalLM",
+        "layers": 24,
+        "hiddenSize": 1024,
+        "attentionHeads": 16,
+        "kvHeads": 16,
+        "headDimension": 64,
+        "contextTokens": 2048
+      },
+      "files": {
+        "config.json": {"bytes": 693, "sha256": "5a255f97efaea3c0dabef5e743d2dd969cf1f733a9c5fd6ef41a42c1aae822e9"},
+        "model.safetensors": {"bytes": 1118459525, "sha256": "a8702498162c95d68d2724e7f333c83d7be08de81cfc091455c38730682116d3"},
+        "special_tokens_map.json": {"bytes": 85, "sha256": "bb7068de1150661a10b55f9e4b12a0e77af8bf91f5e45e1b58afaf1d0e17f675"},
+        "tokenizer.json": {"bytes": 14500438, "sha256": "3fa39cd4b1500feb205bcce3b9703a4373414cafe4970e0657b413f7ddd2a9d3"},
+        "tokenizer_config.json": {"bytes": 222, "sha256": "ae85f7ec32efe4ba09f3914743b0187528eab0322fe90c4e077a9229d1de64a9"}
+      }
+    }
+  },
+  "dataset": {
+    "repository": "Salesforce/wikitext",
+    "revision": "b08601e04326c79dfdd32d625aee71d232d685c3",
+    "configuration": "wikitext-2-raw-v1",
+    "split": "validation",
+    "file": "wikitext-2-raw-v1/validation-00000-of-00001.parquet",
+    "bytes": 657209,
+    "sha256": "204929b7ff9d6184953f867dedb860e40aa69c078fc1e54b3baaa8fb28511c4c"
+  }
+}
