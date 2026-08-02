@@ -25,9 +25,6 @@ jobs:
           - bloom-560m
     env:
       CORELM_LINUX_PYTHON: python
-      CORELM_LINUX_RUNTIME: ${{ runner.temp }}/corelm-linux-runtime
-      CORELM_LINUX_HF_HOME: ${{ runner.temp }}/corelm-codec-assets
-      CROSS_MODEL_RUNS: ${{ runner.temp }}/cross-model-runs
       HF_HUB_DISABLE_TELEMETRY: "1"
       DO_NOT_TRACK: "1"
       TOKENIZERS_PARALLELISM: "false"
@@ -55,6 +52,17 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12.13"
+
+      - name: Configure isolated runner paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'CORELM_LINUX_RUNTIME=%s/corelm-linux-runtime\n' "$RUNNER_TEMP" \
+            >> "$GITHUB_ENV"
+          printf 'CORELM_LINUX_HF_HOME=%s/corelm-model-assets\n' "$RUNNER_TEMP" \
+            >> "$GITHUB_ENV"
+          printf 'CROSS_MODEL_RUNS=%s/cross-model-runs\n' "$RUNNER_TEMP" \
+            >> "$GITHUB_ENV"
 
       - name: Verify the frozen codec checkout
         shell: bash
@@ -191,7 +199,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: corelm-cross-model-${{ matrix.model }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ env.CROSS_MODEL_RUNS }}/${{ matrix.model }}
+          path: ${{ runner.temp }}/cross-model-runs/${{ matrix.model }}
           if-no-files-found: error
           retention-days: 14
 
