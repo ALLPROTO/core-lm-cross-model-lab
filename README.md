@@ -24,6 +24,27 @@ reordered, or retuned.
 This is not an unbiased sample of all language models: the matrix was selected
 for exactly 24 layers and for feasibility on an 8 GB development Mac.
 
+## Verified Linux outcome
+
+The first complete public Linux run is
+[`Actions #2`](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/runs/30750087812)
+at lab commit `6731c6d203f9a3ceafbcc82d64cfcc11a15386e5`.
+All four jobs completed and their container/aggregate verifier returned
+`VERIFIED`. The diagnostic result remains model-specific:
+
+| Model | Complete-container ratio vs BF16 | Delta NLL | Top-1 agreement | Diagnostic |
+|---|---:|---:|---:|:---:|
+| Qwen2.5-0.5B | 2.052385545x | +0.000002146 | 0.996093750 | PASS |
+| GPT-2 Medium | 2.054564234x | -0.000204623 | 0.999023438 | PASS |
+| Pythia-410M-deduped | 2.059581758x | +0.270073175 | 0.749023438 | **FAIL** |
+| BLOOM-560M | 2.066423786x | -0.000506163 | 0.990234375 | PASS |
+
+Every cell contains eight real validation blocks, 1,024 teacher-forced
+decisions, and 192 complete VTL5 containers. Pythia demonstrates the claim
+boundary directly: compression above 2x does not by itself preserve model
+behavior. Exact result, token-selection, artifact, and source hashes are in
+[`RESULTS.md`](RESULTS.md).
+
 ## What the experiment can establish
 
 The workflow is a reproducible **public-validation regression**. It can test
@@ -100,11 +121,11 @@ RESULT=$(find runs/qwen2.5-0.5b -name result.json -type f -print -quit)
 Run each remaining model in a fresh process without changing the protocol.
 Local outputs and downloaded assets are ignored by Git.
 
-## Existing reference
+## Results and cross-platform reference
 
-[`RESULTS.md`](RESULTS.md) records the earlier macOS CPU public-validation
-regression. Those numbers are useful as a cross-platform reference, but they
-are not Linux results and remain outside the scientific verdict.
+[`RESULTS.md`](RESULTS.md) records the verified Linux run and the earlier
+macOS CPU public-validation reference. Both remain exploratory regressions
+outside the scientific verdict.
 
 ## License
 
