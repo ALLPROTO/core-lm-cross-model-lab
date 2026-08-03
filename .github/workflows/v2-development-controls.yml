@@ -1,0 +1,88 @@
+name: Blind v2 development controls
+
+on:
+  pull_request:
+    paths:
+      - "v2/**"
+      - ".github/workflows/v2-development-controls.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blind-v2-development-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-controls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out the lab source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check out the exact codec source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ALLPROTO/core-lm-benchmark
+          ref: 2e8d3b1591ee4a1ed822310f330317936871ff2b
+          path: codec-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up the registered Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.13"
+
+      - name: Run dependency-free protocol controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s v2/tests -v
+          python v2/verify_design.py
+
+      - name: Prove that the development draft fails closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python v2/verify_design.py --require-freezable >/dev/null
+          freeze_rc=$?
+          set -e
+          test "$freeze_rc" -eq 2
+
+          set +e
+          python v2/preflight.py \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            --require-execution-ready >/dev/null
+          preflight_rc=$?
+          set -e
+          test "$preflight_rc" -eq 2
+
+      - name: Verify the read-only Linux development preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          python v2/preflight.py \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            >"$RUNNER_TEMP/v2-preflight.json"
+          python - "$RUNNER_TEMP/v2-preflight.json" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          report = json.loads(pathlib.Path(sys.argv[1]).read_text())
+          assert report["status"] == "DEVELOPMENT_PREFLIGHT_ONLY"
+          assert report["executionReady"] is False
+          assert report["networkUsed"] is False
+          assert report["modelInferenceUsed"] is False
+          assert report["corpusOpened"] is False
+          assert report["codec"]["commit"] == "2e8d3b1591ee4a1ed822310f330317936871ff2b"
+          assert report["codec"]["tree"] == "c0bb15784d252cd5036757bc64765c773a5f16e8"
+          PY

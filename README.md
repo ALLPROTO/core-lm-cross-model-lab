@@ -56,6 +56,16 @@ LM scientific verdict, and cannot establish corpus-wide or LLM-wide
 generalization. A model failure remains a first-class negative result; one
 model's PASS cannot hide another model's FAIL.
 
+## Prospective blind multi-model v2
+
+Development of a genuinely prospective model-holdout experiment lives under
+[`v2/`](v2/README.md). It uses three model revisions that have not been run by
+this lab and Wikipedia creation revisions that do not exist at design time.
+The v2 files are currently a development draft under review, not a
+preregistration and not evidence. No v2 model inference, corpus collection, or
+one-shot selection is permitted until every freeze blocker is closed and an
+immutable public design release exists.
+
 The familiar ratio >= 2.0x, delta-NLL <= 0.01, and top-1 agreement >= 0.99
 thresholds are reported only as transfer diagnostics. They were not
 preregistered for GPT-2, Pythia, or BLOOM.

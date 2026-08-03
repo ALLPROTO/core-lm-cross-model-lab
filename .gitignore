@@ -9,3 +9,12 @@ runs/
 *.partial/
 prompt-workload/
 V2_PREREGISTRATION_DRAFT.md
+
+# Blind v2 local state. Normative source and empty result instructions stay
+# tracked; downloaded assets, crawl workspaces, runtimes, and one-shot outputs
+# must never be swept into a commit accidentally.
+v2/.assets/
+v2/.runtime/
+v2/.working/
+v2/results/*
+!v2/results/README.md
