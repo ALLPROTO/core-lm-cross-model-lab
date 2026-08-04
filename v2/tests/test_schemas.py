@@ -230,10 +230,10 @@ class SchemaIntegrityTests(unittest.TestCase):
         )
         ci = registration["continuousIntegration"]
         self.assertEqual(ci, EXPECTED_CONTINUOUS_INTEGRATION)
-        self.assertEqual(ci["workflowFileBytes"], 12487)
+        self.assertEqual(ci["workflowFileBytes"], 12873)
         self.assertEqual(
             ci["workflowFileSHA256"],
-            "b9215fec0922fd8462ba5e8de83d6406a7e8fbd1f0c05adff05d0b406da92dbb",
+            "0ab8e00ee19304880dee73decf527ab4b3bd9f217c6872e5a935a48e50bed967",
         )
         workflow = (
             V2_ROOT.parent / ci["workflowPath"]
@@ -285,6 +285,19 @@ class SchemaIntegrityTests(unittest.TestCase):
             source = (V2_ROOT / name).read_text(encoding="utf-8")
             self.assertNotIn("3.12.13", source)
             self.assertNotIn("(3, 12, 13)", source)
+        bootstrap_source = (V2_ROOT / "bootstrap_runtime.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            '"$PYTHON_BIN" -I -B -m venv --copies "$STAGING"',
+            bootstrap_source,
+        )
+        self.assertIn("target_status.st_uid in allowed_owners", bootstrap_source)
+        self.assertIn("not target_status.st_mode & 0o022", bootstrap_source)
+        self.assertIn('expected_version="3.12.10"', bootstrap_source)
+        self.assertIn(
+            "Linux base Python has an unsafe owner/mode chain", bootstrap_source
+        )
         self.assertEqual(ci["requiredReviewDeclaration"], REQUIRED_REVIEW_DECLARATION)
         self.assertEqual(
             [job["machine"] for job in ci["requiredJobs"]],

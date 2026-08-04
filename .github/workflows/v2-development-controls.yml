@@ -64,6 +64,16 @@ jobs:
         with:
           python-version: "3.12.10"
 
+      - name: Harden the registered Linux Python root
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=$(python -I -B -c 'import pathlib,sys; print(pathlib.Path(sys.base_prefix).resolve(strict=True))')
+          test "$base" = "$pythonLocation"
+          test ! -L "$base"
+          test "$(stat -c '%u' "$base")" = "$(id -u)"
+          chmod go-w "$base"
+
       - name: Assert hosted runner architecture
         shell: bash
         run: |

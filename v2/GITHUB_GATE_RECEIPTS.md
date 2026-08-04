@@ -35,7 +35,7 @@ The verifier requires all of the following:
   exact head SHA, `completed`, and `success`;
 - the frozen registration separately commits the tracked workflow's exact
   12,487 bytes and SHA-256
-  `b9215fec0922fd8462ba5e8de83d6406a7e8fbd1f0c05adff05d0b406da92dbb`;
+  `0ab8e00ee19304880dee73decf527ab4b3bd9f217c6872e5a935a48e50bed967`;
 - every job returned by `filter=all` is on the same run/head and is
   `completed/success`; `skipped`, `cancelled`, neutral, failed, and incomplete
   jobs all fail;

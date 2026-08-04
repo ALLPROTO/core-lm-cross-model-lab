@@ -21,6 +21,31 @@ fail() {
     exit 1
 }
 
+validate_linux_runtime() {
+    "$PYTHON_BIN" -I -B - \
+        "$CODEC_ROOT/platforms/linux/scripts/runtime_safety.py" "$1" <<'PY'
+import importlib.util
+import json
+from pathlib import Path
+import sys
+
+source = Path(sys.argv[1]).resolve(strict=True)
+runtime = Path(sys.argv[2]).resolve(strict=True)
+specification = importlib.util.spec_from_file_location(
+    "_corelm_pinned_linux_runtime_safety", source
+)
+if specification is None or specification.loader is None:
+    raise SystemExit("pinned Linux runtime-safety module could not be loaded")
+module = importlib.util.module_from_spec(specification)
+sys.modules[specification.name] = module
+specification.loader.exec_module(module)
+report = module.validate_existing_runtime(
+    runtime, expected_version="3.12.10"
+)
+print(json.dumps(report, sort_keys=True))
+PY
+}
+
 usage() {
     printf '%s\n' \
         'Usage: v2/bootstrap_runtime.sh --platform linux|macos \' \
@@ -91,7 +116,49 @@ on_signal() {
 trap cleanup EXIT
 trap on_signal HUP INT TERM
 
-"$PYTHON_BIN" -I -B -m venv "$STAGING"
+# A safe standalone interpreter remains linked so its relocatable layout is
+# preserved.  actions/setup-python may instead expose a hosted-toolcache or
+# framework target whose owner/mode chain fails the pinned codec checks; only
+# that case uses a self-contained launcher copy.  This probe mirrors both
+# platform implementations' physical-path policy.
+if "$PYTHON_BIN" -I -B - <<'PY'
+import os
+from pathlib import Path
+import stat
+import sys
+
+allowed_owners = {0, os.getuid()}
+target = Path(sys.executable).resolve(strict=True)
+target_status = target.lstat()
+safe = (
+    stat.S_ISREG(target_status.st_mode)
+    and not stat.S_ISLNK(target_status.st_mode)
+    and target_status.st_uid in allowed_owners
+    and not target_status.st_mode & 0o022
+)
+current = target.parent
+while safe:
+    status = current.lstat()
+    safe = (
+        stat.S_ISDIR(status.st_mode)
+        and not stat.S_ISLNK(status.st_mode)
+        and status.st_uid in allowed_owners
+        and not status.st_mode & 0o022
+    )
+    if current == Path("/"):
+        break
+    current = current.parent
+raise SystemExit(0 if safe else 1)
+PY
+then
+    "$PYTHON_BIN" -I -B -m venv "$STAGING"
+else
+    if [ "$PLATFORM" = macos ]; then
+        "$PYTHON_BIN" -I -B -m venv --copies "$STAGING"
+    else
+        fail 'Linux base Python has an unsafe owner/mode chain; harden or replace it'
+    fi
+fi
 RUNTIME_PYTHON="$STAGING/bin/python"
 "$RUNTIME_PYTHON" -I -B -m pip install \
     --isolated --no-input --disable-pip-version-check --no-cache-dir \
@@ -112,9 +179,7 @@ if [ "$PLATFORM" = linux ]; then
     "$PYTHON_BIN" -I -B \
         "$CODEC_ROOT/platforms/linux/scripts/runtime_safety.py" initialize-runtime \
         --runtime "$STAGING" >/dev/null
-    "$PYTHON_BIN" -I -B \
-        "$CODEC_ROOT/platforms/linux/scripts/runtime_safety.py" validate-runtime \
-        --runtime "$STAGING" >/dev/null
+    validate_linux_runtime "$STAGING" >/dev/null
 else
     [ "$(uname -s)" = Darwin ] || fail 'macos bootstrap requires macOS'
     [ "$(uname -m)" = arm64 ] || fail 'macos bootstrap requires Apple Silicon arm64'
@@ -153,9 +218,7 @@ fi
 STAGING=
 
 if [ "$PLATFORM" = linux ]; then
-    "$PYTHON_BIN" -I -B \
-        "$CODEC_ROOT/platforms/linux/scripts/runtime_safety.py" validate-runtime \
-        --runtime "$RUNTIME" >/dev/null
+    validate_linux_runtime "$RUNTIME" >/dev/null
 else
     [ "$("$PYTHON_BIN" -I -B "$CODEC_ROOT/security/manage_local_runtime.py" \
         --path "$RUNTIME" --project "$CODEC_ROOT" --mode preflight)" = existing ] \
