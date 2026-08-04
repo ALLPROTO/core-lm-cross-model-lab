@@ -470,7 +470,17 @@ PYTHONHASHSEED=0 "$RUNTIME_ROOT/bin/python" -P -s -B \
   --output-root /absolute/new/path/development-control-release-assets
 ```
 
-Before `2026-08-15T00:00:00Z`, publish those exact three files in an immutable
+> **Current suite status (2026-08-04): failed-freeze archive.** The immutable
+> release below was published correctly, but the verifier in its exact source
+> commit passed a 523,227,575-byte ZIP to Cosign as a blob and hit Cosign's
+> 134,217,728-byte limit. The later digest-mode verifier fix is regression-only:
+> it cannot retroactively satisfy the clean exact-source replay required by the
+> frozen design. Keep the tag/release unchanged. A scientific freeze requires a
+> new suite identity, tag, exact-commit CI, real-model development E2E, and
+> shifted dependent corpus/NIST/deadline windows.
+
+Historically, before `2026-08-15T00:00:00Z`, those exact three files were to be
+published in an immutable
 GitHub release named by the signed annotated tag
 `corelm-crossmodel-livewiki-v3-development-control`. The tag must directly
 target `$IMPLEMENTATION_COMMIT`. Then collect the canonical immutable-release
@@ -504,11 +514,13 @@ PYTHONHASHSEED=0 "$RUNTIME_ROOT/bin/python" -P -s -B \
   --output /absolute/new/path/development-control-archive-receipt.json
 ```
 
-The Cosign verification uses the complete archived DSSE bundle, the
-lexicographically first ASCII release asset, the exact GitHub release SAN, the
-release predicate type, and the signed RFC3161 timestamp. The semantic replay
-then binds every signed subject in that same statement. `attestedAt` is parsed
-from the raw signed timestamp and cross-checked against the GitHub CLI result.
+The Cosign verification uses the complete archived DSSE bundle, the SHA-256 of
+the lexicographically first ASCII release asset, the exact GitHub release SAN,
+the release predicate type, and the signed RFC3161 timestamp. The selected
+asset is fully copied and SHA-256 verified locally before Cosign receives that
+digest; digest mode avoids Cosign's 128 MiB blob-input limit. The semantic
+replay then binds every signed subject in that same statement. `attestedAt` is
+parsed from the raw signed timestamp and cross-checked against the GitHub CLI result.
 Because GitHub's bundle has neither a Rekor entry nor a certificate SCT, the
 fixed command uses `--private-infrastructure --insecure-ignore-sct`. This
 deliberately excludes transparency-log/SCT claims; it does not weaken the DSSE,

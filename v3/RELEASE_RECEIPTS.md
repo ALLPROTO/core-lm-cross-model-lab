@@ -7,8 +7,9 @@ four direct-TLS GitHub API observations and one GitHub immutable-release
 attestation. The collector first invokes exactly the pinned GitHub CLI below;
 `gh release verify --format json` obtains and verifies the release bundle online
 and its complete output is archived. It then invokes an independently pinned
-Cosign 3.0.6 binary with no network access against the archived bundle, one
-deterministically selected release asset, and the tracked GitHub trusted root.
+Cosign 3.0.6 binary with no network access against the archived bundle, the
+SHA-256 of one deterministically selected release asset, and the tracked GitHub
+trusted root.
 The offline verifier repeats that Cosign operation and also replays every signed
 subject, signer identity, release, asset, commit, and timestamp binding.
 This cryptographic claim applies to the immutable-release attestation. The four
@@ -244,8 +245,9 @@ GitHub RFC3161 timestamp.
 
 Immediately afterward, the collector selects the lexicographically first
 ASCII asset name, byte-verifies private copies of Cosign and the tracked root,
-and runs this exact argument sequence with an isolated environment (the three
-path placeholders are the verifier's private copies and selected local asset):
+byte-verifies a private copy of the selected local asset against its expected
+SHA-256, and runs this exact argument sequence with an isolated environment
+(the two path placeholders are the verifier's private copies):
 
 ```sh
 '<private-byte-verified-cosign>' verify-blob-attestation \
@@ -257,7 +259,9 @@ path placeholders are the verifier's private copies and selected local asset):
   --use-signed-timestamps \
   --private-infrastructure \
   --insecure-ignore-sct \
-  '<exact-selected-release-asset>'
+  --check-claims=true \
+  --digest '<exact-selected-release-asset-sha256>' \
+  --digestAlg sha256
 ```
 
 Success is exactly exit status zero, empty stdout, and `Verified OK` followed
@@ -269,6 +273,35 @@ Cosign binary identity, trusted-root digest, selected asset, bundle digest,
 RFC3161 `attestedAt`, and transcript. Normal receipts require `attestedAt <
 deadline`; the explicit late-closeout path alone requires `attestedAt >=
 deadline`.
+
+Digest mode is mandatory rather than an optimization. Cosign 3.0.6 limits a
+blob input to 128 MiB, while a valid immutable release may contain a larger
+selected asset. The collector still opens, copies, and SHA-256 verifies the
+complete local asset before invoking Cosign. Passing that verified digest makes
+Cosign check the same in-toto subject without weakening the local byte binding
+or the subsequent complete subject-name/digest replay.
+
+The real known-answer integration also performs a negative digest control with
+the same pinned Cosign binary and genuine signed bundle. A locally valid digest
+that is absent from the signed in-toto subjects must fail. This keeps
+`--check-claims=true` executable rather than relying on its current default.
+
+### Development-control verifier incident on 2026-08-04
+
+The immutable non-scientific development-control release with database ID
+`365071220` correctly binds signed annotated tag object
+`13a1a15bc9ecd4bc203ba8d93036764282abe32d`, implementation commit
+`36a63b114a3c6979d8363565d5bb7ff9183bbfe2`, and exactly the three registered
+assets. GitHub's release attestation is valid and has signed RFC3161 time
+`2026-08-04T18:26:40Z`.
+
+The original independent verifier nevertheless failed closed because it passed
+the 523,227,575-byte `development-control-artifacts.zip` to Cosign as a blob;
+Cosign rejected it above its 134,217,728-byte layer limit. No canonical receipt
+or signature-failure sidecar was created, and the immutable tag and release were
+not modified. This release is retained as a transparent non-scientific
+failed-freeze archive. The digest-mode change is a post-release regression fix;
+it must not be used to relabel the original source identity as freeze-complete.
 
 GitHub release bundles currently contain the signed RFC3161 timestamp but no
 Rekor entry or certificate SCT. Therefore `--private-infrastructure` and
@@ -287,9 +320,9 @@ kind, tag, commit, tree, deadline, SSH fingerprint, public-key SHA-256, and a
 host binary. The verifier performs no network request and independently reruns
 the archived raw tag signature through `/usr/bin/ssh-keygen -Y verify` under
 the fixed `git` namespace and frozen `allowed_signers` policy. It reopens every
-release asset, repeats the pinned Cosign operation against the archived bundle
-and tracked root, validates the archived cryptographic-verification record,
-derives `attestedAt` from the signed RFC3161 bytes, and cross-checks the fresh
-result against the semantic replay and deadline relation. No ambient Cosign
-trust or archived success assertion can substitute for that operation. The
-transparency boundary above remains unchanged during offline audit.
+release asset, repeats the pinned Cosign digest operation against the archived
+bundle and tracked root, validates the archived cryptographic-verification
+record, derives `attestedAt` from the signed RFC3161 bytes, and cross-checks the
+fresh result against the semantic replay and deadline relation. No ambient
+Cosign trust or archived success assertion can substitute for that operation.
+The transparency boundary above remains unchanged during offline audit.

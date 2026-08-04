@@ -16,6 +16,7 @@ import json
 import os
 import stat
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +31,7 @@ from v3.release_attestation_crypto import (  # noqa: E402
     METHOD,
     TRUST_POLICY,
     PinnedCosignReleaseAttestationVerifier,
+    ReleaseAttestationCryptoError,
     validate_cryptographic_verification_record,
     validate_known_answer_result,
 )
@@ -302,6 +304,26 @@ def run(*, cosign: Path, network_isolation: str) -> dict[str, Any]:
         or verified.verified_asset_sha256 != ASSET_SHA256
     ):
         raise KnownAnswerError("production Cosign known-answer result differs")
+    selected_raw = (VECTOR_ROOT / ASSET_NAME).read_bytes()
+    negative_raw = selected_raw + b"\x00"
+    negative_sha256 = hashlib.sha256(negative_raw).hexdigest()
+    if any(digest == negative_sha256 for _name, digest in assets):
+        raise KnownAnswerError("negative digest unexpectedly exists in signed subjects")
+    with tempfile.TemporaryDirectory(prefix="corelm-cosign-negative-") as value:
+        negative_root = Path(value)
+        (negative_root / ASSET_NAME).write_bytes(negative_raw)
+        try:
+            PinnedCosignReleaseAttestationVerifier(cosign).verify(
+                attestation_record=attestation_record,
+                asset_root=negative_root,
+                expected_assets=((ASSET_NAME, negative_sha256),),
+            )
+        except ReleaseAttestationCryptoError:
+            pass
+        else:
+            raise KnownAnswerError(
+                "Cosign accepted a digest absent from the signed subjects"
+            )
     result = {
         "schemaVersion": "corelm-release-attestation-crypto-known-answer-result-v1",
         "status": "KNOWN_ANSWER_PASS",

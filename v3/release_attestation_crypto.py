@@ -3,11 +3,12 @@
 
 The GitHub CLI collection result is useful evidence only if the archived
 Sigstore bundle is independently verified.  This module runs one exact pinned
-Cosign binary against one release asset and the complete DSSE bundle, using a
-tracked snapshot of GitHub's Sigstore certificate and RFC3161 timestamp roots.
-Cosign verifies the DSSE signature, certificate chain, exact SAN, timestamp
-signature/chain, and the selected asset digest.  The dependency-free semantic
-replay in :mod:`v3.github_release_attestation` then checks every signed subject.
+Cosign binary against one release-asset digest and the complete DSSE bundle,
+using a tracked snapshot of GitHub's Sigstore certificate and RFC3161 timestamp
+roots. Cosign verifies the DSSE signature, certificate chain, exact SAN,
+timestamp signature/chain, and the selected asset digest. The dependency-free
+semantic replay in :mod:`v3.github_release_attestation` then checks every signed
+subject.
 
 GitHub release attestations contain an RFC3161 timestamp but no Rekor entry or
 certificate SCT.  Accordingly the command uses Cosign's private-infrastructure
@@ -826,7 +827,11 @@ class PinnedCosignReleaseAttestationVerifier:
                 "--use-signed-timestamps",
                 "--private-infrastructure",
                 "--insecure-ignore-sct",
-                os.fspath(private_asset),
+                "--check-claims=true",
+                "--digest",
+                verified_digest,
+                "--digestAlg",
+                "sha256",
             ]
             try:
                 completed = subprocess.run(

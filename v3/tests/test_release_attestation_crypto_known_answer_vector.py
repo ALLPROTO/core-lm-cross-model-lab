@@ -37,7 +37,7 @@ class RealReleaseAttestationVectorTests(unittest.TestCase):
             "MACHINE_GENERATED_PUBLIC_CRYPTOGRAPHIC_AND_FACTUAL_RECORD",
         )
 
-    def test_cosign_receives_private_digest_checked_asset_copy(self) -> None:
+    def test_cosign_receives_digest_of_private_checked_asset_copy(self) -> None:
         raw_output, _assets = subject._load_vector()
         asset_raw = (subject.VECTOR_ROOT / subject.ASSET_NAME).read_bytes()
         with tempfile.TemporaryDirectory() as temporary_value:
@@ -58,10 +58,21 @@ class RealReleaseAttestationVectorTests(unittest.TestCase):
             }
 
             def fake_run(command: list[str], **_kwargs: object) -> SimpleNamespace:
-                private_asset = Path(command[-1])
+                private_asset = Path(command[0]).parent / subject.ASSET_NAME
                 self.assertNotEqual(private_asset, original_asset)
                 self.assertEqual(private_asset.parent, Path(command[0]).parent)
                 self.assertEqual(private_asset.read_bytes(), asset_raw)
+                self.assertEqual(
+                    command[-5:],
+                    [
+                        "--check-claims=true",
+                        "--digest",
+                        subject.ASSET_SHA256,
+                        "--digestAlg",
+                        "sha256",
+                    ],
+                )
+                self.assertNotIn(str(private_asset), command)
                 return SimpleNamespace(
                     returncode=0,
                     stdout=b"",
