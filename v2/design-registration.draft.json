@@ -211,8 +211,8 @@
   "continuousIntegration": {
     "workflowName": "Blind v2 development controls",
     "workflowPath": ".github/workflows/v2-development-controls.yml",
-    "workflowFileBytes": 12873,
-    "workflowFileSHA256": "0ab8e00ee19304880dee73decf527ab4b3bd9f217c6872e5a935a48e50bed967",
+    "workflowFileBytes": 13547,
+    "workflowFileSHA256": "1be8d930bfb3baebc01119ed45fe7806c67716d5bc2d9f4cef87a7b4549fb622",
     "requiredReviewDeclaration": "I independently reviewed the normative protocol, canonical schemas, fail-closed implementation, zero-skip tests, and evidence plan on this exact commit. I have no undisclosed conflict of interest with the repository owner. I found no unresolved P0 blocker and approve freeze publication.",
     "reviewerMustDifferFromRepositoryOwner": true,
     "githubAccountIdentityBoundary": "authenticated-account-statement-not-real-world-identity-or-conflict-proof",

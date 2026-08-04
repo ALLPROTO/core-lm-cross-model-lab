@@ -230,10 +230,10 @@ class SchemaIntegrityTests(unittest.TestCase):
         )
         ci = registration["continuousIntegration"]
         self.assertEqual(ci, EXPECTED_CONTINUOUS_INTEGRATION)
-        self.assertEqual(ci["workflowFileBytes"], 12873)
+        self.assertEqual(ci["workflowFileBytes"], 13547)
         self.assertEqual(
             ci["workflowFileSHA256"],
-            "0ab8e00ee19304880dee73decf527ab4b3bd9f217c6872e5a935a48e50bed967",
+            "1be8d930bfb3baebc01119ed45fe7806c67716d5bc2d9f4cef87a7b4549fb622",
         )
         workflow = (
             V2_ROOT.parent / ci["workflowPath"]

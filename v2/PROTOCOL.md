@@ -167,7 +167,7 @@ identity/conflict declaration and cannot replace the exact-commit review.
 The implementation gate is itself preregistered. The tracked workflow is
 `.github/workflows/v2-development-controls.yml`, exactly 12,487 bytes with
 SHA-256
-`0ab8e00ee19304880dee73decf527ab4b3bd9f217c6872e5a935a48e50bed967`.
+`1be8d930bfb3baebc01119ed45fe7806c67716d5bc2d9f4cef87a7b4549fb622`.
 Each lab-source checkout must explicitly use
 `${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}`
 so a pull-request gate executes the reviewed head commit rather than GitHub's

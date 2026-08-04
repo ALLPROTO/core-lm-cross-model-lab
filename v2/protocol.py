@@ -149,9 +149,9 @@ EXPECTED_DEVELOPMENT_CONTROLS = {
 EXPECTED_CONTINUOUS_INTEGRATION = {
     "workflowName": "Blind v2 development controls",
     "workflowPath": ".github/workflows/v2-development-controls.yml",
-    "workflowFileBytes": 12873,
+    "workflowFileBytes": 13547,
     "workflowFileSHA256": (
-        "0ab8e00ee19304880dee73decf527ab4b3bd9f217c6872e5a935a48e50bed967"
+        "1be8d930bfb3baebc01119ed45fe7806c67716d5bc2d9f4cef87a7b4549fb622"
     ),
     "requiredReviewDeclaration": (
         "I independently reviewed the normative protocol, canonical schemas, "

@@ -64,15 +64,23 @@ jobs:
         with:
           python-version: "3.12.10"
 
-      - name: Harden the registered Linux Python root
+      - name: Copy and harden the registered Linux Python root
         shell: bash
         run: |
           set -euo pipefail
-          base=$(python -I -B -c 'import pathlib,sys; print(pathlib.Path(sys.base_prefix).resolve(strict=True))')
-          test "$base" = "$pythonLocation"
-          test ! -L "$base"
-          test "$(stat -c '%u' "$base")" = "$(id -u)"
-          chmod go-w "$base"
+          source_base=$(python -I -B -c 'import pathlib,sys; print(pathlib.Path(sys.base_prefix).resolve(strict=True))')
+          test "$source_base" = "$pythonLocation"
+          test ! -L "$source_base"
+          test "$(stat -c '%u' "$source_base")" = "$(id -u)"
+          private_base="$RUNNER_TEMP/corelm-v2-python-3.12.10-base"
+          test ! -e "$private_base"
+          cp -a "$source_base" "$private_base"
+          python -I -B codec-source/platforms/linux/scripts/runtime_safety.py \
+            harden-owner-tree --root "$private_base" >/dev/null
+          private_python="$private_base/bin/python"
+          test "$($private_python -I -B -c 'import pathlib,sys; print(pathlib.Path(sys.base_prefix).resolve(strict=True))')" = "$private_base"
+          test "$($private_python -I -B -c 'import platform; print(platform.python_version())')" = 3.12.10
+          printf 'V2_BASE_PYTHON=%s\n' "$private_python" >> "$GITHUB_ENV"
 
       - name: Assert hosted runner architecture
         shell: bash
@@ -90,7 +98,7 @@ jobs:
             --platform linux \
             --codec-root "$GITHUB_WORKSPACE/codec-source" \
             --runtime "$runtime" \
-            --python "$(command -v python)"
+            --python "$V2_BASE_PYTHON"
           printf 'V2_RUNTIME=%s\n' "$runtime" >> "$GITHUB_ENV"
 
       - name: Acquire and pin the Linux release-attestation verifier

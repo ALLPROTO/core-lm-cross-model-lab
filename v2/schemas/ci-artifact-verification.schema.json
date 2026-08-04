@@ -68,10 +68,10 @@
       "$ref": "#/$defs/sha256"
     },
     "workflowFileBytes": {
-      "const": 12873
+      "const": 13547
     },
     "workflowFileSHA256": {
-      "const": "0ab8e00ee19304880dee73decf527ab4b3bd9f217c6872e5a935a48e50bed967"
+      "const": "1be8d930bfb3baebc01119ed45fe7806c67716d5bc2d9f4cef87a7b4549fb622"
     },
     "testsRun": {
       "type": "integer",
