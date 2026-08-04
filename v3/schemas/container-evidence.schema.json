@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v3/schemas/container-evidence.schema.json",
+  "title": "Core LM blind multi-model v3 container evidence record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "attemptId",
+    "modelKey",
+    "corpusProject",
+    "pageRevisionId",
+    "pageSelectionIndex",
+    "layerIndex",
+    "denseBF16Bytes",
+    "containerBytes",
+    "containerSHA256",
+    "relativePath",
+    "structuralReplay"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v3-container-evidence-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v3-author-verified"
+    },
+    "attemptId": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+    },
+    "modelKey": {
+      "enum": [
+        "gpt-neo-125m",
+        "smollm2-360m",
+        "tiny-starcoder-py"
+      ]
+    },
+    "corpusProject": {
+      "enum": [
+        "de.wikipedia.org",
+        "en.wikipedia.org",
+        "fr.wikipedia.org"
+      ]
+    },
+    "pageRevisionId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "pageSelectionIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 15
+    },
+    "layerIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 31
+    },
+    "denseBF16Bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "containerBytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "containerSHA256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$"
+    },
+    "structuralReplay": {
+      "const": true
+    }
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "schemaVersion": "corelm-crossmodel-livewiki-v3-model-assets-draft-v1",
+  "status": "DRAFT_METADATA_VERIFIED_NO_WEIGHT_DOWNLOAD",
+  "queriedAtUTC": "2026-08-03",
+  "source": "official immutable Hugging Face model revisions",
+  "completeRuntimeFileList": true,
+  "smallRuntimeFilesContentHashed": true,
+  "fullSafetensorsBytesLocallyVerified": false,
+  "weightsRedistributed": false,
+  "forbiddenFormats": [
+    "pytorch_model.bin",
+    "flax_model.msgpack",
+    "rust_model.ot"
+  ],
+  "models": {
+    "gpt-neo-125m": {
+      "repository": "EleutherAI/gpt-neo-125m",
+      "revision": "21def0189f5705e2521767faed922f1f15e7d7db",
+      "license": "mit",
+      "licenseURL": "https://huggingface.co/EleutherAI/gpt-neo-125m/tree/21def0189f5705e2521767faed922f1f15e7d7db",
+      "files": {
+        "config.json": {
+          "bytes": 1007,
+          "sha256": "dace197ce91788731063527367b0a6766d7d3a4ab72c671fabf16dbbf9037e16",
+          "digestSource": "downloaded-content"
+        },
+        "generation_config.json": {
+          "bytes": 119,
+          "sha256": "a7996263aa24aca6c74d9edfe19dbb3af742c572ada10f73c88c3a5e30ba5c14",
+          "digestSource": "downloaded-content"
+        },
+        "merges.txt": {
+          "bytes": 456318,
+          "sha256": "1ce1664773c50f3e0cc8842619a93edc4624525b728b188a9e0be33b7726adc5",
+          "digestSource": "downloaded-content"
+        },
+        "model.safetensors": {
+          "bytes": 525979192,
+          "sha256": "52738cbfb54e25a232598242f60ef19ee193d36090b98fe649b10c02724b3521",
+          "digestSource": "official-lfs-pointer-not-yet-locally-rehashed"
+        },
+        "special_tokens_map.json": {
+          "bytes": 357,
+          "sha256": "a00e1f660c842693e7f667898759c24eb538c2dbb09b91c22dbde1b45d4cdee8",
+          "digestSource": "downloaded-content"
+        },
+        "tokenizer.json": {
+          "bytes": 2107652,
+          "sha256": "f6ed3d307010c244c22aeffbde05f419cf277c23e64cf98b673cac5449cfeff5",
+          "digestSource": "downloaded-content"
+        },
+        "tokenizer_config.json": {
+          "bytes": 727,
+          "sha256": "fd1d9aed595c7ad9e64cf65c74e94bddc9dc1608e178a4f60380c8373813f30f",
+          "digestSource": "downloaded-content"
+        },
+        "vocab.json": {
+          "bytes": 898669,
+          "sha256": "03087853bc70c618b66e7c7a43e787d2db4c469416beac9a483e53dad1f72f27",
+          "digestSource": "downloaded-content"
+        }
+      }
+    },
+    "smollm2-360m": {
+      "repository": "HuggingFaceTB/SmolLM2-360M",
+      "revision": "f8027fd0eaeea54caa13c31d31b9fdc459c38b49",
+      "license": "apache-2.0",
+      "licenseURL": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M/tree/f8027fd0eaeea54caa13c31d31b9fdc459c38b49",
+      "files": {
+        "config.json": {
+          "bytes": 689,
+          "sha256": "34f7801487078de7e434e19162c497e5cc6ff397080e40e8586627cb68a5168a",
+          "digestSource": "downloaded-content"
+        },
+        "generation_config.json": {
+          "bytes": 111,
+          "sha256": "2056c988e990b0d13670f63f2f3b87b3b6d07edaf7a3416998ba27dab2d8a059",
+          "digestSource": "downloaded-content"
+        },
+        "merges.txt": {
+          "bytes": 466391,
+          "sha256": "0b54e8aa4e53d5383e2e4bc635a56b43f9647f7b13832d5d9ecd8f82dac4f510",
+          "digestSource": "downloaded-content"
+        },
+        "model.safetensors": {
+          "bytes": 723674912,
+          "sha256": "7aaff6661428bed033abba9522bec81938678642cca3181fe752b6ca9e1e540f",
+          "digestSource": "official-lfs-pointer-not-yet-locally-rehashed"
+        },
+        "special_tokens_map.json": {
+          "bytes": 831,
+          "sha256": "e786b595b9a23148bf1630df78d9037a048ea671e48bfd3549a1e3c233742bb3",
+          "digestSource": "downloaded-content"
+        },
+        "tokenizer.json": {
+          "bytes": 2104556,
+          "sha256": "9ca9acddb6525a194ec8ac7a87f24fbba7232a9a15ffa1af0c1224fcd888e47c",
+          "digestSource": "downloaded-content"
+        },
+        "tokenizer_config.json": {
+          "bytes": 3658,
+          "sha256": "4bb9af56a342753d39374f4016a16574cab299fe088e896f425ce3c433f61424",
+          "digestSource": "downloaded-content"
+        },
+        "vocab.json": {
+          "bytes": 800662,
+          "sha256": "82b84012e3add4d01d12ba14442026e49b8cbbaead1f79ecf3d919784f82dc79",
+          "digestSource": "downloaded-content"
+        }
+      }
+    },
+    "tiny-starcoder-py": {
+      "repository": "bigcode/tiny_starcoder_py",
+      "revision": "8547527bef0bc927268c1653cce6948c5c242dd1",
+      "license": "bigcode-openrail-m",
+      "licenseURL": "https://huggingface.co/bigcode/tiny_starcoder_py/tree/8547527bef0bc927268c1653cce6948c5c242dd1",
+      "files": {
+        "config.json": {
+          "bytes": 1030,
+          "sha256": "5961dd4e9a1f649c509cee1a4936cda489b165dc38b33127d39623a8f13490a5",
+          "digestSource": "downloaded-content"
+        },
+        "generation_config.json": {
+          "bytes": 111,
+          "sha256": "368f15f9c335d48e1a585440037c77022af6b867303dc8fe9ee01e8fc86c1617",
+          "digestSource": "downloaded-content"
+        },
+        "merges.txt": {
+          "bytes": 441848,
+          "sha256": "74b0a4bc1a97ebc1d227f69231b18574374ba052fb945b0fa0aa91d3c32504a2",
+          "digestSource": "downloaded-content"
+        },
+        "model.safetensors": {
+          "bytes": 656601304,
+          "sha256": "15fa942f055b618d5ca6283f5c27278a475ff12e53dc704b9658ffd5160d4021",
+          "digestSource": "official-lfs-pointer-not-yet-locally-rehashed"
+        },
+        "special_tokens_map.json": {
+          "bytes": 532,
+          "sha256": "0823292e24ea07b89317e9ede9d08da2a1b6c014290c06908a7ad04f1efd6719",
+          "digestSource": "downloaded-content"
+        },
+        "tokenizer.json": {
+          "bytes": 2057395,
+          "sha256": "42b5a37ba11199f024f2b8873e1ecba98da33166e16f700bf7cb2304b0a5583f",
+          "digestSource": "downloaded-content"
+        },
+        "tokenizer_config.json": {
+          "bytes": 677,
+          "sha256": "95684c52ad9a970dbbb17576ee2237cb62902c1eff6804c7c91a4d6219a4a6d7",
+          "digestSource": "downloaded-content"
+        },
+        "vocab.json": {
+          "bytes": 776993,
+          "sha256": "20175afb9f164fad4829aca2279f8df7eeff1e2e3f671378aaa287a740aff09f",
+          "digestSource": "downloaded-content"
+        }
+      }
+    }
+  }
+}

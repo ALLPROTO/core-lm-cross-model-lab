@@ -56,10 +56,10 @@ LM scientific verdict, and cannot establish corpus-wide or LLM-wide
 generalization. A model failure remains a first-class negative result; one
 model's PASS cannot hide another model's FAIL.
 
-## Prospective blind multi-model v2
+## Prospective beacon-selected multi-model v3
 
-Development of a genuinely prospective model-holdout experiment lives under
-[`v2/`](v2/README.md). It uses three model revisions that were not used to
+The active prospective model-holdout experiment lives under
+[`v3/`](v3/README.md). It uses three model revisions that were not used to
 select or tune the candidate and Wikipedia creation revisions that do not exist
 at design time. Before freeze, the exact model revisions may be exercised only
 by one fixed full candidate-pipeline readiness control on the pinned UD English
@@ -68,11 +68,17 @@ not the prospective scientific holdout; the control includes the lossless
 adapter invariant. It may compute diagnostics but cannot be used to change the
 candidate, gates, models, runtime, or protocol. It forbids
 future-corpus/NIST/attempt state and reports
-`countsTowardScientificVerdict=false`; it is not scientific evidence. The v2
-files are currently a development draft under review, not a preregistration
-and not evidence. Candidate inference on eligible future corpus, one-shot
+`countsTowardScientificVerdict=false`; it is not scientific evidence. The v3
+files are a new draft with a new suite identity and future timeline, not yet a
+preregistration and not evidence. Its governance is explicitly
+`AUTHOR_SELF_VERIFICATION`: no independent human review, peer review, operator
+blindness, or independent replication is claimed. Candidate inference on eligible future corpus, one-shot
 selection, and scientific attempt state remain forbidden until every freeze
 blocker is closed and an immutable public design release exists.
+
+The former [`v2/`](v2/README.md) contour is a superseded, unfrozen draft. Its
+real PUD run remains a prior non-scientific development observation and cannot
+be reused as v3 freeze or scientific evidence.
 
 The familiar ratio >= 2.0x, delta-NLL <= 0.01, and top-1 agreement >= 0.99
 thresholds are reported only as transfer diagnostics. They were not
@@ -149,7 +155,7 @@ outside the scientific verdict.
 
 The lab code is MIT-licensed. Downloaded model assets retain their upstream
 licenses listed in `models.json`; in particular, BLOOM uses the BigScience
-BLOOM RAIL 1.0 license. The blind-v2 model/data rights matrix, exact UD English
+BLOOM RAIL 1.0 license. The v3 model/data rights matrix, exact UD English
 PUD r2.18 source evidence, CC BY-SA 3.0 attribution/share-alike handling, and
 the boundary that upstream declarations are not an independent ownership
 conclusion are documented in

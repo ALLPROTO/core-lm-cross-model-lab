@@ -20,8 +20,10 @@ it does not copy or relicense model weights.
   — provenance and rights classification for the minimal real `cli/cli`
   immutable-release known-answer vector; its exact upstream MIT license is
   preserved beside the vector.
+- [`../v3/test-vectors/github-release-attestation-v1/metadata.json`](../v3/test-vectors/github-release-attestation-v1/metadata.json)
+  — the identical known-answer bytes reused by the active v3 protocol contour.
 
-Before the immutable design release, independently replay every entry in
+Before the immutable design release, the author must replay every entry in
 `source-evidence.json`. The local development artifact set binds that file,
 `ASSET_LICENSES.md`, the pinned UD English PUD README and license, and
 `UD_ENGLISH_PUD_ATTRIBUTION.md` under `inputs/LICENSES/`; the eventual archival

@@ -1,0 +1,446 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v3/schemas/experiment-closeout.schema.json",
+  "title": "Core LM blind multi-model v3 public experiment closeout",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "documentType",
+    "classification",
+    "classificationScope",
+    "attemptTerminalOutcome",
+    "attemptTerminalStatesExcluded",
+    "doesNotModifyAttemptOutcome",
+    "deadlines",
+    "closeoutReleasePlan",
+    "publicationBindings",
+    "basis",
+    "classifiedAt",
+    "countsTowardScientificVerdict",
+    "retryPermitted",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v3-experiment-closeout-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v3-author-verified"
+    },
+    "documentType": {
+      "const": "PUBLIC_EXPERIMENT_CLOSEOUT"
+    },
+    "classification": {
+      "enum": [
+        "NO_ATTEMPT_EXPIRED",
+        "LATE_PUBLICATION_INVALID"
+      ]
+    },
+    "classificationScope": {
+      "const": "PUBLIC_EXPERIMENT_OR_PUBLICATION_CLASSIFICATION_NOT_ATTEMPT_TERMINAL_OUTCOME"
+    },
+    "attemptTerminalOutcome": {
+      "type": "null"
+    },
+    "attemptTerminalStatesExcluded": {
+      "const": [
+        "PASS",
+        "FAIL_GATES",
+        "FAIL_EXECUTION",
+        "CONSUMED_INCOMPLETE"
+      ]
+    },
+    "doesNotModifyAttemptOutcome": {
+      "const": true
+    },
+    "deadlines": {
+      "$ref": "#/$defs/deadlines"
+    },
+    "closeoutReleasePlan": {
+      "$ref": "#/$defs/closeoutReleasePlan"
+    },
+    "publicationBindings": {
+      "$ref": "#/$defs/publicationBindings"
+    },
+    "basis": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/noAttemptBasis"
+        },
+        {
+          "$ref": "#/$defs/latePublicationBasis"
+        }
+      ]
+    },
+    "classifiedAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "countsTowardScientificVerdict": {
+      "const": false
+    },
+    "retryPermitted": {
+      "const": false
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "classification": {
+            "const": "NO_ATTEMPT_EXPIRED"
+          }
+        },
+        "required": [
+          "classification"
+        ]
+      },
+      "then": {
+        "properties": {
+          "basis": {
+            "$ref": "#/$defs/noAttemptBasis"
+          },
+          "publicationBindings": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/publicationBindings"
+              },
+              {
+                "properties": {
+                  "evidenceReleaseReceiptSHA256": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "classification": {
+            "const": "LATE_PUBLICATION_INVALID"
+          }
+        },
+        "required": [
+          "classification"
+        ]
+      },
+      "then": {
+        "properties": {
+          "basis": {
+            "$ref": "#/$defs/latePublicationBasis"
+          },
+          "publicationBindings": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/publicationBindings"
+              },
+              {
+                "properties": {
+                  "evidenceReleaseReceiptSHA256": {
+                    "$ref": "#/$defs/sha256"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "gitOID": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "deadlines": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "designPublicationDeadline",
+        "snapshotPublicationDeadline",
+        "executionHardDeadline",
+        "evidencePublicationDeadline",
+        "closeoutPublicationDeadline"
+      ],
+      "properties": {
+        "designPublicationDeadline": {
+          "const": "2026-08-15T00:00:00Z"
+        },
+        "snapshotPublicationDeadline": {
+          "const": "2026-09-01T18:00:00Z"
+        },
+        "executionHardDeadline": {
+          "const": "2026-09-04T18:00:00Z"
+        },
+        "evidencePublicationDeadline": {
+          "const": "2026-09-07T18:00:00Z"
+        },
+        "closeoutPublicationDeadline": {
+          "const": "2026-09-14T18:00:00Z"
+        }
+      }
+    },
+    "closeoutReleasePlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "kind",
+        "tag",
+        "publishNoLaterThan",
+        "serverTimestampRequired",
+        "immutableReleaseRequired",
+        "signedAnnotatedTagRequired",
+        "signatureType",
+        "signingKeyFingerprint",
+        "signingPublicKeySHA256",
+        "sourcePolicy"
+      ],
+      "properties": {
+        "repository": {"const": "ALLPROTO/core-lm-cross-model-lab"},
+        "kind": {"const": "closeout"},
+        "tag": {"const": "corelm-crossmodel-livewiki-v3-closeout"},
+        "publishNoLaterThan": {"const": "2026-09-14T18:00:00Z"},
+        "serverTimestampRequired": {"const": true},
+        "immutableReleaseRequired": {"const": true},
+        "signedAnnotatedTagRequired": {"const": true},
+        "signatureType": {"const": "SSH"},
+        "signingKeyFingerprint": {
+          "const": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM"
+        },
+        "signingPublicKeySHA256": {
+          "const": "beac537f2979026cd85facd195132979a5a3a77da65f87d563ffb6253d408ea2"
+        },
+        "sourcePolicy": {
+          "const": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE"
+        }
+      }
+    },
+    "publicationBindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "designRegistrationSHA256",
+        "designPublicationReceiptSHA256",
+        "snapshotRegistrationSHA256",
+        "snapshotPublicationReceiptSHA256",
+        "evidenceReleaseReceiptSHA256",
+        "closeoutSourceCommit",
+        "closeoutSourceTree"
+      ],
+      "properties": {
+        "designRegistrationSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "designPublicationReceiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "snapshotRegistrationSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "snapshotPublicationReceiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "evidenceReleaseReceiptSHA256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "closeoutSourceCommit": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "closeoutSourceTree": {
+          "$ref": "#/$defs/gitOID"
+        }
+      }
+    },
+    "noAttemptBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "emptyResultRootObservationSHA256",
+        "observedAt",
+        "observationCreatedAt",
+        "observedHostEnvironmentSHA256",
+        "observedResultRootPathSHA256",
+        "rootDevice",
+        "rootInode",
+        "entryCount",
+        "emptyInventorySHA256",
+        "claimScope",
+        "globalAbsenceEstablished",
+        "auditImplementationSHA256",
+        "auditReportSHA256",
+        "auditorIdentity"
+      ],
+      "properties": {
+        "kind": {
+          "const": "AUDITED_EMPTY_OBSERVED_RESULT_ROOT"
+        },
+        "emptyResultRootObservationSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "observedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "observationCreatedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "observedHostEnvironmentSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "observedResultRootPathSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "rootDevice": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rootInode": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "entryCount": {
+          "const": 0
+        },
+        "emptyInventorySHA256": {
+          "const": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "claimScope": {
+          "const": "ONLY_THIS_RESULT_ROOT_ON_THIS_HOST_AT_OBSERVED_AT"
+        },
+        "globalAbsenceEstablished": {
+          "const": false
+        },
+        "auditImplementationSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "auditReportSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "auditorIdentity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "latePublicationBasis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "evidenceReleaseReceiptSHA256",
+        "publishedAt",
+        "attestedAt",
+        "deadline",
+        "latenessRelation",
+        "repository",
+        "tag",
+        "commit",
+        "tree",
+        "signatureType",
+        "keyFingerprint",
+        "publicKeySHA256",
+        "requiredAssets"
+      ],
+      "properties": {
+        "kind": {
+          "const": "ARCHIVED_LATE_EVIDENCE_PUBLICATION"
+        },
+        "evidenceReleaseReceiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "publishedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "attestedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "deadline": {
+          "const": "2026-09-07T18:00:00Z"
+        },
+        "latenessRelation": {
+          "const": "ATTESTED_AT_OR_AFTER_DEADLINE"
+        },
+        "repository": {
+          "const": "ALLPROTO/core-lm-cross-model-lab"
+        },
+        "tag": {
+          "const": "corelm-crossmodel-livewiki-v3-evidence"
+        },
+        "commit": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "tree": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "signatureType": {
+          "const": "SSH"
+        },
+        "keyFingerprint": {
+          "type": "string",
+          "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+        },
+        "publicKeySHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "requiredAssets": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/releaseAsset"}
+        }
+      }
+    },
+    "releaseAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "name",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,190}[A-Za-z0-9]$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v3/schemas/evidence-release-manifest.schema.json",
+  "title": "Core LM blind multi-model v3 post-one-shot evidence release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "attemptId",
+    "createdAt",
+    "packageStatus",
+    "recoveryClassification",
+    "terminalState",
+    "attemptCountsTowardScientificVerdict",
+    "artifactPresence",
+    "forensicArtifacts",
+    "missingArtifacts",
+    "groups",
+    "entries",
+    "entryCount",
+    "totalBytes",
+    "entriesSHA256",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v3-evidence-release-manifest-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v3-author-verified"
+    },
+    "attemptId": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "packageStatus": {
+      "enum": [
+        "COMPLETE_TERMINAL",
+        "PARTIAL_CONSUMED_INCOMPLETE"
+      ]
+    },
+    "recoveryClassification": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "CONSUMED_INCOMPLETE",
+        null
+      ]
+    },
+    "terminalState": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "PASS",
+        "FAIL_GATES",
+        "FAIL_EXECUTION",
+        "CONSUMED_INCOMPLETE",
+        null
+      ]
+    },
+    "attemptCountsTowardScientificVerdict": {
+      "type": "boolean"
+    },
+    "artifactPresence": {
+      "$ref": "#/$defs/artifactPresence"
+    },
+    "forensicArtifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/forensicArtifact"
+      }
+    },
+    "missingArtifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/evidencePath"
+      }
+    },
+    "groups": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt",
+        "corpus",
+        "frozenBindings",
+        "nistTrust"
+      ],
+      "properties": {
+        "attempt": {
+          "$ref": "#/$defs/group"
+        },
+        "corpus": {
+          "$ref": "#/$defs/group"
+        },
+        "frozenBindings": {
+          "$ref": "#/$defs/group"
+        },
+        "nistTrust": {
+          "$ref": "#/$defs/group"
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    },
+    "entryCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "totalBytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "entriesSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "packageStatus": {
+            "const": "PARTIAL_CONSUMED_INCOMPLETE"
+          }
+        },
+        "required": [
+          "packageStatus"
+        ]
+      },
+      "then": {
+        "properties": {
+          "terminalState": {
+            "type": "null"
+          },
+          "recoveryClassification": {
+            "const": "CONSUMED_INCOMPLETE"
+          },
+          "attemptCountsTowardScientificVerdict": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "packageStatus": {
+            "const": "COMPLETE_TERMINAL"
+          }
+        },
+        "required": [
+          "packageStatus"
+        ]
+      },
+      "then": {
+        "properties": {
+          "terminalState": {
+            "enum": [
+              "PASS",
+              "FAIL_GATES",
+              "FAIL_EXECUTION",
+              "CONSUMED_INCOMPLETE"
+            ]
+          },
+          "recoveryClassification": {
+            "type": "null"
+          },
+          "artifactPresence": {
+            "properties": {
+              "attemptMarker": {
+                "const": true
+              },
+              "terminalOutcome": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "evidencePath": {
+      "enum": [
+        "payload/attempt/attempt-reservation.json",
+        "payload/attempt/attempt-marker.json",
+        "payload/attempt/terminal-outcome.json",
+        "payload/attempt/private-snapshot-manifest.json",
+        "payload/attempt/environment/host-preflight.json",
+        "payload/attempt/nist/request-uri.txt",
+        "payload/attempt/nist/response-headers.bin",
+        "payload/attempt/nist/response-body.json",
+        "payload/attempt/nist/verification.json",
+        "payload/attempt/selection.json",
+        "payload/attempt/page-token-evidence.jsonl",
+        "payload/attempt/raw-token-evidence.jsonl",
+        "payload/attempt/container-evidence.jsonl",
+        "payload/attempt/result.json",
+        "payload/attempt/evidence-manifest.json",
+        "payload/attempt/independent-verifier-report.json",
+        "payload/attempt/logs/independent-verifier.log",
+        "payload/attempt/workers/gpt-neo-125m/page-token-evidence.jsonl",
+        "payload/attempt/workers/smollm2-360m/page-token-evidence.jsonl",
+        "payload/attempt/workers/tiny-starcoder-py/page-token-evidence.jsonl"
+      ]
+    },
+    "artifactPresence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attemptReservation",
+        "attemptMarker",
+        "terminalOutcome",
+        "privateSnapshotManifest",
+        "hostEnvironment",
+        "nistRequestURI",
+        "nistResponseHeaders",
+        "nistResponseBody",
+        "nistVerification",
+        "selection",
+        "pageTokenEvidence",
+        "rawTokenEvidence",
+        "containerEvidence",
+        "producerResult",
+        "producerEvidenceManifest",
+        "independentVerifierReport",
+        "independentVerifierLog",
+        "gptNeoWorkerPageTokenEvidence",
+        "smolLM2WorkerPageTokenEvidence",
+        "tinyStarcoderWorkerPageTokenEvidence"
+      ],
+      "properties": {
+        "attemptReservation": {
+          "const": true
+        },
+        "attemptMarker": {
+          "type": "boolean"
+        },
+        "terminalOutcome": {
+          "type": "boolean"
+        },
+        "privateSnapshotManifest": {
+          "type": "boolean"
+        },
+        "hostEnvironment": {
+          "type": "boolean"
+        },
+        "nistRequestURI": {
+          "type": "boolean"
+        },
+        "nistResponseHeaders": {
+          "type": "boolean"
+        },
+        "nistResponseBody": {
+          "type": "boolean"
+        },
+        "nistVerification": {
+          "type": "boolean"
+        },
+        "selection": {
+          "type": "boolean"
+        },
+        "pageTokenEvidence": {
+          "type": "boolean"
+        },
+        "rawTokenEvidence": {
+          "type": "boolean"
+        },
+        "containerEvidence": {
+          "type": "boolean"
+        },
+        "producerResult": {
+          "type": "boolean"
+        },
+        "producerEvidenceManifest": {
+          "type": "boolean"
+        },
+        "independentVerifierReport": {
+          "type": "boolean"
+        },
+        "independentVerifierLog": {
+          "type": "boolean"
+        },
+        "gptNeoWorkerPageTokenEvidence": {
+          "type": "boolean"
+        },
+        "smolLM2WorkerPageTokenEvidence": {
+          "type": "boolean"
+        },
+        "tinyStarcoderWorkerPageTokenEvidence": {
+          "type": "boolean"
+        }
+      }
+    },
+    "forensicArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256",
+        "condition"
+      ],
+      "properties": {
+        "path": {
+          "enum": [
+            "payload/attempt/attempt-reservation.pending",
+            "payload/attempt/attempt-marker.pending",
+            "payload/attempt/terminal-outcome.pending",
+            "payload/attempt/attempt-marker.json",
+            "payload/attempt/terminal-outcome.json"
+          ]
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "condition": {
+          "enum": [
+            "INTERRUPTED_RESERVATION_PUBLICATION_CLEANUP",
+            "INTERRUPTED_ATTEMPT_MARKER_PUBLICATION",
+            "INTERRUPTED_TERMINAL_OUTCOME_PUBLICATION",
+            "PARTIAL_OR_NONCANONICAL_ATTEMPT_MARKER",
+            "PARTIAL_OR_NONCANONICAL_TERMINAL_OUTCOME",
+            "UNVERIFIABLE_OR_PARTIAL_TERMINAL_OUTCOME"
+          ]
+        }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prefix",
+        "entryCount",
+        "totalBytes",
+        "entriesSHA256"
+      ],
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entryCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "totalBytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entriesSHA256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "sha256",
+        "role"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^payload/(attempt|corpus|bindings)/[^\\\\]+$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "role": {
+          "enum": [
+            "attempt-evidence",
+            "public-corpus",
+            "frozen-design",
+            "frozen-snapshot-registration",
+            "design-publication-receipt",
+            "snapshot-publication-receipt",
+            "release-signing-public-key",
+            "design-release-asset",
+            "snapshot-release-asset",
+            "freeze-manifest",
+            "runtime-manifest",
+            "model-asset-source-manifest",
+            "full-asset-receipt",
+            "sbom",
+            "nist-trust",
+            "transport-ca-bundle"
+          ]
+        }
+      }
+    }
+  }
+}
