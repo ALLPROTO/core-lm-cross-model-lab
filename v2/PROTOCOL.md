@@ -100,9 +100,14 @@ conclusion.
 The 2,088-member set and its deterministic release ZIP intentionally contain
 no model weights. The 24 real-model files remain external private inputs; the
 sealed plan, pinned model-asset manifest, and complete local rehash receipt bind
-their exact paths, byte counts, and SHA-256 values. The packager and verifier
-both require the ZIP to remain strictly below 1,800,000,000 bytes and reject
-missing, extra, duplicate, or accidentally embedded model members.
+their exact paths, byte counts, and SHA-256 values. Within this evidence set,
+the receipt's only canonical member path is
+`inputs/model-assets.full-rehash.json`; `inputs/full-asset-receipt.json` is
+forbidden here. The same receipt bytes are published separately in the design
+release as the root asset `full-asset-receipt.json`. The packager and verifier
+both require the ZIP to remain strictly below
+1,800,000,000 bytes and reject missing, extra, duplicate, or accidentally
+embedded model members.
 
 The packager and archive verifier re-open those rights bytes and every artifact
 before emitting the three release assets. The signed annotated development tag,

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import os
+import re
 import struct
 import tempfile
 import unittest
@@ -139,7 +140,7 @@ class TinySemanticArchive:
                     }
                 },
             }
-            self.files["inputs/full-asset-receipt.json"] = line(receipt)
+            self.files[subject.FULL_ASSET_RECEIPT_PATH] = line(receipt)
             corpus_manifest = {
                 "schemaVersion": "corelm-crossmodel-livewiki-v2-development-corpus-v1",
                 "status": "PINNED_REAL_CORPUS_WITH_EXPLICIT_REDISTRIBUTION_LICENSE",
@@ -622,6 +623,17 @@ class DevelopmentArtifactVerifierTests(unittest.TestCase):
         self.assertEqual(result["totalPredictions"], 1)
         self.assertEqual(result["totalContainers"], 1)
         self.assertEqual(tuple(result["models"]), (fixture.model_key,))
+
+    def test_rejects_legacy_full_asset_receipt_archive_name(self) -> None:
+        fixture = TinySemanticArchive()
+        fixture.files["inputs/full-asset-receipt.json"] = fixture.files.pop(
+            subject.FULL_ASSET_RECEIPT_PATH
+        )
+        with self.assertRaisesRegex(
+            subject.DevelopmentArtifactVerificationError,
+            re.escape(subject.FULL_ASSET_RECEIPT_PATH),
+        ):
+            self.verify(fixture)
 
     def test_self_contained_reader_rejects_symlink_substitution(self) -> None:
         fixture = TinySemanticArchive()

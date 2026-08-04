@@ -11,6 +11,7 @@ from unittest import mock
 
 from v2 import freeze_manifest
 from v2 import package_development_control_release as subject
+from v2.development_artifact_verifier import FULL_ASSET_RECEIPT_PATH
 from v2.reproducibility import canonical_json_bytes, sha256_bytes
 
 
@@ -37,7 +38,11 @@ class DevelopmentControlReleasePackageTests(unittest.TestCase):
         self.addCleanup(dataset_identity.stop)
 
         project_root = freeze_manifest.PROJECT_ROOT
+        self.full_asset_receipt = (
+            project_root / "v2/manifests/model-assets.full-rehash.json"
+        ).read_bytes()
         rights_files = {
+            FULL_ASSET_RECEIPT_PATH: self.full_asset_receipt,
             "inputs/development-corpus.draft.json": (
                 project_root / "v2/development-corpus.draft.json"
             ).read_bytes(),
@@ -104,7 +109,7 @@ class DevelopmentControlReleasePackageTests(unittest.TestCase):
             "verify_development_control_report",
             side_effect=lambda *_args, **_kwargs: copy.deepcopy(self.summary),
         )
-        verifier.start()
+        self.report_verifier = verifier.start()
         self.addCleanup(verifier.stop)
 
     def package(self) -> dict[str, object]:
@@ -150,6 +155,31 @@ class DevelopmentControlReleasePackageTests(unittest.TestCase):
 
     def test_packages_all_reported_bytes_in_deterministic_read_only_zip(self) -> None:
         report = self.package()
+        self.assertEqual(self.report_verifier.call_count, 2)
+        self.assertEqual(
+            self.report_verifier.call_args_list[0],
+            mock.call(
+                self.report_path,
+                artifact_root=self.artifact_root,
+                expected_implementation={
+                    "repository": (
+                        "https://github.com/ALLPROTO/core-lm-cross-model-lab.git"
+                    ),
+                    "commit": "1" * 40,
+                    "tree": "2" * 40,
+                },
+                expected_codec={
+                    "repository": "https://github.com/ALLPROTO/core-lm-benchmark.git",
+                    "commit": "3" * 40,
+                    "tree": "4" * 40,
+                },
+                completed_no_later_than=freeze_manifest.DESIGN_PUBLISH_DEADLINE,
+                expected_runtime_manifest_sha256=sha256_bytes(
+                    self.runtime_path.read_bytes()
+                ),
+                require_artifacts=True,
+            ),
+        )
         self.assertEqual(
             report["status"],
             "VERIFIED_LOCAL_DEVELOPMENT_CONTROL_RELEASE_ASSETS",
@@ -167,7 +197,13 @@ class DevelopmentControlReleasePackageTests(unittest.TestCase):
             self.output / "development-control-artifacts.zip", "r"
         ) as archive:
             information = archive.infolist()
+            member_names = {item.filename for item in information}
             self.assertEqual(len(information), 2088)
+            self.assertIn(FULL_ASSET_RECEIPT_PATH, member_names)
+            self.assertNotIn("inputs/full-asset-receipt.json", member_names)
+            self.assertEqual(
+                archive.read(FULL_ASSET_RECEIPT_PATH), self.full_asset_receipt
+            )
             self.assertEqual(
                 [item.filename for item in information],
                 sorted((item["path"] for item in self.inventory), key=os.fsencode),

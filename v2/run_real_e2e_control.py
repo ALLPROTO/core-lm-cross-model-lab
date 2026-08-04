@@ -109,6 +109,7 @@ WORKER_SUMMARY_SCHEMA = (
 SUPERVISOR_SCHEMA = (
     "corelm-crossmodel-v2-real-e2e-development-supervisor-receipt-v1"
 )
+FULL_ASSET_RECEIPT_ARCHIVE_NAME = "model-assets.full-rehash.json"
 HEX_40 = re.compile(r"[0-9a-f]{40}\Z")
 HEX_64 = re.compile(r"[0-9a-f]{64}\Z")
 PARTITIONS = 32
@@ -594,7 +595,7 @@ def _load_fixed_inputs(
     archival_inputs = {
         "design-registration.draft.json": design_raw,
         "model-assets.draft.json": manifest_raw,
-        "model-assets.full-rehash.json": receipt_raw,
+        FULL_ASSET_RECEIPT_ARCHIVE_NAME: receipt_raw,
         "development-corpus.draft.json": corpus_manifest_raw,
         "LICENSES/source-evidence.json": license_source_raw,
         "LICENSES/ASSET_LICENSES.md": asset_license_matrix_raw,

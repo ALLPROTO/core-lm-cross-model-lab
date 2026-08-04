@@ -1018,6 +1018,14 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
             self.assertEqual(supervisor.call_count, len(independent.MODELS) + 1)
             model_loader.assert_not_called()
             self.assertTrue((output / "development-control-report.json").is_file())
+            receipt_path = (
+                output / "inputs" / control.FULL_ASSET_RECEIPT_ARCHIVE_NAME
+            )
+            self.assertEqual(
+                receipt_path.read_bytes(),
+                archival_inputs[control.FULL_ASSET_RECEIPT_ARCHIVE_NAME],
+            )
+            self.assertFalse((output / "inputs/full-asset-receipt.json").exists())
             self.assertFalse((control.V2_ROOT / "results" / output.name).exists())
 
     def test_failure_after_output_claim_is_durable_and_never_pass(self) -> None:

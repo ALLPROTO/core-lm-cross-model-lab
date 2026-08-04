@@ -44,6 +44,7 @@ MODEL_FILES = (
 SUITE_ID = "corelm-voidtoken-crossmodel-v2-development-e2e"
 DATASET_ID = "UniversalDependencies/UD_English-PUD:r2.18:test"
 DATASET_PATH = "inputs/corpus/en_pud-ud-test.conllu"
+FULL_ASSET_RECEIPT_PATH = "inputs/model-assets.full-rehash.json"
 DATASET_BYTES = 1_386_858
 DATASET_SHA256 = "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa"
 DATASET_SENTENCES = 1_000
@@ -1811,7 +1812,7 @@ def verify_artifact_semantics(
             else _filesystem_reader(root, inventory_by_path)
         )
         reader = _checked_reader(base_reader, inventory_by_path)
-        receipt_raw = reader("inputs/full-asset-receipt.json", 64 * 1024 * 1024)
+        receipt_raw = reader(FULL_ASSET_RECEIPT_PATH, 64 * 1024 * 1024)
         _validate_asset_receipt(plan, receipt_raw)
         dataset_raw = reader(DATASET_PATH, 16 * 1024 * 1024)
         sentences = _decode_dataset(dataset_raw)
@@ -1879,5 +1880,6 @@ def verify_artifact_semantics(
 
 __all__ = [
     "DevelopmentArtifactVerificationError",
+    "FULL_ASSET_RECEIPT_PATH",
     "verify_artifact_semantics",
 ]

@@ -420,6 +420,12 @@ weights. The 24 model files are external private inputs whose exact paths,
 sizes, and SHA-256 values are jointly bound by `development-plan.json`, the
 pinned asset manifest, and the full-rehash receipt.
 
+Inside this evidence set the receipt's canonical member path is
+`inputs/model-assets.full-rehash.json`. Do not rename it to
+`inputs/full-asset-receipt.json`; that path is not a development-control archive
+member. The same receipt bytes are published separately in the design release
+as the root asset `full-asset-receipt.json`.
+
 The upstream metadata, README, and license consistently declare CC BY-SA 3.0.
 The package therefore records contributor attribution, the license and URI,
 the extraction/partition changes, and share-alike handling for reversible or

@@ -12,7 +12,10 @@ from unittest import mock
 
 import jsonschema
 
+from v2 import development_artifact_verifier
+from v2 import development_model_replay
 from v2 import freeze_manifest as subject
+from v2 import run_real_e2e_control
 from v2.collect_github_gate_receipt import collect_github_gate_receipt_to_path
 from v2.protocol import load_json_strict
 from v2.reproducibility import (
@@ -39,6 +42,20 @@ LAB_TREE = "2" * 40
 CODEC_REPOSITORY = "https://github.com/ALLPROTO/core-lm-benchmark.git"
 CODEC_COMMIT = "2e8d3b1591ee4a1ed822310f330317936871ff2b"
 CODEC_TREE = "c0bb15784d252cd5036757bc64765c773a5f16e8"
+
+
+class FreezeManifestStaticContractTests(unittest.TestCase):
+    def test_development_receipt_archive_path_matches_semantic_verifier(self) -> None:
+        expected = development_artifact_verifier.FULL_ASSET_RECEIPT_PATH
+        self.assertEqual(
+            f"inputs/{run_real_e2e_control.FULL_ASSET_RECEIPT_ARCHIVE_NAME}",
+            expected,
+        )
+        self.assertEqual(development_model_replay.FULL_ASSET_RECEIPT_PATH, expected)
+        self.assertEqual(
+            subject.DEVELOPMENT_ARCHIVED_INPUTS["fullAssetReceipt"][0],
+            expected,
+        )
 
 
 class FreezeManifestTests(unittest.TestCase):

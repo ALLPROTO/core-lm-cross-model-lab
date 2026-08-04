@@ -49,6 +49,7 @@ DATASET_BYTES = 1_386_858
 DATASET_SHA256 = "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa"
 DATASET_ROWS = 1_000
 DATASET_EVIDENCE_PATH = "inputs/corpus/en_pud-ud-test.conllu"
+FULL_ASSET_RECEIPT_PATH = "inputs/model-assets.full-rehash.json"
 JOINED_DATASET_BYTES = 112_419
 JOINED_DATASET_SHA256 = (
     "69dd039b37979f91b165981e92ae578067ecdf0db69bbee0a431c9f337c0f8ea"
@@ -345,7 +346,7 @@ def _load_archived_inputs(
     paths = {
         "designRegistration": "inputs/design-registration.draft.json",
         "modelAssetManifest": "inputs/model-assets.draft.json",
-        "fullAssetReceipt": "inputs/model-assets.full-rehash.json",
+        "fullAssetReceipt": FULL_ASSET_RECEIPT_PATH,
         "developmentCorpusManifest": "inputs/development-corpus.draft.json",
         "licenseSourceEvidence": "inputs/LICENSES/source-evidence.json",
         "runtimeManifest": "inputs/runtime-manifest.json",
