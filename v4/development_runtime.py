@@ -45,7 +45,7 @@ RUNTIME_IMPORT_VERSIONS = {
     "transformers": "5.14.1",
 }
 HASH_INPUT = "corelm-crossmodel-livewiki-v4"
-HASH_KNOWN_ANSWER = 7326695182870824334
+HASH_KNOWN_ANSWER = 6381993545148000455
 
 
 class DevelopmentRuntimeError(RuntimeError):

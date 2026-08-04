@@ -158,6 +158,32 @@ class DevelopmentRuntimeTests(unittest.TestCase):
         ):
             runtime.verify_active_python_startup()
 
+    def test_registered_hash_known_answer_is_executed_by_real_python(self) -> None:
+        completed = subprocess.run(
+            [
+                os.path.abspath(sys.executable),
+                "-P",
+                "-s",
+                "-B",
+                "-c",
+                "import sys; print(hash(sys.argv[1]))",
+                runtime.HASH_INPUT,
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            text=True,
+            timeout=10,
+            env={"PYTHONHASHSEED": "0"},
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(completed.stderr, "")
+        self.assertEqual(
+            completed.stdout,
+            f"{runtime.HASH_KNOWN_ANSWER}\n",
+        )
+
     def test_python_subprocess_checks_startup_and_exact_import_versions(self) -> None:
         launcher = "/private/runtime/bin/python"
         startup = runtime._expected_python_state()
