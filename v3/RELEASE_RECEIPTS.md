@@ -243,6 +243,14 @@ its archived output must bind the exact GitHub repository, release ID, tag,
 commit, complete asset-name/SHA-256 set, GitHub release signer policy, and one
 GitHub RFC3161 timestamp.
 
+For the required annotated tags, the first signed release subject carries the
+SHA-1 object ID of the annotated tag itself, not the peeled target commit. The
+semantic replay therefore requires that signed subject to equal the locally
+rehash-verified tag object OID. The separately verified signed tag payload then
+binds that object to the exact target commit and tree. Treating the release
+subject SHA-1 as the peeled commit is valid only for a lightweight tag and is
+rejected by this protocol.
+
 Immediately afterward, the collector selects the lexicographically first
 ASCII asset name, byte-verifies private copies of Cosign and the tracked root,
 byte-verifies a private copy of the selected local asset against its expected
@@ -302,6 +310,10 @@ or signature-failure sidecar was created, and the immutable tag and release were
 not modified. This release is retained as a transparent non-scientific
 failed-freeze archive. The digest-mode change is a post-release regression fix;
 it must not be used to relabel the original source identity as freeze-complete.
+The full replay then exposed a second original defect: it expected the release
+subject SHA-1 to equal the peeled commit, whereas GitHub correctly signed the
+required annotated tag object OID. That binding is fixed and regression-tested
+only in later commits; it does not change the failed-freeze classification.
 
 GitHub release bundles currently contain the signed RFC3161 timestamp but no
 Rekor entry or certificate SCT. Therefore `--private-infrastructure` and

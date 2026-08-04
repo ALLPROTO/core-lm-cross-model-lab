@@ -219,6 +219,49 @@ def _mapping(value: Any, fields: set[str], *, label: str) -> Mapping[str, Any]:
     return value
 
 
+def _annotated_tag_oid(
+    receipt: Mapping[str, Any],
+    *,
+    expected_commit: str,
+    expected_tag: str,
+    label: str,
+) -> str:
+    annotated_tag = _mapping(
+        receipt.get("annotatedTag"),
+        {"objectOID", "targetType", "targetCommit", "rawPayload"},
+        label=label,
+    )
+    tag_oid = annotated_tag["objectOID"]
+    tag_payload = _archived_bytes(
+        annotated_tag["rawPayload"],
+        label=f"{label} raw payload",
+        maximum_bytes=MAXIMUM_API_BODY_BYTES,
+    )
+    header, separator, _message = tag_payload.partition(b"\n\n")
+    lines = header.split(b"\n")
+    try:
+        observed_tag = lines[2][4:].decode("utf-8")
+    except (IndexError, UnicodeDecodeError):
+        observed_tag = None
+    if (
+        not isinstance(tag_oid, str)
+        or GIT_OID.fullmatch(tag_oid) is None
+        or annotated_tag["targetType"] != "commit"
+        or annotated_tag["targetCommit"] != expected_commit
+        or _git_object_oid("tag", tag_payload) != tag_oid
+        or separator != b"\n\n"
+        or b"\0" in tag_payload
+        or len(lines) != 4
+        or lines[0] != f"object {expected_commit}".encode("ascii")
+        or lines[1] != b"type commit"
+        or not lines[2].startswith(b"tag ")
+        or observed_tag != expected_tag
+        or not lines[3].startswith(b"tagger ")
+    ):
+        raise ZenodoArchiveError(f"{label} identity differs")
+    return tag_oid
+
+
 def _positive_integer(value: Any, *, label: str) -> int:
     if type(value) is not int or value <= 0:
         raise ZenodoArchiveError(f"{label} must be a positive integer")
@@ -680,11 +723,20 @@ def _github_release_summary(
         raise ZenodoArchiveError("GitHub release commit is malformed")
     if not isinstance(tree, str) or GIT_OID.fullmatch(tree) is None:
         raise ZenodoArchiveError("GitHub release tree is malformed")
+    tag = receipt.get("tag")
+    if not isinstance(tag, str) or not tag:
+        raise ZenodoArchiveError("GitHub tag is malformed")
+    tag_oid = _annotated_tag_oid(
+        receipt,
+        expected_commit=commit,
+        expected_tag=tag,
+        label="GitHub annotated tag",
+    )
     published_at = release.get("publishedAt")
     _utc(published_at, label="GitHub release publication time")
     release_id = _positive_integer(release.get("id"), label="GitHub release ID")
-    slug, tag = repository.get("slug"), receipt.get("tag")
-    if not isinstance(slug, str) or slug.count("/") != 1 or not isinstance(tag, str) or not tag:
+    slug = repository.get("slug")
+    if not isinstance(slug, str) or slug.count("/") != 1:
         raise ZenodoArchiveError("GitHub repository or tag is malformed")
     assets = receipt.get("requiredAssets")
     if not isinstance(assets, list) or not assets:
@@ -730,6 +782,7 @@ def _github_release_summary(
             expected_release_id=release_id,
             expected_tag=tag,
             expected_commit=commit,
+            expected_tag_oid=tag_oid,
             expected_assets=tuple(
                 (asset["name"], asset["sha256"]) for asset in assets
             ),
@@ -918,6 +971,12 @@ def _development_control_archive_summary(raw: bytes) -> dict[str, Any]:
         or GIT_OID.fullmatch(tree) is None
     ):
         raise ZenodoArchiveError("development-control source identity is malformed")
+    tag_oid = _annotated_tag_oid(
+        receipt,
+        expected_commit=commit,
+        expected_tag=tag,
+        label="development-control annotated tag",
+    )
     release_id = _positive_integer(
         release.get("id"), label="development-control release ID"
     )
@@ -970,6 +1029,7 @@ def _development_control_archive_summary(raw: bytes) -> dict[str, Any]:
             expected_release_id=release_id,
             expected_tag=tag,
             expected_commit=commit,
+            expected_tag_oid=tag_oid,
             expected_assets=tuple(expected_assets),
             expected_published_at=published_at,
             expected_receipt_created_at=receipt_created_at,

@@ -231,7 +231,7 @@ def _release_attestation_output(
     *,
     repository: str,
     tag: str,
-    commit: str,
+    release_subject_sha1: str,
     release_id: int,
     assets: list[dict[str, Any]],
     attested_at: str,
@@ -242,7 +242,7 @@ def _release_attestation_output(
     statement = {
         "_type": "https://in-toto.io/Statement/v1",
         "subject": [
-            {"uri": purl, "digest": {"sha1": commit}},
+            {"uri": purl, "digest": {"sha1": release_subject_sha1}},
             *[
                 {"name": item["name"], "digest": {"sha256": item["sha256"]}}
                 for item in assets
@@ -569,7 +569,7 @@ def _build_fixture(
     attestation_output = _release_attestation_output(
         repository=REPOSITORY,
         tag=TAG,
-        commit=commit,
+        release_subject_sha1=tag_oid,
         release_id=RELEASE_ID,
         assets=assets,
         attested_at=PUBLISHED,
@@ -986,6 +986,34 @@ class ReleaseReceiptContractTests(unittest.TestCase):
             verify_release_receipt(
                 _rehash(receipt), self.root, **_expected(receipt)
             )
+
+    def test_release_attestation_rejects_target_commit_as_annotated_tag_subject(
+        self,
+    ) -> None:
+        receipt, _raw = _build_fixture(self.root)
+        self.assertNotEqual(
+            receipt["annotatedTag"]["objectOID"], receipt["source"]["commit"]
+        )
+
+        def substitute_target_commit(value: dict[str, Any]) -> None:
+            envelope = value["attestation"]["bundle"]["dsseEnvelope"]
+            statement = json.loads(base64.b64decode(envelope["payload"]))
+            statement["subject"][0]["digest"]["sha1"] = receipt["source"][
+                "commit"
+            ]
+            envelope["payload"] = base64.b64encode(
+                json.dumps(statement, separators=(",", ":")).encode("utf-8")
+            ).decode("ascii")
+            value["verificationResult"]["statement"] = statement
+
+        _replace_attestation_output(receipt, substitute_target_commit)
+        with self.assertRaisesRegex(ReleaseReceiptError, "attestation") as raised:
+            verify_release_receipt(
+                _rehash(receipt), self.root, **_expected(receipt)
+            )
+        self.assertIn(
+            "expected annotated tag object", str(raised.exception.__cause__)
+        )
 
     def test_content_digest_canonical_json_and_duplicate_keys_are_required(self) -> None:
         receipt, raw = _build_fixture(self.root)

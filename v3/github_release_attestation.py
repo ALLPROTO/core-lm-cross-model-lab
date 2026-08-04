@@ -4,8 +4,10 @@
 The online collector invokes one exact, pinned GitHub CLI binary.  That binary
 performs the Sigstore verification and returns both the complete bundle and its
 verification result.  This module performs a dependency-free offline replay of
-all semantic bindings: DSSE payload, release identity, commit, complete asset
-set, GitHub release signer identity, and verified RFC3161 timestamp.
+the bindings carried by that attestation: DSSE payload, release identity,
+annotated-tag object, complete asset set, GitHub release signer identity, and
+verified RFC3161 timestamp.  The enclosing release-receipt verifier separately
+rehashes the signed annotated-tag object and binds it to the target commit.
 
 The offline replay deliberately does not claim to reimplement X.509, ECDSA,
 DSSE, or RFC3161 cryptography.  Fresh cryptographic verification is the pinned
@@ -220,6 +222,7 @@ def verify_attestation_record(
     expected_release_id: int,
     expected_tag: str,
     expected_commit: str,
+    expected_tag_oid: str,
     expected_assets: Sequence[tuple[str, str]],
     expected_published_at: str,
     expected_receipt_created_at: str,
@@ -441,9 +444,15 @@ def verify_attestation_record(
         raise ReleaseAttestationError("release subject inventory is incomplete")
     release_subject = _mapping(subjects[0], {"uri", "digest"}, label="release subject")
     release_digest = _mapping(release_subject["digest"], {"sha1"}, label="release digest")
-    commit = _digest(release_digest["sha1"], SHA1, label="release commit")
-    if release_subject["uri"] != expected_purl or commit != expected_commit:
-        raise ReleaseAttestationError("release subject does not bind the expected commit")
+    release_tag_oid = _digest(
+        release_digest["sha1"], SHA1, label="release annotated tag object OID"
+    )
+    target_commit = _digest(expected_commit, SHA1, label="expected target commit")
+    tag_oid = _digest(expected_tag_oid, SHA1, label="expected annotated tag object OID")
+    if release_subject["uri"] != expected_purl or release_tag_oid != tag_oid:
+        raise ReleaseAttestationError(
+            "release subject does not bind the expected annotated tag object"
+        )
     expected_asset_map = dict(expected_assets)
     if len(expected_asset_map) != len(expected_assets) or not expected_asset_map:
         raise ReleaseAttestationError("expected release asset inventory is invalid")
@@ -466,7 +475,7 @@ def verify_attestation_record(
         owner_id=owner_id,
         release_id=expected_release_id,
         tag=expected_tag,
-        commit=expected_commit,
+        commit=target_commit,
         attested_at=attested_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
         bundle_sha256=bundle_sha256,
         raw_output_sha256=hashlib.sha256(raw).hexdigest(),

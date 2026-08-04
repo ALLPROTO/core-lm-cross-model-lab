@@ -1277,6 +1277,7 @@ def _verify_release_receipt(
             expected_release_id=release_id,
             expected_tag=tag,
             expected_commit=commit,
+            expected_tag_oid=tag_oid,
             expected_assets=asset_digests,
             expected_published_at=release["publishedAt"],
             expected_receipt_created_at=root["receiptCreatedAt"],

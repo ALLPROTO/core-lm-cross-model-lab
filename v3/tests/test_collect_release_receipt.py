@@ -173,7 +173,7 @@ class FakeReleaseAttestationVerifier:
         return release_fixture._release_attestation_output(
             repository=repository,
             tag=tag,
-            commit=self.fixture.commit,
+            release_subject_sha1=self.fixture.tag_oid,
             release_id=RELEASE_ID,
             assets=assets,
             attested_at=release["published_at"],  # type: ignore[index]

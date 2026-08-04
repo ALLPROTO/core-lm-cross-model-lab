@@ -473,9 +473,11 @@ PYTHONHASHSEED=0 "$RUNTIME_ROOT/bin/python" -P -s -B \
 > **Current suite status (2026-08-04): failed-freeze archive.** The immutable
 > release below was published correctly, but the verifier in its exact source
 > commit passed a 523,227,575-byte ZIP to Cosign as a blob and hit Cosign's
-> 134,217,728-byte limit. The later digest-mode verifier fix is regression-only:
-> it cannot retroactively satisfy the clean exact-source replay required by the
-> frozen design. Keep the tag/release unchanged. A scientific freeze requires a
+> 134,217,728-byte limit. The original semantic replay also mistook GitHub's
+> signed annotated-tag object OID for the peeled commit. The later verifier
+> fixes are regression-only: they cannot retroactively satisfy the clean
+> exact-source replay required by the frozen design. Keep the tag/release
+> unchanged. A scientific freeze requires a
 > new suite identity, tag, exact-commit CI, real-model development E2E, and
 > shifted dependent corpus/NIST/deadline windows.
 

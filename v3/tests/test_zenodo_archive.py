@@ -54,6 +54,7 @@ from v3.zenodo_archive import (
     build_deposit_manifest,
     build_deposit_manifest_to_path,
     build_zenodo_receipt,
+    _annotated_tag_oid,
     _github_release_summary,
     _github_gate_summary,
     _verify_github_signed_tag_receipt,
@@ -210,7 +211,7 @@ def _release_attestation_output(
     *,
     repository: str,
     tag: str,
-    commit: str,
+    release_subject_sha1: str,
     release_id: int,
     assets: list[dict[str, object]],
     attested_at: str,
@@ -219,7 +220,7 @@ def _release_attestation_output(
     statement = {
         "_type": "https://in-toto.io/Statement/v1",
         "subject": [
-            {"uri": purl, "digest": {"sha1": commit}},
+            {"uri": purl, "digest": {"sha1": release_subject_sha1}},
             *[
                 {
                     "name": item["name"],
@@ -769,10 +770,25 @@ class ZenodoFixture:
             }
             for index, role in enumerate(REQUIRED_ASSET_ROLES["development-control"])
         ]
+        development_tag_payload = (
+            f"object {LAB_COMMIT}\n"
+            "type commit\n"
+            f"tag {development_tag}\n"
+            "tagger Ivan Tyshchenko <ivan@example.invalid> 1785758100 +0000\n\n"
+            "Development-control fixture\n"
+            "-----BEGIN SSH SIGNATURE-----\n"
+            "ZmFrZQ==\n"
+            "-----END SSH SIGNATURE-----\n"
+        ).encode()
+        development_tag_oid = hashlib.sha1(
+            f"tag {len(development_tag_payload)}\0".encode()
+            + development_tag_payload,
+            usedforsecurity=False,
+        ).hexdigest()
         development_attestation_raw = _release_attestation_output(
             repository=REPOSITORY,
             tag=development_tag,
-            commit=LAB_COMMIT,
+            release_subject_sha1=development_tag_oid,
             release_id=development_release_id,
             assets=development_assets,
             attested_at="2026-08-03T09:55:00Z",
@@ -796,7 +812,12 @@ class ZenodoFixture:
                 "deadline": "2026-08-15T00:00:00Z",
             },
             "source": {"commit": LAB_COMMIT, "tree": lab_tree},
-            "annotatedTag": {},
+            "annotatedTag": {
+                "objectOID": development_tag_oid,
+                "targetType": "commit",
+                "targetCommit": LAB_COMMIT,
+                "rawPayload": _archived(development_tag_payload),
+            },
             "signatureVerification": {},
             "githubReleaseAttestation": build_attestation_record(
                 development_attestation_raw,
@@ -916,7 +937,7 @@ class ZenodoFixture:
         release_attestation_raw = _release_attestation_output(
             repository=REPOSITORY,
             tag="design-v1",
-            commit=LAB_COMMIT,
+            release_subject_sha1=tag_oid,
             release_id=9001,
             assets=required_assets,
             attested_at="2026-08-03T10:00:01Z",
@@ -1292,6 +1313,66 @@ class ZenodoFixture:
 
 
 class ZenodoArchiveTests(unittest.TestCase):
+    def test_annotated_tag_oid_rehashes_and_strictly_parses_raw_payload(self) -> None:
+        tag = "development-control-v1"
+        payload = (
+            f"object {LAB_COMMIT}\n"
+            "type commit\n"
+            f"tag {tag}\n"
+            "tagger Ivan Tyshchenko <ivan@example.invalid> 1785758100 +0000\n\n"
+            "Development-control fixture\n"
+        ).encode("utf-8")
+
+        def receipt_for(raw: bytes) -> dict[str, object]:
+            object_oid = hashlib.sha1(
+                f"tag {len(raw)}\0".encode("ascii") + raw,
+                usedforsecurity=False,
+            ).hexdigest()
+            return {
+                "annotatedTag": {
+                    "objectOID": object_oid,
+                    "targetType": "commit",
+                    "targetCommit": LAB_COMMIT,
+                    "rawPayload": _archived(raw),
+                }
+            }
+
+        receipt = receipt_for(payload)
+        self.assertEqual(
+            _annotated_tag_oid(
+                receipt,
+                expected_commit=LAB_COMMIT,
+                expected_tag=tag,
+                label="fixture tag",
+            ),
+            receipt["annotatedTag"]["objectOID"],
+        )
+
+        changed_oid = deepcopy(receipt)
+        changed_oid["annotatedTag"]["objectOID"] = "0" * 40
+        mutations = {
+            "claimed OID": changed_oid,
+            "target object": receipt_for(
+                payload.replace(
+                    f"object {LAB_COMMIT}".encode("ascii"), b"object " + b"0" * 40
+                )
+            ),
+            "object type": receipt_for(payload.replace(b"type commit", b"type blob")),
+            "tag name": receipt_for(
+                payload.replace(f"tag {tag}".encode("utf-8"), b"tag another-tag")
+            ),
+        }
+        for case, mutated in mutations.items():
+            with self.subTest(case=case), self.assertRaisesRegex(
+                ZenodoArchiveError, "identity differs"
+            ):
+                _annotated_tag_oid(
+                    mutated,
+                    expected_commit=LAB_COMMIT,
+                    expected_tag=tag,
+                    label="fixture tag",
+                )
+
     def test_gate_projection_rejects_forged_independent_review_claim(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             fixture = ZenodoFixture(Path(temporary))
@@ -1438,6 +1519,10 @@ class ZenodoArchiveTests(unittest.TestCase):
             self.assertEqual(
                 verifier.call_args.kwargs["expected_attestation_relation"],
                 "STRICTLY_BEFORE_DEADLINE",
+            )
+            self.assertEqual(
+                verifier.call_args.kwargs["expected_tag_oid"],
+                receipt["annotatedTag"]["objectOID"],
             )
 
     def test_manifest_is_deterministic_and_exact_superset(self) -> None:
