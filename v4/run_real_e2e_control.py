@@ -67,9 +67,9 @@ from v4.development_runtime import (  # noqa: E402
     python_command,
     terminate_process_group,
     verify_active_python_startup,
-    verify_primary_host_safety,
     verify_python_subprocess,
     verify_runtime_live,
+    wait_for_primary_host_safety,
 )
 from v4.development_corpus import (  # noqa: E402
     DATASET_ID,
@@ -1193,7 +1193,7 @@ def _run_control(
         "sourceConlluSHA256": joined["sourceConlluSHA256"],
     }
     try:
-        initial_safety = verify_primary_host_safety(
+        initial_safety = wait_for_primary_host_safety(
             design, output_parent=arguments.output.parent
         )
     except DevelopmentRuntimeError as error:
@@ -1266,7 +1266,9 @@ def _run_control(
         for model_key in MODELS:
             arguments._control_phase = f"producer:{model_key}"
             try:
-                safety = verify_primary_host_safety(design, output_parent=output_root)
+                safety = wait_for_primary_host_safety(
+                    design, output_parent=output_root
+                )
             except DevelopmentRuntimeError as error:
                 raise DevelopmentControlError(
                     f"development host safety gate failed before {model_key}"
@@ -1317,7 +1319,9 @@ def _run_control(
         consolidate_worker_evidence(result_root=output_root, model_order=MODELS)
         arguments._control_phase = "independent-real-model-replay"
         try:
-            safety = verify_primary_host_safety(design, output_parent=output_root)
+            safety = wait_for_primary_host_safety(
+                design, output_parent=output_root
+            )
         except DevelopmentRuntimeError as error:
             raise DevelopmentControlError(
                 "development host safety gate failed before independent replay"

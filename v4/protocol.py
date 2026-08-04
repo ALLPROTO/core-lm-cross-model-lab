@@ -119,6 +119,12 @@ EXPECTED_DEVELOPMENT_CONTROLS = {
     "usedForCandidateSelectionOrTuning": False,
     "configurationChangesAfterOutcome": "NEW_SUITE_AND_COMPLETE_TIMELINE_REQUIRED",
     "unitFixtureBoundary": "ISOLATED_NON_RESULT_PROTOCOL_TESTS_ONLY",
+    "hostSafetyMemoryWait": {
+        "scope": "NON_SCIENTIFIC_REAL_DATA_DEVELOPMENT_CONTROL_ONLY",
+        "timeoutSeconds": 300,
+        "pollSeconds": 2,
+        "scientificOneShotBehavior": "IMMEDIATE_FAIL_NO_WAIT",
+    },
     "realDataE2EFreezeGate": {
         "required": True,
         "reportSchemaVersion": (

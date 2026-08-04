@@ -46,10 +46,21 @@ RUNTIME_IMPORT_VERSIONS = {
 }
 HASH_INPUT = "corelm-crossmodel-livewiki-v4"
 HASH_KNOWN_ANSWER = 6381993545148000455
+MEMORY_FLOOR_ERROR = "free memory is below the development floor"
+HOST_SAFETY_MEMORY_WAIT_POLICY = {
+    "scope": "NON_SCIENTIFIC_REAL_DATA_DEVELOPMENT_CONTROL_ONLY",
+    "timeoutSeconds": 300,
+    "pollSeconds": 2,
+    "scientificOneShotBehavior": "IMMEDIATE_FAIL_NO_WAIT",
+}
 
 
 class DevelopmentRuntimeError(RuntimeError):
     """Raised when a development runtime boundary cannot be proved safe."""
+
+
+class TransientMemoryFloorError(DevelopmentRuntimeError):
+    """Raised only for a valid measured memory percentage below a valid floor."""
 
 
 def closed_environment(execution: Mapping[str, Any]) -> dict[str, str]:
@@ -435,18 +446,24 @@ def verify_primary_host_safety(
     pressure = _bounded_command(
         ["/usr/bin/memory_pressure", "-Q"], label="memory pressure"
     )
-    match = re.search(r"free percentage:\s*(\d+)%", pressure)
     ac_power = "AC Power" in battery
-    free_percent = int(match.group(1)) if match else None
     if execution.get("acPowerRequired") is True and not ac_power:
         raise DevelopmentRuntimeError("development Mac is not connected to AC power")
     minimum_memory = execution.get("minimumFreeMemoryPercent")
     if (
         type(minimum_memory) is not int
-        or type(free_percent) is not int
-        or free_percent < minimum_memory
+        or minimum_memory < 1
+        or minimum_memory > 100
     ):
-        raise DevelopmentRuntimeError("free memory is below the development floor")
+        raise DevelopmentRuntimeError("development memory floor is invalid")
+    match = re.search(r"free percentage:\s*(\d+)%", pressure)
+    if match is None:
+        raise DevelopmentRuntimeError("memory pressure report is invalid")
+    free_percent = int(match.group(1))
+    if free_percent < 0 or free_percent > 100:
+        raise DevelopmentRuntimeError("memory pressure percentage is invalid")
+    if free_percent < minimum_memory:
+        raise TransientMemoryFloorError(MEMORY_FLOOR_ERROR)
     candidate = Path(output_parent)
     while not candidate.exists():
         if candidate == candidate.parent:
@@ -493,6 +510,48 @@ def verify_primary_host_safety(
         "freeMemoryPercent": free_percent,
         "freeDiskBytes": free_disk,
     }
+
+
+def wait_for_primary_host_safety(
+    design: Mapping[str, Any],
+    *,
+    output_parent: Path,
+) -> dict[str, Any]:
+    """Apply the registered development-only wait without relaxing any gate."""
+
+    controls = design.get("developmentControls")
+    policy = (
+        controls.get("hostSafetyMemoryWait")
+        if isinstance(controls, Mapping)
+        else None
+    )
+    if policy != HOST_SAFETY_MEMORY_WAIT_POLICY:
+        raise DevelopmentRuntimeError("development host-safety wait policy differs")
+    timeout_seconds = policy["timeoutSeconds"]
+    poll_seconds = policy["pollSeconds"]
+    deadline = time.monotonic() + timeout_seconds
+    last_memory_error: TransientMemoryFloorError | None = None
+    while True:
+        try:
+            observed = verify_primary_host_safety(
+                design, output_parent=output_parent
+            )
+        except TransientMemoryFloorError as error:
+            last_memory_error = error
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            time.sleep(min(poll_seconds, remaining))
+            if time.monotonic() >= deadline:
+                raise error
+            continue
+        if time.monotonic() >= deadline:
+            if last_memory_error is not None:
+                raise last_memory_error
+            raise DevelopmentRuntimeError(
+                "development host-safety verification exceeded its fixed window"
+            )
+        return observed
 
 
 def networkless_macos_command(command: list[str]) -> list[str]:

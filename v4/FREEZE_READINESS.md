@@ -26,7 +26,10 @@ disclosures are immutable design fields, not optional prose.
   holdout. Its canonical report/logs are archived by hash, state
   `countsTowardScientificVerdict=false`, apply no scientific thresholds, and
   cause no candidate/protocol change. It never uses synthetic input,
-  future-corpus bytes, NIST, or reservation/marker state. The offline
+  future-corpus bytes, NIST, or reservation/marker state. Its development host
+  gate may wait only under the tracked 300-second total window with two-second
+  polling and the unchanged 50% floor; the scientific one-shot waits zero
+  seconds at its separate pre-marker gate. The offline
   development-artifact verifier must independently parse all 1,000 CoNLL-U
   sentence blocks,
   reconstruct the 32 partitions and jobs, parse every JSONL/VTL5 byte,

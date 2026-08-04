@@ -949,9 +949,9 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
                 mock.patch.object(control, "validate_development_control_report"),
                 mock.patch.object(
                     control,
-                    "verify_primary_host_safety",
+                    "wait_for_primary_host_safety",
                     return_value={"system": "Darwin", "machine": "arm64"},
-                ),
+                ) as host_gate,
                 mock.patch.object(
                     control,
                     "verify_python_subprocess",
@@ -1016,6 +1016,18 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
             for field in (*FALSE_BOUNDARY_FIELDS, "thresholdsApplied"):
                 self.assertIs(report[field], False)
             self.assertEqual(supervisor.call_count, len(independent.MODELS) + 1)
+            self.assertEqual(host_gate.call_count, len(independent.MODELS) + 2)
+            self.assertEqual(
+                [value["phase"] for value in report["hostSafetyChecks"]],
+                [
+                    "before-output-materialization",
+                    *(
+                        f"before-producer:{model_key}"
+                        for model_key in independent.MODELS
+                    ),
+                    "before-independent-replay",
+                ],
+            )
             model_loader.assert_not_called()
             self.assertTrue((output / "development-control-report.json").is_file())
             receipt_path = (
@@ -1027,6 +1039,77 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
             )
             self.assertFalse((output / "inputs/full-asset-receipt.json").exists())
             self.assertFalse((control.V4_ROOT / "results" / output.name).exists())
+
+    def test_initial_host_safety_failure_does_not_claim_output(self) -> None:
+        sentences = _fixture_sentences()
+        bindings = _input_bindings()
+        archival_inputs = _archival_inputs()
+        design = {"execution": _execution()}
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_PARENT) as temporary:
+            root = Path(temporary)
+            output = root / "unclaimed-control"
+            arguments = argparse.Namespace(
+                asset_root=root,
+                dataset=root / "en_pud-ud-test.conllu",
+                codec_root=root,
+                runtime_manifest=root / "runtime.json",
+                output=output,
+            )
+            with (
+                mock.patch.object(
+                    control,
+                    "_load_fixed_inputs",
+                    return_value=(
+                        design,
+                        {},
+                        b"pinned-real-conllu",
+                        copy.deepcopy(EXPECTED_DEVELOPMENT_CONTROLS["dataset"]),
+                        bindings,
+                        archival_inputs,
+                    ),
+                ),
+                mock.patch.object(control, "verify_development_lifecycle"),
+                mock.patch.object(
+                    control,
+                    "closed_environment",
+                    return_value={"PATH": "/usr/bin:/bin"},
+                ),
+                mock.patch.object(control, "verify_active_python_startup"),
+                mock.patch.object(
+                    control,
+                    "verify_python_subprocess",
+                    return_value={"runtimeProbe": "fixture"},
+                ),
+                mock.patch.object(
+                    control,
+                    "_real_sentences",
+                    return_value=(
+                        sentences,
+                        {
+                            "bytes": independent.JOINED_DATASET_BYTES,
+                            "sha256": independent.JOINED_DATASET_SHA256,
+                            "parser": "strict-stdlib-conllu-text-v1",
+                            "sentences": independent.DATASET_ROWS,
+                            "sourceConlluSHA256": independent.DATASET_SHA256,
+                        },
+                    ),
+                ),
+                mock.patch.object(
+                    control,
+                    "wait_for_primary_host_safety",
+                    side_effect=control.DevelopmentRuntimeError(
+                        "free memory is below the development floor"
+                    ),
+                ),
+                self.assertRaisesRegex(
+                    control.DevelopmentControlError,
+                    "host safety gate failed",
+                ),
+            ):
+                control.run_control(arguments)
+
+            self.assertFalse(output.exists())
+            self.assertFalse(hasattr(arguments, "_claimed_output_root"))
 
     def test_failure_after_output_claim_is_durable_and_never_pass(self) -> None:
         sentences = _fixture_sentences()
@@ -1084,7 +1167,7 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
                 ),
                 mock.patch.object(
                     control,
-                    "verify_primary_host_safety",
+                    "wait_for_primary_host_safety",
                     return_value={"system": "Darwin", "machine": "arm64"},
                 ),
                 mock.patch.object(

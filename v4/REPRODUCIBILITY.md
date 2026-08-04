@@ -403,9 +403,13 @@ substitute for this macOS arm64 control.
 Run it only from the exact clean implementation commit after regenerating the
 runtime manifest with `--require-clean-git`. The output path must be a new,
 absent directory outside both repositories and outside every scientific
-`.one-shot-result` path. Other applications may remain open; the fail-closed
-host gate aborts before model loading whenever AC power, free-memory, or disk
-requirements are not met.
+`.one-shot-result` path. Other applications may remain open. The fail-closed
+host gate waits for at most five minutes when free memory is temporarily below
+the registered 50% floor, without lowering that floor. It aborts immediately
+once any power, disk, platform, configuration, or inspection failure is
+observed, and aborts before model loading if memory does not recover within the
+fixed window. This wait belongs only to the non-scientific development control;
+the prospective one-shot uses its separate immediate pre-marker gate.
 
 ```sh
 cd /absolute/path/to/lab

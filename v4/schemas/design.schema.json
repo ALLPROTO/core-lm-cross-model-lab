@@ -408,6 +408,7 @@
         "usedForCandidateSelectionOrTuning",
         "configurationChangesAfterOutcome",
         "unitFixtureBoundary",
+        "hostSafetyMemoryWait",
         "realDataE2EFreezeGate"
       ],
       "properties": {
@@ -459,6 +460,14 @@
         },
         "unitFixtureBoundary": {
           "const": "ISOLATED_NON_RESULT_PROTOCOL_TESTS_ONLY"
+        },
+        "hostSafetyMemoryWait": {
+          "const": {
+            "scope": "NON_SCIENTIFIC_REAL_DATA_DEVELOPMENT_CONTROL_ONLY",
+            "timeoutSeconds": 300,
+            "pollSeconds": 2,
+            "scientificOneShotBehavior": "IMMEDIATE_FAIL_NO_WAIT"
+          }
         },
         "realDataE2EFreezeGate": {
           "type": "object",

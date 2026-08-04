@@ -13,11 +13,20 @@ from types import SimpleNamespace
 from unittest import mock
 
 import v4.development_runtime as runtime
-from v4.protocol import canonical_json_bytes
+from v4.protocol import EXPECTED_DEVELOPMENT_CONTROLS, canonical_json_bytes
 
 
 def _canonical_line(value: object) -> bytes:
     return canonical_json_bytes(value) + b"\n"
+
+
+def _host_safety_design() -> dict[str, object]:
+    return {
+        "developmentControls": {
+            "hostSafetyMemoryWait": dict(runtime.HOST_SAFETY_MEMORY_WAIT_POLICY)
+        },
+        "execution": {},
+    }
 
 
 class DevelopmentRuntimeTests(unittest.TestCase):
@@ -58,6 +67,16 @@ class DevelopmentRuntimeTests(unittest.TestCase):
                 "v4.state_machine",
                 "v4.publication",
             }.isdisjoint(imported)
+        )
+        scientific_source = Path(runtime.__file__).with_name("runner.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("wait_for_primary_host_safety", scientific_source)
+
+    def test_host_safety_wait_policy_matches_normative_design(self) -> None:
+        self.assertEqual(
+            runtime.HOST_SAFETY_MEMORY_WAIT_POLICY,
+            EXPECTED_DEVELOPMENT_CONTROLS["hostSafetyMemoryWait"],
         )
 
     def test_closed_environment_is_exact_and_secret_free(self) -> None:
@@ -183,6 +202,201 @@ class DevelopmentRuntimeTests(unittest.TestCase):
             completed.stdout,
             f"{runtime.HASH_KNOWN_ANSWER}\n",
         )
+
+    def test_host_safety_wait_retries_only_transient_memory_failure(self) -> None:
+        expected = {"system": "Darwin", "freeMemoryPercent": 50}
+        memory_error = runtime.TransientMemoryFloorError(
+            runtime.MEMORY_FLOOR_ERROR
+        )
+        with (
+            mock.patch.object(
+                runtime,
+                "verify_primary_host_safety",
+                side_effect=[memory_error, memory_error, expected],
+            ) as verify,
+            mock.patch.object(
+                runtime.time,
+                "monotonic",
+                side_effect=[100.0, 100.0, 101.0, 101.0, 102.0, 102.0],
+            ),
+            mock.patch.object(runtime.time, "sleep") as sleep,
+        ):
+            observed = runtime.wait_for_primary_host_safety(
+                _host_safety_design(),
+                output_parent=Path("/private/output"),
+            )
+        self.assertEqual(observed, expected)
+        self.assertEqual(verify.call_count, 3)
+        self.assertEqual(sleep.call_args_list, [mock.call(2.0), mock.call(2.0)])
+
+    def test_host_safety_wait_does_not_retry_other_failures(self) -> None:
+        power_error = runtime.DevelopmentRuntimeError(
+            "development Mac is not connected to AC power"
+        )
+        with (
+            mock.patch.object(
+                runtime,
+                "verify_primary_host_safety",
+                side_effect=power_error,
+            ) as verify,
+            mock.patch.object(runtime.time, "monotonic", return_value=100.0),
+            mock.patch.object(runtime.time, "sleep") as sleep,
+            self.assertRaisesRegex(runtime.DevelopmentRuntimeError, "AC power"),
+        ):
+            runtime.wait_for_primary_host_safety(
+                _host_safety_design(),
+                output_parent=Path("/private/output"),
+            )
+        verify.assert_called_once()
+        sleep.assert_not_called()
+
+    def test_host_safety_wait_fails_at_fixed_timeout(self) -> None:
+        memory_error = runtime.TransientMemoryFloorError(
+            runtime.MEMORY_FLOOR_ERROR
+        )
+        with (
+            mock.patch.object(
+                runtime,
+                "verify_primary_host_safety",
+                side_effect=[memory_error, memory_error],
+            ) as verify,
+            mock.patch.object(
+                runtime.time,
+                "monotonic",
+                side_effect=[100.0, 100.0, 101.0, 101.0, 400.0],
+            ),
+            mock.patch.object(runtime.time, "sleep") as sleep,
+            self.assertRaisesRegex(
+                runtime.DevelopmentRuntimeError,
+                runtime.MEMORY_FLOOR_ERROR,
+            ),
+        ):
+            runtime.wait_for_primary_host_safety(
+                _host_safety_design(),
+                output_parent=Path("/private/output"),
+            )
+        self.assertEqual(verify.call_count, 2)
+        self.assertEqual(sleep.call_args_list, [mock.call(2), mock.call(2)])
+
+    def test_host_safety_wait_rejects_late_success(self) -> None:
+        expected = {"system": "Darwin", "freeMemoryPercent": 50}
+        memory_error = runtime.TransientMemoryFloorError(
+            runtime.MEMORY_FLOOR_ERROR
+        )
+        with (
+            mock.patch.object(
+                runtime,
+                "verify_primary_host_safety",
+                side_effect=[memory_error, expected],
+            ) as verify,
+            mock.patch.object(
+                runtime.time,
+                "monotonic",
+                side_effect=[100.0, 100.0, 101.0, 400.0],
+            ),
+            mock.patch.object(runtime.time, "sleep") as sleep,
+            self.assertRaisesRegex(
+                runtime.TransientMemoryFloorError,
+                runtime.MEMORY_FLOOR_ERROR,
+            ),
+        ):
+            runtime.wait_for_primary_host_safety(
+                _host_safety_design(),
+                output_parent=Path("/private/output"),
+            )
+        self.assertEqual(verify.call_count, 2)
+        sleep.assert_called_once_with(2)
+
+    def test_host_safety_wait_rejects_unregistered_policy_before_gate(self) -> None:
+        invalid_designs = [
+            {},
+            {"developmentControls": {}},
+            {
+                "developmentControls": {
+                    "hostSafetyMemoryWait": {
+                        **runtime.HOST_SAFETY_MEMORY_WAIT_POLICY,
+                        "timeoutSeconds": 301,
+                    }
+                }
+            },
+            {
+                "developmentControls": {
+                    "hostSafetyMemoryWait": {
+                        **runtime.HOST_SAFETY_MEMORY_WAIT_POLICY,
+                        "pollSeconds": 0,
+                    }
+                }
+            },
+        ]
+        for design in invalid_designs:
+            with self.subTest(design=design):
+                with (
+                    mock.patch.object(
+                        runtime, "verify_primary_host_safety"
+                    ) as verify,
+                    self.assertRaisesRegex(
+                        runtime.DevelopmentRuntimeError, "policy differs"
+                    ),
+                ):
+                    runtime.wait_for_primary_host_safety(
+                        design,
+                        output_parent=Path("/private/output"),
+                    )
+                verify.assert_not_called()
+
+    def test_host_safety_classifies_only_measured_low_memory_as_transient(
+        self,
+    ) -> None:
+        design = {
+            "execution": {
+                "acPowerRequired": True,
+                "minimumFreeMemoryPercent": 50,
+            }
+        }
+        with (
+            mock.patch.object(runtime.platform, "system", return_value="Darwin"),
+            mock.patch.object(runtime.platform, "machine", return_value="arm64"),
+            mock.patch.object(
+                runtime,
+                "_bounded_command",
+                side_effect=["AC Power", "free percentage: 49%"],
+            ),
+            self.assertRaisesRegex(
+                runtime.TransientMemoryFloorError,
+                runtime.MEMORY_FLOOR_ERROR,
+            ),
+        ):
+            runtime.verify_primary_host_safety(
+                design, output_parent=Path("/private/output")
+            )
+
+        invalid_cases = (
+            ({"execution": {"acPowerRequired": True}}, "free percentage: 49%"),
+            (design, "memory report unavailable"),
+            (design, "free percentage: 101%"),
+        )
+        for invalid_design, pressure in invalid_cases:
+            with self.subTest(pressure=pressure, design=invalid_design):
+                with (
+                    mock.patch.object(
+                        runtime.platform, "system", return_value="Darwin"
+                    ),
+                    mock.patch.object(
+                        runtime.platform, "machine", return_value="arm64"
+                    ),
+                    mock.patch.object(
+                        runtime,
+                        "_bounded_command",
+                        side_effect=["AC Power", pressure],
+                    ),
+                    self.assertRaises(runtime.DevelopmentRuntimeError) as caught,
+                ):
+                    runtime.verify_primary_host_safety(
+                        invalid_design, output_parent=Path("/private/output")
+                    )
+                self.assertNotIsInstance(
+                    caught.exception, runtime.TransientMemoryFloorError
+                )
 
     def test_python_subprocess_checks_startup_and_exact_import_versions(self) -> None:
         launcher = "/private/runtime/bin/python"

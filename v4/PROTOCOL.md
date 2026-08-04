@@ -99,6 +99,13 @@ reservation/marker state, and scientific result roots. Its report must state
 `countsTowardScientificVerdict=false` and
 `usedForCandidateSelectionOrTuning=false`.
 
+Only this non-scientific development E2E may wait for transient host-memory
+recovery: the tracked policy fixes a 300-second total window and two-second
+polling while retaining the registered 50% floor. Invalid configuration,
+unparseable inspection output, and every non-memory failure are not retried.
+The prospective scientific one-shot has no such wait and fails immediately at
+its separate pre-marker host gate.
+
 The full development E2E control is a freeze-readiness gate, not a model gate:
 all three producer processes, VTL5 serialization/decoding, and the independent
 real-model replay must complete on the exact implementation and locked runtime,
