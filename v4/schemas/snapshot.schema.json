@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v4/schemas/snapshot.schema.json",
+  "title": "Core LM blind multi-model v4 snapshot registration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "status",
+    "designPublicationReceiptSHA256",
+    "snapshotReleasePlan",
+    "projects",
+    "models",
+    "ledgers",
+    "modelAssetSourceManifestSHA256",
+    "fullAssetReceiptSHA256",
+    "corpusManifestSHA256",
+    "createdAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v4-snapshot-registration-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v4-author-verified"
+    },
+    "status": {
+      "const": "SNAPSHOT_FROZEN_READY_FOR_PUBLICATION"
+    },
+    "designPublicationReceiptSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "snapshotReleasePlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "publishNoLaterThan",
+        "serverTimestampRequired",
+        "immutableReleaseRequired",
+        "signedAnnotatedTagRequired"
+      ],
+      "properties": {
+        "tag": {
+          "const": "corelm-crossmodel-livewiki-v4-snapshot"
+        },
+        "publishNoLaterThan": {
+          "const": "2026-09-24T18:00:00Z"
+        },
+        "serverTimestampRequired": {
+          "const": true
+        },
+        "immutableReleaseRequired": {
+          "const": true
+        },
+        "signedAnnotatedTagRequired": {
+          "const": true
+        }
+      }
+    },
+    "projects": {
+      "const": [
+        "de.wikipedia.org",
+        "en.wikipedia.org",
+        "fr.wikipedia.org"
+      ]
+    },
+    "models": {
+      "const": [
+        "gpt-neo-125m",
+        "smollm2-360m",
+        "tiny-starcoder-py"
+      ]
+    },
+    "ledgers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "de.wikipedia.org",
+        "en.wikipedia.org",
+        "fr.wikipedia.org"
+      ],
+      "properties": {
+        "de.wikipedia.org": {
+          "$ref": "#/$defs/sha256"
+        },
+        "en.wikipedia.org": {
+          "$ref": "#/$defs/sha256"
+        },
+        "fr.wikipedia.org": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "modelAssetSourceManifestSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "fullAssetReceiptSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "corpusManifestSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utcSecond"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    }
+  }
+}

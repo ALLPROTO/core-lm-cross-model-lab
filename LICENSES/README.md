@@ -21,7 +21,10 @@ it does not copy or relicense model weights.
   immutable-release known-answer vector; its exact upstream MIT license is
   preserved beside the vector.
 - [`../v3/test-vectors/github-release-attestation-v1/metadata.json`](../v3/test-vectors/github-release-attestation-v1/metadata.json)
-  — the identical known-answer bytes reused by the active v3 protocol contour.
+  — the identical known-answer bytes retained by the historical v3 contour.
+- [`../v4/test-vectors/github-release-attestation-v1/metadata.json`](../v4/test-vectors/github-release-attestation-v1/metadata.json)
+  — the identical known-answer bytes reused by the active v4 development
+  contour.
 
 Before the immutable design release, the author must replay every entry in
 `source-evidence.json`. The local development artifact set binds that file,

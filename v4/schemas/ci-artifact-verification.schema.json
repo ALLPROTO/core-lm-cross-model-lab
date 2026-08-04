@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v4/schemas/ci-artifact-verification.schema.json",
+  "title": "Core LM design-release CI artifact verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "status",
+    "role",
+    "releaseName",
+    "githubActionsArtifactName",
+    "platform",
+    "system",
+    "machine",
+    "archiveBytes",
+    "archiveSHA256",
+    "designRegistrationFileSHA256",
+    "runtimeManifestContentSHA256",
+    "workflowFileBytes",
+    "workflowFileSHA256",
+    "testsRun",
+    "skippedTests",
+    "members"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v4-ci-artifact-verification-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v4-author-verified"
+    },
+    "status": {
+      "const": "VERIFIED_CI_ARTIFACT_PAYLOAD"
+    },
+    "role": {
+      "enum": ["linux-ci-artifact", "macos-arm64-ci-artifact"]
+    },
+    "releaseName": {
+      "enum": ["linux-ci-artifact.zip", "macos-arm64-ci-artifact.zip"]
+    },
+    "githubActionsArtifactName": {
+      "type": "string",
+      "pattern": "^author-v4-(?:linux|macos)-development-[1-9][0-9]*-[1-9][0-9]*$"
+    },
+    "platform": {
+      "enum": ["linux-x86_64", "macos-arm64"]
+    },
+    "system": {
+      "enum": ["Linux", "Darwin"]
+    },
+    "machine": {
+      "enum": ["x86_64", "arm64"]
+    },
+    "archiveBytes": {
+      "type": "integer",
+      "minimum": 22,
+      "maximum": 536870912
+    },
+    "archiveSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "designRegistrationFileSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "runtimeManifestContentSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "workflowFileBytes": {
+      "const": 13560
+    },
+    "workflowFileSHA256": {
+      "const": "cc68011dc189b4616cece9376adb077f769f7d3405f40b32cfacbe57a663714e"
+    },
+    "testsRun": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "skippedTests": {
+      "const": 0
+    },
+    "members": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        {"$ref": "#/$defs/preflightMember"},
+        {"$ref": "#/$defs/runtimeMember"},
+        {"$ref": "#/$defs/zeroSkipMember"},
+        {"$ref": "#/$defs/designCheckMember"},
+        {"$ref": "#/$defs/releaseAttestationKnownAnswerMember"}
+      ],
+      "items": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"role": {"const": "linux-ci-artifact"}},
+        "required": ["role"]
+      },
+      "then": {
+        "properties": {
+          "releaseName": {"const": "linux-ci-artifact.zip"},
+          "githubActionsArtifactName": {
+            "type": "string",
+            "pattern": "^author-v4-linux-development-[1-9][0-9]*-[1-9][0-9]*$"
+          },
+          "platform": {"const": "linux-x86_64"},
+          "system": {"const": "Linux"},
+          "machine": {"const": "x86_64"},
+          "members": {
+            "prefixItems": [
+              {"allOf": [{"$ref": "#/$defs/preflightMember"}, {"properties": {"name": {"const": "v4-preflight-linux.json"}}}]},
+              {"allOf": [{"$ref": "#/$defs/runtimeMember"}, {"properties": {"name": {"const": "v4-runtime-linux.json"}}}]},
+              {"allOf": [{"$ref": "#/$defs/zeroSkipMember"}, {"properties": {"name": {"const": "v4-zero-skip-linux.log"}}}]},
+              {"allOf": [{"$ref": "#/$defs/designCheckMember"}, {"properties": {"name": {"const": "v4-design-check-linux.json"}}}]},
+              {"allOf": [{"$ref": "#/$defs/releaseAttestationKnownAnswerMember"}, {"properties": {"name": {"const": "v4-release-attestation-known-answer-linux.json"}}}]}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"role": {"const": "macos-arm64-ci-artifact"}},
+        "required": ["role"]
+      },
+      "then": {
+        "properties": {
+          "releaseName": {"const": "macos-arm64-ci-artifact.zip"},
+          "githubActionsArtifactName": {
+            "type": "string",
+            "pattern": "^author-v4-macos-development-[1-9][0-9]*-[1-9][0-9]*$"
+          },
+          "platform": {"const": "macos-arm64"},
+          "system": {"const": "Darwin"},
+          "machine": {"const": "arm64"},
+          "members": {
+            "prefixItems": [
+              {"allOf": [{"$ref": "#/$defs/preflightMember"}, {"properties": {"name": {"const": "v4-preflight-macos.json"}}}]},
+              {"allOf": [{"$ref": "#/$defs/runtimeMember"}, {"properties": {"name": {"const": "v4-runtime-macos.json"}}}]},
+              {"allOf": [{"$ref": "#/$defs/zeroSkipMember"}, {"properties": {"name": {"const": "v4-zero-skip-macos.log"}}}]},
+              {"allOf": [{"$ref": "#/$defs/designCheckMember"}, {"properties": {"name": {"const": "v4-design-check-macos.json"}}}]},
+              {"allOf": [{"$ref": "#/$defs/releaseAttestationKnownAnswerMember"}, {"properties": {"name": {"const": "v4-release-attestation-known-answer-macos.json"}}}]}
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "name", "bytes", "sha256"],
+      "properties": {
+        "role": {
+          "enum": ["preflight", "runtime-manifest", "zero-skip-log", "design-check", "release-attestation-known-answer"]
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^v4-(?:preflight|runtime|zero-skip|design-check|release-attestation-known-answer)-(?:linux|macos)\\.(?:json|log)$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 536870912
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "preflightMember": {
+      "allOf": [{"$ref": "#/$defs/member"}, {"properties": {"role": {"const": "preflight"}}}]
+    },
+    "runtimeMember": {
+      "allOf": [{"$ref": "#/$defs/member"}, {"properties": {"role": {"const": "runtime-manifest"}}}]
+    },
+    "zeroSkipMember": {
+      "allOf": [{"$ref": "#/$defs/member"}, {"properties": {"role": {"const": "zero-skip-log"}}}]
+    },
+    "designCheckMember": {
+      "allOf": [{"$ref": "#/$defs/member"}, {"properties": {"role": {"const": "design-check"}}}]
+    },
+    "releaseAttestationKnownAnswerMember": {
+      "allOf": [{"$ref": "#/$defs/member"}, {"properties": {"role": {"const": "release-attestation-known-answer"}}}]
+    }
+  }
+}
