@@ -154,6 +154,90 @@ class FetchAssetsTests(unittest.TestCase):
             {"gpt-neo-125m", "smollm2-360m", "tiny-starcoder-py"},
         )
 
+    def test_development_dataset_specification_is_exact_and_immutable(self) -> None:
+        specification = subject.DevelopmentDatasetSpecification()
+        self.assertEqual(specification.model_key, "ud-english-pud-r2.18")
+        self.assertEqual(
+            specification.repository,
+            "UniversalDependencies/UD_English-PUD",
+        )
+        self.assertEqual(
+            specification.revision,
+            "e173a1be1b442faf34e7d5a502189ad5d9d1e197",
+        )
+        self.assertEqual(specification.filename, "en_pud-ud-test.conllu")
+        self.assertEqual(specification.expected_bytes, 1_386_858)
+        self.assertEqual(
+            specification.expected_sha256,
+            "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa",
+        )
+        self.assertEqual(
+            specification.url,
+            "https://raw.githubusercontent.com/UniversalDependencies/"
+            "UD_English-PUD/e173a1be1b442faf34e7d5a502189ad5d9d1e197/"
+            "en_pud-ud-test.conllu",
+        )
+        self.assertEqual(
+            subject.DEVELOPMENT_DATASET_HOSTS,
+            frozenset({"raw.githubusercontent.com"}),
+        )
+
+    def test_development_dataset_uses_same_verified_no_overwrite_fetcher(self) -> None:
+        payload = b"real pinned CoNLL-U fixture bytes"
+        specification = subject.DevelopmentDatasetSpecification(
+            expected_bytes=len(payload),
+            expected_sha256=hashlib.sha256(payload).hexdigest(),
+        )
+        transport = FakeTransport({specification.url: payload})
+        with mock.patch.object(
+            subject, "DevelopmentDatasetSpecification", return_value=specification
+        ):
+            record = subject.fetch_development_dataset(
+                self.destination, transport=transport
+            )
+        destination = (
+            self.destination
+            / "ud-english-pud-r2.18"
+            / "en_pud-ud-test.conllu"
+        )
+        self.assertEqual(destination.read_bytes(), payload)
+        self.assertEqual(record.status, "downloaded-and-verified")
+        self.assertEqual(record.sha256, hashlib.sha256(payload).hexdigest())
+        self.assertFalse(
+            destination.with_name("en_pud-ud-test.conllu.partial").exists()
+        )
+
+        with mock.patch.object(
+            subject, "DevelopmentDatasetSpecification", return_value=specification
+        ):
+            repeated = subject.fetch_development_dataset(
+                self.destination, transport=NoCallTransport()
+            )
+        self.assertEqual(repeated.status, "verified-existing")
+
+    def test_development_dataset_rejects_every_other_final_host(self) -> None:
+        payload = b"pinned CoNLL-U fixture"
+        specification = subject.DevelopmentDatasetSpecification(
+            expected_bytes=len(payload),
+            expected_sha256=hashlib.sha256(payload).hexdigest(),
+        )
+        transport = FakeTransport(
+            {specification.url: payload},
+            final_url="https://huggingface.co/redirected-dataset",
+        )
+        with (
+            mock.patch.object(
+                subject,
+                "DevelopmentDatasetSpecification",
+                return_value=specification,
+            ),
+            self.assertRaisesRegex(subject.AssetFetchError, "not allowlisted"),
+        ):
+            subject.fetch_development_dataset(
+                self.destination,
+                transport=transport,
+            )
+
     def test_downloads_exact_bytes_with_mock_transport(self) -> None:
         files = {"config.json": b'{"model_type":"fixture"}\n'}
         self.write_manifest(files)
@@ -329,6 +413,17 @@ class FetchAssetsTests(unittest.TestCase):
                     handler.redirect_request(
                         request, None, 302, "Found", {}, target
                     )
+
+    def test_current_hugging_face_weight_cdn_is_allowlisted_exactly(self) -> None:
+        subject._validate_https_url(
+            "https://us.aws.cdn.hf.co/model.safetensors",
+            subject.DEFAULT_REDIRECT_HOSTS,
+        )
+        with self.assertRaises(subject.AssetFetchError):
+            subject._validate_https_url(
+                "https://subdomain.us.aws.cdn.hf.co/model.safetensors",
+                subject.DEFAULT_REDIRECT_HOSTS,
+            )
 
     def test_symlink_root_intermediate_and_leaf_are_rejected(self) -> None:
         if not hasattr(os, "symlink"):

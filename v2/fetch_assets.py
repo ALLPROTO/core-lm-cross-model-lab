@@ -38,6 +38,7 @@ DEFAULT_REDIRECT_HOSTS = frozenset(
         "cdn-lfs-eu-1.huggingface.co",
         "cdn-lfs-us-1.hf.co",
         "cdn-lfs-eu-1.hf.co",
+        "us.aws.cdn.hf.co",
         "cas-bridge.xethub.hf.co",
     }
 )
@@ -51,6 +52,16 @@ MAX_ASSET_BYTES = 8 * 1024 * 1024 * 1024
 MAX_MANIFEST_BYTES = 1024 * 1024
 READ_CHUNK_BYTES = 1024 * 1024
 SMALL_FILE_EXCLUSIONS = frozenset({"model.safetensors"})
+DEVELOPMENT_DATASET_MODEL_KEY = "ud-english-pud-r2.18"
+DEVELOPMENT_DATASET_REPOSITORY = "UniversalDependencies/UD_English-PUD"
+DEVELOPMENT_DATASET_REVISION = "e173a1be1b442faf34e7d5a502189ad5d9d1e197"
+DEVELOPMENT_DATASET_FILENAME = "en_pud-ud-test.conllu"
+DEVELOPMENT_DATASET_SOURCE_PATH = "en_pud-ud-test.conllu"
+DEVELOPMENT_DATASET_BYTES = 1_386_858
+DEVELOPMENT_DATASET_SHA256 = (
+    "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa"
+)
+DEVELOPMENT_DATASET_HOSTS = frozenset({"raw.githubusercontent.com"})
 
 
 class AssetFetchError(RuntimeError):
@@ -77,6 +88,32 @@ class AssetSpecification:
         return (
             f"https://huggingface.co/{repository}/resolve/"
             f"{self.revision}/{filename}"
+        )
+
+
+@dataclass(frozen=True)
+class DevelopmentDatasetSpecification:
+    """One byte-pinned real-data input, kept outside the model manifest."""
+
+    model_key: str = DEVELOPMENT_DATASET_MODEL_KEY
+    repository: str = DEVELOPMENT_DATASET_REPOSITORY
+    revision: str = DEVELOPMENT_DATASET_REVISION
+    filename: str = DEVELOPMENT_DATASET_FILENAME
+    expected_bytes: int = DEVELOPMENT_DATASET_BYTES
+    expected_sha256: str = DEVELOPMENT_DATASET_SHA256
+
+    @property
+    def url(self) -> str:
+        repository = "/".join(
+            urllib.parse.quote(part, safe="") for part in self.repository.split("/")
+        )
+        source_path = "/".join(
+            urllib.parse.quote(part, safe="")
+            for part in DEVELOPMENT_DATASET_SOURCE_PATH.split("/")
+        )
+        return (
+            f"https://raw.githubusercontent.com/{repository}/"
+            f"{self.revision}/{source_path}"
         )
 
 
@@ -552,7 +589,7 @@ def _remove_own_partial(path: Path, device: int, inode: int) -> None:
 
 
 def fetch_asset(
-    specification: AssetSpecification,
+    specification: AssetSpecification | DevelopmentDatasetSpecification,
     destination_root: Path,
     *,
     transport: Transport,
@@ -690,6 +727,22 @@ def fetch_assets(
     return records
 
 
+def fetch_development_dataset(
+    destination_root: Path,
+    *,
+    transport: Transport | None = None,
+) -> FetchRecord:
+    """Fetch or reverify the exact official UD English PUD r2.18 bytes."""
+
+    active_transport = transport or default_transport(DEVELOPMENT_DATASET_HOSTS)
+    return fetch_asset(
+        DevelopmentDatasetSpecification(),
+        destination_root,
+        transport=active_transport,
+        allowed_hosts=DEVELOPMENT_DATASET_HOSTS,
+    )
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
@@ -700,29 +753,62 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="verify/materialize manifest files except model.safetensors",
     )
+    parser.add_argument(
+        "--include-development-dataset",
+        action="store_true",
+        help="also fetch the exact official UD English PUD r2.18 CoNLL-U file",
+    )
+    parser.add_argument(
+        "--development-dataset-only",
+        action="store_true",
+        help="fetch only the exact official UD English PUD r2.18 CoNLL-U file",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     arguments = parse_arguments()
     try:
-        records = fetch_assets(
-            arguments.manifest,
-            arguments.destination,
-            selected_models=set(arguments.models) if arguments.models else None,
-            small_files_only=arguments.small_files_only,
-        )
+        if arguments.development_dataset_only and (
+            arguments.models or arguments.small_files_only
+        ):
+            raise AssetFetchError(
+                "--development-dataset-only cannot be combined with model selection"
+            )
+        records = []
+        if not arguments.development_dataset_only:
+            records.extend(
+                fetch_assets(
+                    arguments.manifest,
+                    arguments.destination,
+                    selected_models=set(arguments.models) if arguments.models else None,
+                    small_files_only=arguments.small_files_only,
+                )
+            )
+        if (
+            arguments.include_development_dataset
+            or arguments.development_dataset_only
+        ):
+            records.append(fetch_development_dataset(arguments.destination))
     except AssetFetchError as error:
         print(f"ASSET FETCH FAIL: {error}", file=sys.stderr)
         return 1
     summary = {
         "schemaVersion": "corelm-v2-asset-fetch-result-v1",
         "status": (
-            "SMALL_ASSETS_VERIFIED"
-            if arguments.small_files_only
-            else "ALL_ASSETS_VERIFIED"
+            "DEVELOPMENT_DATASET_VERIFIED"
+            if arguments.development_dataset_only
+            else (
+                "SMALL_ASSETS_VERIFIED"
+                if arguments.small_files_only
+                else "ALL_ASSETS_VERIFIED"
+            )
         ),
         "smallFilesOnly": arguments.small_files_only,
+        "developmentDatasetIncluded": (
+            arguments.include_development_dataset
+            or arguments.development_dataset_only
+        ),
         "records": [record.as_json() for record in records],
     }
     print(json.dumps(summary, ensure_ascii=False, sort_keys=True, indent=2))

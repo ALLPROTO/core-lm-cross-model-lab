@@ -1,11 +1,13 @@
 # Blind v2 result boundary
 
-This directory is intentionally empty before the normative one-shot. No
-development output, protocol-control fixture, model preflight, corpus crawl,
-or regression may be written here.
+This tracked directory contains documentation only. No development output,
+protocol-control fixture, model preflight, corpus crawl, regression, or
+scientific attempt may be written here.
 
-The future one-shot runner must create a durable attempt marker here before it
-resolves the NIST selection or opens selected corpus/model bytes. Once that
-marker exists, no retry is permitted. Every later execution belongs in a
-separate regression directory and must state
+The one-shot runner derives the only allowed scientific result root as the
+external sibling `<private_root>.one-shot-result` of the sealed private
+snapshot. It creates the durable reservation and marker there before resolving
+the NIST selection or opening selected corpus/model bytes. Once a reservation
+exists, no retry is permitted. Every later execution belongs under a distinct
+external regression identity and must state
 `countsTowardScientificVerdict=false`.

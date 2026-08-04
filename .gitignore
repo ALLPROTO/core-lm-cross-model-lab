@@ -3,12 +3,14 @@ __pycache__/
 *.py[cod]
 .venv/
 .runtime/
+.assets/
+.working/
 .codec-assets/
 .cross-model-assets/
 runs/
 *.partial/
 prompt-workload/
-V2_PREREGISTRATION_DRAFT.md
+codec-source/
 
 # Blind v2 local state. Normative source and empty result instructions stay
 # tracked; downloaded assets, crawl workspaces, runtimes, and one-shot outputs

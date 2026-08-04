@@ -1,14 +1,85 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
-from v2.preflight import verify_file_beneath, verify_regular_file
+from v2.preflight import verify_asset_receipt, verify_file_beneath, verify_regular_file
+from v2.reproducibility import sha256_bytes, with_content_digest
 
 
 class PreflightFileTests(unittest.TestCase):
+    def test_full_asset_receipt_is_bound_to_exact_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve(strict=True)
+            manifest = {
+                "models": {
+                    "fixture-model": {
+                        "repository": "fixture/model",
+                        "revision": "a" * 40,
+                        "license": "mit",
+                        "licenseURL": "https://example.invalid/license",
+                        "files": {
+                            "model.safetensors": {
+                                "bytes": 10,
+                                "sha256": "b" * 64,
+                            }
+                        },
+                    }
+                }
+            }
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            receipt = with_content_digest(
+                {
+                    "schemaVersion": "corelm-crossmodel-livewiki-v2-asset-receipt-v1",
+                    "status": "LOCAL_FULL_ASSET_SNAPSHOT_VERIFIED",
+                    "countsTowardScientificVerdict": False,
+                    "networkUsed": False,
+                    "modelInferenceUsed": False,
+                    "fullSafetensorsBytesLocallyVerified": True,
+                    "manifestFileSHA256": sha256_bytes(manifest_path.read_bytes()),
+                    "manifestFileBytes": len(manifest_path.read_bytes()),
+                    "fileCount": 1,
+                    "totalBytes": 10,
+                    "fullSafetensorsBytes": 10,
+                    "models": {
+                        "fixture-model": {
+                            "repository": "fixture/model",
+                            "revision": "a" * 40,
+                            "license": "mit",
+                            "licenseURL": "https://example.invalid/license",
+                            "files": {
+                                "model.safetensors": {
+                                    "bytes": 10,
+                                    "sha256": "b" * 64,
+                                }
+                            },
+                        }
+                    },
+                }
+            )
+            receipt_path = root / "receipt.json"
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            observed = verify_asset_receipt(
+                receipt_path,
+                manifest_path=manifest_path,
+                manifest=manifest,
+                local_assets={"verified": True, "files": 1},
+            )
+            self.assertTrue(observed["verified"])
+            receipt["totalBytes"] = 11
+            receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "self-digest mismatch"):
+                verify_asset_receipt(
+                    receipt_path,
+                    manifest_path=manifest_path,
+                    manifest=manifest,
+                    local_assets={"verified": True, "files": 1},
+                )
+
     def test_regular_file_digest_and_size(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory).resolve(strict=True) / "asset.bin"

@@ -39,8 +39,11 @@ from v2.protocol import (
     sha256_bytes,
     unbiased_draw,
     validate_design_registration,
+    validate_design_registration_lifecycle,
+    validate_frozen_design_registration,
     validate_ledger,
     validate_model_asset_manifest,
+    validate_snapshot_registration,
 )
 
 
@@ -204,30 +207,43 @@ class ProtocolTests(unittest.TestCase):
         vector = json.loads(
             (V2_ROOT / "test-vectors" / "selection-v1.json").read_text()
         )
-        release = lambda tag, published_at: {
-            "tag": tag,
-            "commit": "1" * 40,
-            "tree": "2" * 40,
-            "publishedAt": published_at,
-            "freezeManifestSHA256": "3" * 64,
-        }
         snapshot = {
             "schemaVersion": "corelm-crossmodel-livewiki-v2-snapshot-registration-v1",
             "suiteId": "corelm-voidtoken-crossmodel-livewiki-v2",
-            "status": "PUBLIC_SNAPSHOT_FROZEN",
-            "designRelease": release(
-                "corelm-crossmodel-livewiki-v2-design", "2026-08-08T12:00:00Z"
-            ),
-            "snapshotRelease": release(
-                "corelm-crossmodel-livewiki-v2-snapshot", "2026-08-25T07:00:00Z"
-            ),
+            "status": "SNAPSHOT_FROZEN_READY_FOR_PUBLICATION",
+            "designPublicationReceiptSHA256": "3" * 64,
+            "snapshotReleasePlan": {
+                "tag": "corelm-crossmodel-livewiki-v2-snapshot",
+                "publishNoLaterThan": "2026-08-26T18:00:00Z",
+                "serverTimestampRequired": True,
+                "immutableReleaseRequired": True,
+                "signedAnnotatedTagRequired": True,
+            },
             "projects": vector["projects"],
             "models": vector["models"],
             "ledgers": {project: "4" * 64 for project in vector["projects"]},
-            "modelAssetManifestSHA256": "5" * 64,
+            "modelAssetSourceManifestSHA256": "5" * 64,
+            "fullAssetReceiptSHA256": "7" * 64,
             "corpusManifestSHA256": "6" * 64,
             "createdAt": "2026-08-25T06:30:00Z",
         }
+        validate_snapshot_registration(snapshot, allow_fixture=False)
+        invalid_receipt = copy.deepcopy(snapshot)
+        invalid_receipt["designPublicationReceiptSHA256"] = "not-a-digest"
+        with self.assertRaisesRegex(ValueError, "invalid digest"):
+            validate_snapshot_registration(invalid_receipt, allow_fixture=False)
+        before_second_crawl = copy.deepcopy(snapshot)
+        before_second_crawl["createdAt"] = "2026-08-25T05:59:59Z"
+        with self.assertRaisesRegex(
+            ValueError, "before the second registered crawl"
+        ):
+            validate_snapshot_registration(before_second_crawl, allow_fixture=False)
+        after_release_deadline = copy.deepcopy(snapshot)
+        after_release_deadline["createdAt"] = "2026-08-26T18:00:01Z"
+        with self.assertRaisesRegex(
+            ValueError, "after its registered release deadline"
+        ):
+            validate_snapshot_registration(after_release_deadline, allow_fixture=False)
         snapshot_bytes = canonical_json_bytes(snapshot)
         with self.assertRaisesRegex(ValueError, "caller projects differ"):
             resolve_selection(
@@ -245,6 +261,48 @@ class ProtocolTests(unittest.TestCase):
                 models=["model-a", "model-b", "model-c"],
                 ledgers=vector["ledgers"],
             )
+
+    def test_normative_snapshot_rejects_old_self_referential_release_form(self) -> None:
+        def release(tag: str, published_at: str) -> dict[str, str]:
+            return {
+                "tag": tag,
+                "commit": "1" * 40,
+                "tree": "2" * 40,
+                "publishedAt": published_at,
+                "freezeManifestSHA256": "3" * 64,
+            }
+
+        old_snapshot = {
+            "schemaVersion": "corelm-crossmodel-livewiki-v2-snapshot-registration-v1",
+            "suiteId": "corelm-voidtoken-crossmodel-livewiki-v2",
+            "status": "PUBLIC_SNAPSHOT_FROZEN",
+            "designRelease": release(
+                "corelm-crossmodel-livewiki-v2-design", "2026-08-08T12:00:00Z"
+            ),
+            "snapshotRelease": release(
+                "corelm-crossmodel-livewiki-v2-snapshot", "2026-08-25T07:00:00Z"
+            ),
+            "projects": [
+                "de.wikipedia.org",
+                "en.wikipedia.org",
+                "fr.wikipedia.org",
+            ],
+            "models": [
+                "gpt-neo-125m",
+                "smollm2-360m",
+                "tiny-starcoder-py",
+            ],
+            "ledgers": {
+                "de.wikipedia.org": "4" * 64,
+                "en.wikipedia.org": "4" * 64,
+                "fr.wikipedia.org": "4" * 64,
+            },
+            "modelAssetManifestSHA256": "5" * 64,
+            "corpusManifestSHA256": "6" * 64,
+            "createdAt": "2026-08-25T06:30:00Z",
+        }
+        with self.assertRaisesRegex(ValueError, "registration fields differ"):
+            validate_snapshot_registration(old_snapshot, allow_fixture=False)
 
     def test_normative_selection_authenticates_exact_ledger_bytes(self) -> None:
         projects = [
@@ -265,31 +323,25 @@ class ProtocolTests(unittest.TestCase):
             ]
             ledger_bytes[project] = canonical_json_bytes(records)
 
-        def release(tag: str, published_at: str) -> dict[str, str]:
-            return {
-                "tag": tag,
-                "commit": "1" * 40,
-                "tree": "2" * 40,
-                "publishedAt": published_at,
-                "freezeManifestSHA256": "3" * 64,
-            }
-
         snapshot = {
             "schemaVersion": "corelm-crossmodel-livewiki-v2-snapshot-registration-v1",
             "suiteId": "corelm-voidtoken-crossmodel-livewiki-v2",
-            "status": "PUBLIC_SNAPSHOT_FROZEN",
-            "designRelease": release(
-                "corelm-crossmodel-livewiki-v2-design", "2026-08-08T12:00:00Z"
-            ),
-            "snapshotRelease": release(
-                "corelm-crossmodel-livewiki-v2-snapshot", "2026-08-25T07:00:00Z"
-            ),
+            "status": "SNAPSHOT_FROZEN_READY_FOR_PUBLICATION",
+            "designPublicationReceiptSHA256": "3" * 64,
+            "snapshotReleasePlan": {
+                "tag": "corelm-crossmodel-livewiki-v2-snapshot",
+                "publishNoLaterThan": "2026-08-26T18:00:00Z",
+                "serverTimestampRequired": True,
+                "immutableReleaseRequired": True,
+                "signedAnnotatedTagRequired": True,
+            },
             "projects": projects,
             "models": models,
             "ledgers": {
                 project: sha256_bytes(value) for project, value in ledger_bytes.items()
             },
-            "modelAssetManifestSHA256": "5" * 64,
+            "modelAssetSourceManifestSHA256": "5" * 64,
+            "fullAssetReceiptSHA256": "7" * 64,
             "corpusManifestSHA256": "6" * 64,
             "createdAt": "2026-08-25T06:30:00Z",
         }
@@ -354,24 +406,103 @@ class ProtocolTests(unittest.TestCase):
         self.assertFalse(registration["readyToFreeze"])
         self.assertFalse(registration["countsTowardScientificVerdict"])
         self.assertGreaterEqual(len(blockers), 1)
+        self.assertTrue(
+            any(
+                "UD English PUD" in blocker
+                and "CC BY-SA 3.0" in blocker
+                for blocker in blockers
+            )
+        )
+
+    def test_frozen_design_lifecycle_reuses_every_normative_body_check(self) -> None:
+        frozen = json.loads(
+            (V2_ROOT / "design-registration.draft.json").read_text()
+        )
+        frozen.update(
+            schemaVersion="corelm-crossmodel-livewiki-v2-design-v1",
+            status="PUBLIC_DESIGN_FROZEN",
+            readyToFreeze=True,
+            freezeBlockers=[],
+        )
+        frozen["labSource"].update(
+            status="FROZEN_BOUND",
+            commit="1" * 40,
+            tree="2" * 40,
+            freezeManifestSHA256="3" * 64,
+        )
+        frozen["runtime"].update(
+            status="FROZEN_BOUND", runtimeManifestSHA256="4" * 64
+        )
+        frozen["developmentControls"]["realDataE2EFreezeGate"].update(
+            status="ARCHIVED_VERIFIED_BEFORE_FREEZE",
+            executionId="development-execution-20260808T100000Z-0123456789abcdef",
+            archiveReceiptSHA256="7" * 64,
+            archivePublishedAt="2026-08-08T10:05:00Z",
+            archiveAttestedAt="2026-08-08T10:05:01Z",
+            releaseAttestationBundleSHA256="b" * 64,
+            releaseAttestationOutputSHA256="c" * 64,
+            reportSHA256="8" * 64,
+            artifactSetSHA256="9" * 64,
+            controlConfigurationSHA256="a" * 64,
+            completedAt="2026-08-08T10:00:00Z",
+        )
+        frozen["beacon"].update(
+            transportCABundleSHA256="5" * 64,
+            offlineTrustBundleSHA256="6" * 64,
+        )
+        self.assertEqual(validate_frozen_design_registration(frozen), [])
+        self.assertEqual(validate_design_registration_lifecycle(frozen), [])
+        mutated = copy.deepcopy(frozen)
+        mutated["candidate"]["groupSize"] = 64
+        with self.assertRaisesRegex(ValueError, "candidate boundary"):
+            validate_frozen_design_registration(mutated)
+        mutated = copy.deepcopy(frozen)
+        mutated["runtime"]["runtimeManifestSHA256"] = None
+        with self.assertRaisesRegex(ValueError, "runtime manifest"):
+            validate_frozen_design_registration(mutated)
+        mutated = copy.deepcopy(frozen)
+        mutated["developmentControls"]["realDataE2EFreezeGate"][
+            "archiveAttestedAt"
+        ] = "2026-08-09T00:00:00Z"
+        with self.assertRaisesRegex(ValueError, "archive timing"):
+            validate_frozen_design_registration(mutated)
 
     def test_design_validator_binds_normative_fields(self) -> None:
         original = json.loads(
             (V2_ROOT / "design-registration.draft.json").read_text()
         )
         mutations = (
+            ("", "claim", "transfers to all language models"),
             ("cellGates", "minimumTop1Agreement", 0.5),
             ("execution", "device", "cuda"),
             ("beacon", "targetUnixMilliseconds", 0),
             ("candidate", "groupSize", 64),
             ("selection", "allModelsRequired", False),
+            ("snapshotRelease", "sourcePolicy", "ALLOW_LATER_COMMIT"),
             ("modelAggregateGates", "minimumWilsonLower", 0.5),
+            ("continuousIntegration", "workflowFileSHA256", "0" * 64),
+            ("developmentControls", "syntheticInputsForbidden", False),
         )
         for section, field, value in mutations:
             registration = copy.deepcopy(original)
-            registration[section][field] = value
+            if section:
+                registration[section][field] = value
+            else:
+                registration[field] = value
             with self.assertRaises(ValueError):
                 validate_design_registration(registration)
+        registration = copy.deepcopy(original)
+        registration["execution"]["independentModelReplay"][
+            "fixtureBackendScientificUse"
+        ] = "allowed"
+        with self.assertRaisesRegex(ValueError, "execution boundary"):
+            validate_design_registration(registration)
+        registration = copy.deepcopy(original)
+        registration["futureCorpus"]["prospectiveHoldout"][
+            "operatorBlindnessClaimed"
+        ] = True
+        with self.assertRaisesRegex(ValueError, "future corpus boundary"):
+            validate_design_registration(registration)
 
     def test_model_asset_manifest_matches_design(self) -> None:
         registration = json.loads(

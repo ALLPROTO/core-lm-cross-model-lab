@@ -4,13 +4,85 @@
   "suiteId": "corelm-voidtoken-crossmodel-livewiki-v2",
   "readyToFreeze": false,
   "countsTowardScientificVerdict": false,
-  "claim": "One codec candidate fixed before corpus creation transfers to every registered model on both NIST-selected future Wikipedia corpora under the registered cell and model gates.",
-  "scientificBoundary": "A PASS applies only to the exact registered models, future-corpus snapshot, selection pulse, candidate, runtime, and metrics. It is not a claim about all LLMs, all text, latency, throughput, weight compression, or state of the art.",
+  "claim": "One codec candidate fixed before corpus creation meets every registered cell and model gate on each exact registered model in two NIST-selected samples of sixteen eligible future Wikipedia creation revisions.",
+  "scientificBoundary": "A PASS applies only to the exact three registered model revisions, the thirty-two selected creation revisions, future-corpus snapshot, selection pulse, candidate, runtime, codec, and metrics. It is not a claim about either complete language-edition corpus, all Wikipedia, all LLMs, all text, latency, throughput, weight compression, or state of the art.",
+  "developmentControls": {
+    "status": "NON_SCIENTIFIC_PRE_FREEZE_ONLY",
+    "dataset": {
+      "datasetId": "UniversalDependencies/UD_English-PUD:r2.18:test",
+      "repository": "UniversalDependencies/UD_English-PUD",
+      "revision": "e173a1be1b442faf34e7d5a502189ad5d9d1e197",
+      "tree": "50f2ebe00ff016d2dca93f9bf6ee51c5f8493fde",
+      "releaseTag": "r2.18",
+      "split": "test",
+      "splitPurpose": "upstream test split reused only as a non-scientific development control; it is not a blind scientific test result",
+      "file": "en_pud-ud-test.conllu",
+      "format": "CoNLL-U",
+      "bytes": 1386858,
+      "sha256": "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa",
+      "rows": 1000,
+      "rowExtraction": "exactly one '# text = ' value from each LF-delimited CoNLL-U sentence block; prefix removed; text otherwise unchanged",
+      "joinedTextBytes": 112419,
+      "joinedTextSHA256": "69dd039b37979f91b165981e92ae578067ecdf0db69bbee0a431c9f337c0f8ea",
+      "license": "CC-BY-SA-3.0",
+      "manifestPath": "v2/development-corpus.draft.json",
+      "manifestBytes": 1985,
+      "manifestSHA256": "ce46322376c6795606ef9d651290f5db303a6bcf09075dfcada7db1a729ef402"
+    },
+    "allowedEntryPoints": [
+      {
+        "path": "v2/run_real_e2e_control.py",
+        "control": "producer-vtl5-independent-replay",
+        "candidateCodecInvoked": true,
+        "candidateMetricsComputed": true
+      }
+    ],
+    "realPretrainedModelsRequired": true,
+    "realCorpusBytesRequired": true,
+    "syntheticInputsForbidden": true,
+    "futureCorpusUsed": false,
+    "nistUsed": false,
+    "scientificAttemptStateCreated": false,
+    "scientificResultRootUsed": false,
+    "countsTowardScientificVerdict": false,
+    "usedForCandidateSelectionOrTuning": false,
+    "configurationChangesAfterOutcome": "NEW_SUITE_AND_COMPLETE_TIMELINE_REQUIRED",
+    "unitFixtureBoundary": "ISOLATED_NON_RESULT_PROTOCOL_TESTS_ONLY",
+    "realDataE2EFreezeGate": {
+      "required": true,
+      "reportSchemaVersion": "corelm-crossmodel-v2-real-e2e-development-report-v1",
+      "reportFileName": "development-control-report.json",
+      "completeNoLaterThan": "2026-08-09T00:00:00Z",
+      "serverTimestampedArchiveRequired": true,
+      "archiveTag": "corelm-crossmodel-livewiki-v2-development-control",
+      "archiveRequiredAssetRoles": [
+        "development-control-report",
+        "development-control-artifacts",
+        "sha256-manifest"
+      ],
+      "status": "UNBOUND_DRAFT",
+      "executionId": null,
+      "archiveReceiptSHA256": null,
+      "archivePublishedAt": null,
+      "archiveAttestedAt": null,
+      "releaseAttestationBundleSHA256": null,
+      "releaseAttestationOutputSHA256": null,
+      "reportSHA256": null,
+      "artifactSetSHA256": null,
+      "controlConfigurationSHA256": null,
+      "completedAt": null
+    }
+  },
   "designRelease": {
     "tag": "corelm-crossmodel-livewiki-v2-design",
     "publishNoLaterThan": "2026-08-09T00:00:00Z",
+    "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
     "serverTimestampRequired": true,
-    "immutableReleaseRequired": true
+    "immutableReleaseRequired": true,
+    "signedAnnotatedTagRequired": true,
+    "signatureType": "SSH",
+    "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+    "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c"
   },
   "futureCorpus": {
     "projects": [
@@ -34,14 +106,79 @@
       "addSpecialTokens": false,
       "minimumTokensUnderEveryRegisteredTokenizer": 512
     },
+    "prospectiveHoldout": {
+      "claimType": "PROSPECTIVE_BEACON_SELECTED_HOLDOUT",
+      "operatorBlindnessClaimed": false,
+      "futureCorpusUnavailableAtDesignFreeze": true,
+      "exactSelectionUnavailableUntilTargetPulse": true,
+      "preAttemptModelInferenceOnEligibleRecords": "FORBIDDEN_FROM_FIRST_COLLECTION_THROUGH_ATTEMPT_MARKER",
+      "metricOrCandidateTuningUsingEligibleRecords": "FORBIDDEN",
+      "permittedPreAttemptProcessing": [
+        "collection",
+        "eligibility-validation",
+        "canonicalization",
+        "tokenization-for-minimum-length-only",
+        "hashing",
+        "packaging"
+      ],
+      "behavioralComplianceCryptographicallyAttested": false
+    },
     "license": "CC-BY-SA-4.0",
     "attributionLedgerRequired": true
   },
   "snapshotRelease": {
     "tag": "corelm-crossmodel-livewiki-v2-snapshot",
     "publishNoLaterThan": "2026-08-26T18:00:00Z",
+    "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
     "serverTimestampRequired": true,
-    "immutableReleaseRequired": true
+    "immutableReleaseRequired": true,
+    "signedAnnotatedTagRequired": true,
+    "signatureType": "SSH",
+    "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+    "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c"
+  },
+  "evidenceRelease": {
+    "tag": "corelm-crossmodel-livewiki-v2-evidence",
+    "publishNoLaterThan": "2026-09-01T18:00:00Z",
+    "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
+    "serverTimestampRequired": true,
+    "immutableReleaseRequired": true,
+    "signedAnnotatedTagRequired": true,
+    "signatureType": "SSH",
+    "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+    "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c"
+  },
+  "closeoutRelease": {
+    "tag": "corelm-crossmodel-livewiki-v2-closeout",
+    "publishNoLaterThan": "2026-09-08T18:00:00Z",
+    "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
+    "serverTimestampRequired": true,
+    "immutableReleaseRequired": true,
+    "signedAnnotatedTagRequired": true,
+    "signatureType": "SSH",
+    "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+    "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c"
+  },
+  "reschedulePolicy": {
+    "decisionCheckpoint": "2026-08-08T12:00:00Z",
+    "requiredStateAtCheckpoint": "all pre-publication P0 inputs complete; independent review and exact-commit CI observed through direct verified TLS and archived with no GitHub response signature and offline structural-consistency-only verification; only immutable design publication remains",
+    "actionIfNotReady": "DO_NOT_FREEZE_OR_PUBLISH_THIS_SUITE",
+    "newSuiteIdRequired": true,
+    "minimumLeadTimesMustBePreserved": true,
+    "moveTogether": [
+      "designRelease.publishNoLaterThan",
+      "futureCorpus.creationInterval",
+      "futureCorpus.firstCrawlNotBefore",
+      "futureCorpus.secondCrawlNotBefore",
+      "snapshotRelease.publishNoLaterThan",
+      "beacon.targetTimestamp",
+      "beacon.targetUnixMilliseconds",
+      "beacon.pulseEndpoint",
+      "execution.oneShotNotBefore",
+      "execution.hardDeadline",
+      "evidenceRelease.publishNoLaterThan",
+      "closeoutRelease.publishNoLaterThan"
+    ]
   },
   "codecSource": {
     "repository": "https://github.com/ALLPROTO/core-lm-benchmark.git",
@@ -63,12 +200,40 @@
     "freezeManifestSHA256": null
   },
   "runtime": {
-    "python": "3.12.13",
+    "python": "3.12.10",
     "primaryPlatform": "macOS-arm64-local-offline",
-    "postEvidenceReplication": "Linux-x86_64-GitHub-Actions",
+    "postEvidenceReplication": "NOT_IMPLEMENTED_OR_REGISTERED",
+    "pipBootstrapLockSHA256": "587c4946469d33bb2e83b0d34cbe54d0c4c4799896e5af672331e108743f1fca",
     "requirementsLockSHA256": "e731ab2076b171d731b42ee8609d5943954911a10c92564ab52b7bed7a9fa561",
     "status": "UNBOUND_DRAFT",
     "runtimeManifestSHA256": null
+  },
+  "continuousIntegration": {
+    "workflowName": "Blind v2 development controls",
+    "workflowPath": ".github/workflows/v2-development-controls.yml",
+    "workflowFileBytes": 12487,
+    "workflowFileSHA256": "b9215fec0922fd8462ba5e8de83d6406a7e8fbd1f0c05adff05d0b406da92dbb",
+    "requiredReviewDeclaration": "I independently reviewed the normative protocol, canonical schemas, fail-closed implementation, zero-skip tests, and evidence plan on this exact commit. I have no undisclosed conflict of interest with the repository owner. I found no unresolved P0 blocker and approve freeze publication.",
+    "reviewerMustDifferFromRepositoryOwner": true,
+    "githubAccountIdentityBoundary": "authenticated-account-statement-not-real-world-identity-or-conflict-proof",
+    "allReturnedJobsMustCompleteSuccess": true,
+    "zeroSkippedOrCancelledJobs": true,
+    "gateReceiptArtifactBytesArchived": false,
+    "ciArtifactBytesMustBeArchivedSeparately": true,
+    "requiredJobs": [
+      {
+        "jobName": "Linux x86-64 locked runtime",
+        "runnerLabel": "ubuntu-24.04",
+        "system": "Linux",
+        "machine": "x86_64"
+      },
+      {
+        "jobName": "macOS arm64 clean clone",
+        "runnerLabel": "macos-15",
+        "system": "Darwin",
+        "machine": "arm64"
+      }
+    ]
   },
   "models": [
     {
@@ -78,13 +243,14 @@
       "architecture": "gpt-neo-mixed-global-local",
       "layers": 12,
       "kvHeads": 12,
+      "vocabSize": 50257,
       "weightFile": "model.safetensors",
       "weightBytes": 525979192,
       "weightSHA256": "52738cbfb54e25a232598242f60ef19ee193d36090b98fe649b10c02724b3521",
       "license": "mit",
       "candidateBitsByLayer": [9, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 8],
       "candidateConfigurationSHA256": "8cf8e8897378679ea0d134ddf8db217a0ff026316aaea5556438ffe13aed2bfc",
-      "previouslyRunByThisLab": false
+      "usedForCandidateSelectionOrTuning": false
     },
     {
       "key": "smollm2-360m",
@@ -93,13 +259,14 @@
       "architecture": "llama-gqa",
       "layers": 32,
       "kvHeads": 5,
+      "vocabSize": 49152,
       "weightFile": "model.safetensors",
       "weightBytes": 723674912,
       "weightSHA256": "7aaff6661428bed033abba9522bec81938678642cca3181fe752b6ca9e1e540f",
       "license": "apache-2.0",
       "candidateBitsByLayer": [9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
       "candidateConfigurationSHA256": "42dbdd88aea94117f3ffbb05afe078a70ae276363237b6632f286729ac023d4e",
-      "previouslyRunByThisLab": false
+      "usedForCandidateSelectionOrTuning": false
     },
     {
       "key": "tiny-starcoder-py",
@@ -108,13 +275,14 @@
       "architecture": "gpt-bigcode-mqa",
       "layers": 20,
       "kvHeads": 1,
+      "vocabSize": 49152,
       "weightFile": "model.safetensors",
       "weightBytes": 656601304,
       "weightSHA256": "15fa942f055b618d5ca6283f5c27278a475ff12e53dc704b9658ffd5160d4021",
       "license": "bigcode-openrail-m",
       "candidateBitsByLayer": [9, 8, 8, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8],
       "candidateConfigurationSHA256": "270e27ffa5c1c8f8e87e781ced9a0240303369f3a4b931aca38a77f281fae82d",
-      "previouslyRunByThisLab": false
+      "usedForCandidateSelectionOrTuning": false
     }
   ],
   "candidate": {
@@ -138,20 +306,69 @@
     "attentionImplementation": "eager",
     "prefillTokens": 383,
     "predictionTokensPerPage": 128,
-    "modelProcessIsolation": "one-model-per-process",
+    "modelProcessIsolation": "producer-one-model-per-process; independent verifier loads one model at a time sequentially",
     "acPowerRequired": true,
     "minimumFreeMemoryPercent": 50,
+    "maximumWorkerRSSBytes": 4294967296,
+    "watchdogPollMilliseconds": 250,
+    "minimumFreeDiskBytes": 12884901888,
     "deterministicAlgorithms": "fail-closed",
-    "networkAfterAttemptMarker": "forbidden",
+    "pulseFetchAfterAttemptMarker": true,
+    "pulseFetchAuthority": "supervisor-only",
+    "pulseFetchTotalTimeoutSeconds": 30,
+    "pulseFetchNetworkScope": "one HTTPS request to the exact registered NIST endpoint; redirects, proxies, alternate hosts, extra requests, and fallback are forbidden",
+    "networkAfterPulseSeal": "trusted-supervisor-python-socket-denial; OS-sandbox network denial for registered children",
+    "supervisorNetworkIsolationClaim": "trusted-control-flow guard, not OS capability isolation",
+    "inferenceChildNetwork": "forbidden-from-process-creation",
+    "networkIsolationBackend": "macOS sandbox-exec before Python startup",
+    "networkIsolationProfile": "(version 1)(allow default)(deny network*)",
     "pickle": "forbidden",
     "trustRemoteCode": "forbidden",
-    "filesystemModelLoadAfterMarker": "forbidden",
+    "assetReadAfterMarker": "one no-follow read per model evaluation in each registered producer or independent-verifier process from frozen private snapshot into verified anonymous buffers",
+    "pathBasedModelParsing": "forbidden",
+    "mmap": "forbidden",
+    "fromPretrained": "forbidden",
+    "independentModelReplay": {
+      "requiredForTerminalGateVerdict": true,
+      "implementation": "v2/independent_model_replay.py",
+      "producerModuleImports": "forbidden",
+      "modelOrder": "selection.modelExecutionOrder",
+      "modelsSequential": true,
+      "device": "cpu",
+      "modelDtype": "float32",
+      "retokenizeFrozenCorpusBytes": true,
+      "baselineCache": "regenerated-float32-to-bfloat16-to-float32",
+      "candidateCache": "independently-decode-archived-vtl5-and-bind-inputSha256-to-regenerated-baseline",
+      "compareEveryPrediction": true,
+      "comparisons": [
+        "first512TokenIds",
+        "targetTokenId",
+        "baselineLossF32Bits",
+        "candidateLossF32Bits",
+        "baselineTop1TokenId",
+        "candidateTop1TokenId"
+      ],
+      "network": "forbidden-from-process-creation",
+      "fixtureBackendScientificUse": "forbidden",
+      "bitExactReplayScope": "one-shot host and frozen runtime; archival cross-environment mismatches are failures, never tolerance"
+    },
+    "attemptStartTimeAuthority": "live NIST HTTPS Date observed over pinned hostname-verified TLS must be inside registered one-shot window; pulse signature does not cover HTTP Date",
+    "completionTimeAuthority": "host UTC clock plus process monotonic durations; no external completion attestation",
+    "oneShotNotBefore": "2026-08-28T18:00:00Z",
     "hardDeadline": "2026-08-29T18:00:00Z"
   },
   "beacon": {
     "targetTimestamp": "2026-08-27T18:00:00.000Z",
     "targetUnixMilliseconds": 1787853600000,
     "pulseEndpoint": "https://beacon.nist.gov/beacon/2.0/pulse/time/1787853600000",
+    "pulseVersion": "2.0",
+    "pulseCipherSuite": 0,
+    "pulsePeriodMilliseconds": 60000,
+    "transportCABundleSHA256": "22b557a27055b33606b6559f37703928d3e4ad79f110b407d04986e1843543d1",
+    "offlineTrustBundleSHA256": "3c17cb8f6086e201eb4babc692616f621054339dc17376a7acee730e6a8cfc71",
+    "nistTrustRootDERsSHA256": [
+      "cb3ccbb76031e5e0138f8dd39a23f9de47ffc35e43c1144cea27d46a5ab1cb5f"
+    ],
     "fallback": "forbidden",
     "exactTimestampRequired": true,
     "signatureAndOutputVerificationRequired": true,
@@ -163,7 +380,7 @@
     "corporaSelected": 2,
     "pagesPerCorpus": 16,
     "allModelsRequired": true,
-    "beaconControlsModelOrderOnly": true,
+    "beaconControlsCorpusPageAndModelOrder": true,
     "drawOrder": "corpus-A, corpus-B, 16 pages A, 16 pages B, first model, second model, append remaining model"
   },
   "cellGates": {
@@ -195,29 +412,43 @@
     "interpretation": "fixed descriptive gates; not IID population confidence claims"
   },
   "oneShotStateMachine": {
-    "attemptMarkerBeforeSelectionOrDataOpen": true,
+    "attemptReservationBeforeMarker": true,
+    "attemptMarkerBeforeSelectionOrSelectedDataOpen": true,
+    "atomicStatePublication": "exclusive-pending-file-fsync-hardlink-directory-fsync-unlink-directory-fsync",
+    "phaseOrder": [
+      "preflight-seal-assets",
+      "pre-marker-networkless-locked-runtime-import-probe",
+      "durable-attempt-reservation",
+      "durable-attempt-marker",
+      "supervisor-fetch-and-verify-exact-nist-pulse",
+      "seal-pulse-and-install-scoped-supervisor-socket-denial",
+      "derive-selection",
+      "spawn-networkless-inference-workers-in-registered-order",
+      "consolidate-worker-evidence",
+      "publish-producer-result",
+      "publish-producer-evidence-manifest",
+      "spawn-networkless-independent-verifier",
+      "require-independent-real-model-replay-and-exact-result-match",
+      "publish-terminal-outcome"
+    ],
+    "durablePulseSealBeforeSelection": true,
+    "networklessChildStartsAfterPulseSeal": true,
+    "retryAfterReservation": "forbidden",
     "retryAfterMarker": "forbidden",
     "terminalStates": [
       "PASS",
       "FAIL_GATES",
       "FAIL_EXECUTION",
-      "CONSUMED_INCOMPLETE",
-      "LATE_PUBLICATION_INVALID",
-      "NO_ATTEMPT_EXPIRED"
+      "CONSUMED_INCOMPLETE"
     ],
     "allLaterRuns": "regression-only"
   },
   "freezeBlockers": [
-    "locally rehash every full safetensors file and create an immutable no-symlink asset snapshot",
-    "bounded immutable-byte safetensors and tokenizer loading prototype",
-    "two-pass MediaWiki collector and strict corpus-ledger verifier",
-    "offline NIST certificate trust bundle and known-answer pulse tests",
-    "canonical schemas and adversarial state-machine tests",
-    "normative isolated multi-model runner and independent raw-evidence verifier",
-    "strict macOS one-shot preflight with mandatory assets and durable attempt marker",
-    "exact lab-source commit/tree and full runtime manifest",
-    "independent review of collector, arithmetic, licenses, execution, and failure paths",
-    "concrete freeze validator that verifies artifacts instead of trusting declared status",
-    "immutable public design release before the registered deadline"
+    "independently review the archived UD English PUD CC BY-SA 3.0 license, README, attribution, and source-derived evidence handling on the exact implementation",
+    "complete and archive the untuned real UD English PUD producer-to-VTL5-to-independent-replay development control on the exact implementation and locked runtime",
+    "bind the repeated full-asset rehash, clean runtime manifest, CycloneDX SBOM, and exact implementation commit/tree into release artifacts",
+    "obtain an independent human approval and zero-skip Linux plus macOS arm64 CI receipt on that exact commit",
+    "publish the development-control release and archive exact-key annotated-tag verification with the already registered signing key",
+    "publish the immutable design release and canonical GitHub-attested receipt whose verified RFC3161 attestedAt is strictly before the registered deadline"
   ]
 }

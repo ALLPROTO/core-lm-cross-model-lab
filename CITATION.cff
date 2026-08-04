@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, cite the exact immutable software release rather
+  than a moving branch. Evidence deposits have separate citation metadata.
+type: software
+title: Core LM cross-model benchmark laboratory
+authors:
+  - family-names: Tyshchenko
+    given-names: Ivan
+    orcid: https://orcid.org/0009-0000-7935-6090
+repository-code: https://github.com/ALLPROTO/core-lm-cross-model-lab
+url: https://github.com/ALLPROTO/core-lm-cross-model-lab
+license: MIT
+keywords:
+  - language models
+  - KV cache
+  - compression
+  - reproducibility
+  - preregistration
+abstract: >-
+  Software implementing reproducibility controls, canonical evidence formats,
+  and independent verification for fixed-profile cross-model KV-cache
+  compression experiments. This software citation does not identify or license
+  a scientific evidence deposit.

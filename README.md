@@ -59,12 +59,20 @@ model's PASS cannot hide another model's FAIL.
 ## Prospective blind multi-model v2
 
 Development of a genuinely prospective model-holdout experiment lives under
-[`v2/`](v2/README.md). It uses three model revisions that have not been run by
-this lab and Wikipedia creation revisions that do not exist at design time.
-The v2 files are currently a development draft under review, not a
-preregistration and not evidence. No v2 model inference, corpus collection, or
-one-shot selection is permitted until every freeze blocker is closed and an
-immutable public design release exists.
+[`v2/`](v2/README.md). It uses three model revisions that were not used to
+select or tune the candidate and Wikipedia creation revisions that do not exist
+at design time. Before freeze, the exact model revisions may be exercised only
+by one fixed full candidate-pipeline readiness control on the pinned UD English
+PUD r2.18 CoNLL-U source. Its upstream `test` split is development-only input,
+not the prospective scientific holdout; the control includes the lossless
+adapter invariant. It may compute diagnostics but cannot be used to change the
+candidate, gates, models, runtime, or protocol. It forbids
+future-corpus/NIST/attempt state and reports
+`countsTowardScientificVerdict=false`; it is not scientific evidence. The v2
+files are currently a development draft under review, not a preregistration
+and not evidence. Candidate inference on eligible future corpus, one-shot
+selection, and scientific attempt state remain forbidden until every freeze
+blocker is closed and an immutable public design release exists.
 
 The familiar ratio >= 2.0x, delta-NLL <= 0.01, and top-1 agreement >= 0.99
 thresholds are reported only as transfer diagnostics. They were not
@@ -141,4 +149,9 @@ outside the scientific verdict.
 
 The lab code is MIT-licensed. Downloaded model assets retain their upstream
 licenses listed in `models.json`; in particular, BLOOM uses the BigScience
-BLOOM RAIL 1.0 license.
+BLOOM RAIL 1.0 license. The blind-v2 model/data rights matrix, exact UD English
+PUD r2.18 source evidence, CC BY-SA 3.0 attribution/share-alike handling, and
+the boundary that upstream declarations are not an independent ownership
+conclusion are documented in
+[`LICENSES/ASSET_LICENSES.md`](LICENSES/ASSET_LICENSES.md) and
+[`NOTICE.md`](NOTICE.md).

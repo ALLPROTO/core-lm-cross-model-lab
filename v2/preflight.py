@@ -24,9 +24,10 @@ if str(PROJECT_ROOT) not in sys.path:
 from v2.protocol import (  # noqa: E402
     load_json_strict,
     sha256_bytes,
-    validate_design_registration,
+    validate_design_registration_lifecycle,
     validate_model_asset_manifest,
 )
+from v2.reproducibility import verify_content_digest  # noqa: E402
 
 
 def _sha256_descriptor(descriptor: int) -> str:
@@ -197,6 +198,76 @@ def verify_local_assets(
     return {"provided": True, "verified": True, "files": files}
 
 
+def verify_asset_receipt(
+    receipt_path: Path | None,
+    *,
+    manifest_path: Path,
+    manifest: dict[str, Any],
+    local_assets: dict[str, Any],
+) -> dict[str, Any]:
+    if receipt_path is None:
+        return {"provided": False, "verified": False}
+    if local_assets.get("verified") is not True:
+        raise ValueError("asset receipt requires a verified local asset snapshot")
+    receipt = load_json_strict(receipt_path)
+    if not isinstance(receipt, dict):
+        raise ValueError("asset receipt must contain an object")
+    verify_content_digest(receipt)
+    if receipt.get("schemaVersion") != "corelm-crossmodel-livewiki-v2-asset-receipt-v1":
+        raise ValueError("unexpected asset receipt schema")
+    if receipt.get("status") != "LOCAL_FULL_ASSET_SNAPSHOT_VERIFIED":
+        raise ValueError("asset receipt status differs")
+    for field in ("countsTowardScientificVerdict", "networkUsed", "modelInferenceUsed"):
+        if receipt.get(field) is not False:
+            raise ValueError(f"asset receipt boundary differs: {field}")
+    if receipt.get("fullSafetensorsBytesLocallyVerified") is not True:
+        raise ValueError("asset receipt does not prove full safetensors rehashing")
+    manifest_bytes = manifest_path.read_bytes()
+    if receipt.get("manifestFileSHA256") != sha256_bytes(manifest_bytes):
+        raise ValueError("asset receipt binds a different model manifest")
+    if receipt.get("manifestFileBytes") != len(manifest_bytes):
+        raise ValueError("asset receipt manifest byte count differs")
+    if receipt.get("fileCount") != local_assets.get("files"):
+        raise ValueError("asset receipt file count differs")
+    models = receipt.get("models")
+    if not isinstance(models, dict) or set(models) != set(manifest["models"]):
+        raise ValueError("asset receipt model set differs")
+    expected_total = 0
+    expected_weight_total = 0
+    for model_key, model in manifest["models"].items():
+        receipt_model = models.get(model_key)
+        if not isinstance(receipt_model, dict):
+            raise ValueError(f"asset receipt model entry differs: {model_key}")
+        for field in ("repository", "revision", "license", "licenseURL"):
+            if receipt_model.get(field) != model.get(field):
+                raise ValueError(f"asset receipt model field differs: {model_key}/{field}")
+        receipt_files = receipt_model.get("files")
+        if not isinstance(receipt_files, dict) or set(receipt_files) != set(model["files"]):
+            raise ValueError(f"asset receipt file set differs: {model_key}")
+        for filename, specification in model["files"].items():
+            expected = {
+                "bytes": specification["bytes"],
+                "sha256": specification["sha256"],
+            }
+            if receipt_files.get(filename) != expected:
+                raise ValueError(f"asset receipt file differs: {model_key}/{filename}")
+            expected_total += specification["bytes"]
+            if filename == "model.safetensors":
+                expected_weight_total += specification["bytes"]
+    if receipt.get("totalBytes") != expected_total:
+        raise ValueError("asset receipt total byte count differs")
+    if receipt.get("fullSafetensorsBytes") != expected_weight_total:
+        raise ValueError("asset receipt safetensors byte count differs")
+    return {
+        "provided": True,
+        "verified": True,
+        "contentSHA256": receipt["contentSHA256"],
+        "fileSHA256": sha256_bytes(receipt_path.read_bytes()),
+        "files": receipt["fileCount"],
+        "bytes": receipt["totalBytes"],
+    }
+
+
 def platform_safety() -> dict[str, Any]:
     result: dict[str, Any] = {
         "system": platform.system(),
@@ -236,6 +307,11 @@ def parse_arguments() -> argparse.Namespace:
         help="optional no-symlink layout <root>/<model-key>/<runtime-file>",
     )
     parser.add_argument("--require-assets", action="store_true")
+    parser.add_argument(
+        "--asset-receipt",
+        type=Path,
+        help="deterministic receipt created after rehashing every local asset",
+    )
     parser.add_argument("--require-execution-ready", action="store_true")
     return parser.parse_args()
 
@@ -243,11 +319,17 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     registration = load_json_strict(V2_ROOT / "design-registration.draft.json")
-    blockers = validate_design_registration(registration)
+    blockers = validate_design_registration_lifecycle(registration)
     manifest = load_json_strict(V2_ROOT / "model-assets.draft.json")
     manifest_summary = validate_model_asset_manifest(manifest, registration)
     codec = verify_codec_source(arguments.codec_root, registration)
     assets = verify_local_assets(arguments.asset_root, manifest)
+    asset_receipt = verify_asset_receipt(
+        arguments.asset_receipt,
+        manifest_path=V2_ROOT / "model-assets.draft.json",
+        manifest=manifest,
+        local_assets=assets,
+    )
     safety = platform_safety()
     boundary = result_boundary()
     readiness_failures: list[str] = []
@@ -255,12 +337,12 @@ def main() -> int:
         readiness_failures.append(f"{len(blockers)} design freeze blockers remain")
     if registration["status"] != "PUBLIC_DESIGN_FROZEN":
         readiness_failures.append("design is not an immutable public frozen release")
-    if not manifest_summary["fullSafetensorsBytesLocallyVerified"]:
+    if asset_receipt["verified"] is not True:
         readiness_failures.append("full safetensors bytes are not locally rehashed")
     if not assets["verified"]:
         readiness_failures.append("full local asset snapshot was not provided")
-    if sys.version_info[:3] != (3, 12, 13):
-        readiness_failures.append("interpreter is not pinned Python 3.12.13")
+    if sys.version_info[:3] != (3, 12, 10):
+        readiness_failures.append("interpreter is not pinned Python 3.12.10")
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         readiness_failures.append("primary one-shot requires macOS on arm64")
     else:
@@ -284,6 +366,7 @@ def main() -> int:
         "codec": codec,
         "assetManifest": manifest_summary,
         "localAssets": assets,
+        "assetReceipt": asset_receipt,
         "platformSafety": safety,
         "resultBoundary": boundary,
         "executionReady": not readiness_failures,

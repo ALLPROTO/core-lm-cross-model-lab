@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import sys
 from pathlib import Path
 
@@ -41,6 +42,15 @@ def main() -> int:
     registration_bytes = registration_path.read_bytes()
     registration = load_json_strict(registration_path)
     blockers = validate_design_registration(registration)
+    continuous_integration = registration["continuousIntegration"]
+    workflow_path = PROJECT_ROOT / continuous_integration["workflowPath"]
+    workflow_bytes = workflow_path.read_bytes()
+    if (
+        len(workflow_bytes) != continuous_integration["workflowFileBytes"]
+        or sha256_bytes(workflow_bytes)
+        != continuous_integration["workflowFileSHA256"]
+    ):
+        raise ValueError("tracked CI workflow bytes differ from the registered design")
     asset_manifest_path = V2_ROOT / "model-assets.draft.json"
     asset_manifest_bytes = asset_manifest_path.read_bytes()
     asset_manifest = load_json_strict(asset_manifest_path)
@@ -79,15 +89,16 @@ def main() -> int:
     if observed_draws != vector["expectedDrawsSHA256"]:
         raise ValueError("known-answer draw transcript mismatch")
 
-    # The development verifier intentionally has no path that can bless a
-    # freeze. A later, separately reviewed freeze validator must derive
-    # readiness from concrete local artifacts and public release identities.
+    # A concrete, fail-closed two-stage freeze validator now exists in
+    # freeze_manifest.py.  This draft still cannot become ready merely because
+    # the validator exists: every declared artifact and publication blocker
+    # must be discharged by independently reviewable inputs first.
     ready_to_freeze = False
     result = {
         "schemaVersion": "corelm-crossmodel-livewiki-v2-design-check-v1",
         "status": "DRAFT_VERIFIED_NOT_PREREGISTERED",
         "readyToFreeze": ready_to_freeze,
-        "freezeValidatorImplemented": False,
+        "freezeValidatorImplemented": True,
         "countsTowardScientificVerdict": False,
         "designRegistrationFileSHA256": sha256_bytes(registration_bytes),
         "canonicalDesignSHA256": sha256_bytes(canonical_json_bytes(registration)),
@@ -96,6 +107,12 @@ def main() -> int:
         "knownAnswerSelectionSHA256": observed_selection,
         "knownAnswerDrawsSHA256": observed_draws,
         "freezeBlockers": blockers,
+        "workflowFileBytes": len(workflow_bytes),
+        "workflowFileSHA256": sha256_bytes(workflow_bytes),
+        "platformSafety": {
+            "system": platform.system(),
+            "machine": platform.machine(),
+        },
         "networkUsed": False,
         "modelInferenceUsed": False,
         "corpusOpened": False,
@@ -103,8 +120,8 @@ def main() -> int:
     print(json.dumps(result, indent=2, sort_keys=True))
     if arguments.require_freezable and not ready_to_freeze:
         print(
-            f"NOT FREEZABLE: {len(blockers)} explicit blockers remain and the "
-            "concrete freeze validator is not implemented",
+            f"NOT FREEZABLE: {len(blockers)} explicit blockers remain; the "
+            "freeze validator cannot waive them",
             file=sys.stderr,
         )
         return 2

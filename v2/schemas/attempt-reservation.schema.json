@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v2/schemas/attempt-reservation.schema.json",
+  "title": "Core LM blind multi-model v2 durable attempt reservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "attemptId",
+    "status",
+    "createdAt",
+    "designSHA256",
+    "snapshotRegistrationSHA256",
+    "designPublicationReceiptSHA256",
+    "snapshotPublicationReceiptSHA256",
+    "privateSnapshotManifestSHA256",
+    "runtimeManifestSHA256",
+    "modelAssetSourceManifestSHA256",
+    "fullAssetReceiptSHA256",
+    "githubGateReceiptSHA256",
+    "corpusManifestSHA256",
+    "codecCommit",
+    "codecTree",
+    "labCommit",
+    "labTree",
+    "targetPulseTimestamp",
+    "countsTowardScientificVerdict",
+    "retryPermitted",
+    "reservationContentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v2-attempt-reservation-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v2"
+    },
+    "attemptId": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+    },
+    "status": {
+      "const": "RESERVED"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "designSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "snapshotRegistrationSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "designPublicationReceiptSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "snapshotPublicationReceiptSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "privateSnapshotManifestSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "runtimeManifestSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "modelAssetSourceManifestSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "fullAssetReceiptSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "githubGateReceiptSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "corpusManifestSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "codecCommit": {
+      "$ref": "#/$defs/gitObject"
+    },
+    "codecTree": {
+      "$ref": "#/$defs/gitObject"
+    },
+    "labCommit": {
+      "$ref": "#/$defs/gitObject"
+    },
+    "labTree": {
+      "$ref": "#/$defs/gitObject"
+    },
+    "targetPulseTimestamp": {
+      "const": "2026-08-27T18:00:00.000Z"
+    },
+    "countsTowardScientificVerdict": {
+      "const": false
+    },
+    "retryPermitted": {
+      "const": false
+    },
+    "reservationContentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "gitObject": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    }
+  }
+}

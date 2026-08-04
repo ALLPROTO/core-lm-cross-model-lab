@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "corelm-crossmodel-livewiki-v2-development-corpus-v1",
+  "status": "PINNED_REAL_CORPUS_WITH_EXPLICIT_REDISTRIBUTION_LICENSE",
+  "queriedAtUTC": "2026-08-03T23:02:05Z",
+  "datasetId": "UniversalDependencies/UD_English-PUD:r2.18:test",
+  "repository": "UniversalDependencies/UD_English-PUD",
+  "revision": "e173a1be1b442faf34e7d5a502189ad5d9d1e197",
+  "tree": "50f2ebe00ff016d2dca93f9bf6ee51c5f8493fde",
+  "releaseTag": "r2.18",
+  "split": "test",
+  "splitPurpose": "upstream test split reused only as a non-scientific development control; it is not a blind scientific test result",
+  "file": "en_pud-ud-test.conllu",
+  "format": "CoNLL-U",
+  "bytes": 1386858,
+  "sha256": "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa",
+  "sourceURL": "https://raw.githubusercontent.com/UniversalDependencies/UD_English-PUD/e173a1be1b442faf34e7d5a502189ad5d9d1e197/en_pud-ud-test.conllu",
+  "rows": 1000,
+  "rowExtraction": "exactly one '# text = ' value from each LF-delimited CoNLL-U sentence block; prefix removed; text otherwise unchanged",
+  "joinedTextBytes": 112419,
+  "joinedTextSHA256": "69dd039b37979f91b165981e92ae578067ecdf0db69bbee0a431c9f337c0f8ea",
+  "contentSynthetic": false,
+  "license": "CC-BY-SA-3.0",
+  "licenseFile": {
+    "path": "LICENSE.txt",
+    "bytes": 19556,
+    "sha256": "b278eb53fe50b8bb7fa0d90fb8536c35fdcaa80f9d63812cb51db539555d2a89",
+    "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_English-PUD/e173a1be1b442faf34e7d5a502189ad5d9d1e197/LICENSE.txt"
+  },
+  "readme": {
+    "path": "README.md",
+    "bytes": 6986,
+    "sha256": "9558eb70a6565a40e2ecf06d0f38c9f6117de0f0f8bc5021805bdce51ee0d67f",
+    "url": "https://raw.githubusercontent.com/UniversalDependencies/UD_English-PUD/e173a1be1b442faf34e7d5a502189ad5d9d1e197/README.md"
+  },
+  "redistributionObligations": {
+    "attributionRequired": true,
+    "shareAlikeRequired": true,
+    "licenseNoticeRequired": true,
+    "upstreamWarranty": "none"
+  }
+}

@@ -1,24 +1,40 @@
 # Real-data cross-model execution policy
 
-All result-producing runs in this repository must use the pinned real
-pretrained models and pinned real WikiText validation asset declared in
-`models.json`.
+Legacy root result-producing runs must use the pinned real pretrained models
+and pinned real WikiText validation asset declared in `models.json`. The v2
+development control instead uses the separately pinned UD English PUD r2.18
+CoNLL-U source and three models declared under `v2/`.
 
 Synthetic, generated, toy, mocked, or beacon inputs must not produce current
 benchmark metrics, PASS/FAIL claims, or publication evidence. Mocked values are
 permitted only in isolated unit, parser, security, and protocol-control tests;
 their outputs must never enter a result directory.
 
-The Linux workflow must keep the codec source fixed at commit
+The legacy root Linux workflow must keep the codec source fixed at commit
 `61afcf1a44007dec54bd1c56e3403bc74182a400`, use public validation blocks
 64 through 71, and execute every model in its own process. Do not tune the
 configuration, block range, thresholds, dtype, tokenizer, or dependency set
 between model cells.
 
-Every run is an exploratory public-validation regression. It is not blind,
-does not execute the beacon one-shot, does not count toward the Core LM frozen
-scientific verdict, and must not be described as proof of corpus-wide or
-LLM-wide generalization.
+Every run through that legacy root workflow is an exploratory
+public-validation regression. It is not blind, does not execute the beacon
+one-shot, does not count toward the Core LM frozen scientific verdict, and
+must not be described as proof of corpus-wide or LLM-wide generalization.
+
+The prospective `v2/` experiment is a separate execution contour. Its codec
+commit, real-corpus selection rule, model set, dependency locks, deadlines,
+and one-shot policy are governed exclusively by the frozen canonical design
+and `v2/PROTOCOL.md`. Before a public design freeze, only the single tracked
+non-scientific E2E control may run on the pinned UD English PUD r2.18 `test`
+split at `v2/.assets/ud-english-pud-r2.18/en_pud-ud-test.conllu`. That upstream
+test split is reused only as development input and is not the prospective
+scientific test corpus. Its diagnostics stay outside scientific result roots,
+cannot use future corpus/NIST/attempt state, and cannot be used for tuning.
+The corpus and reversible derivatives retain the upstream CC BY-SA 3.0
+attribution/share-alike obligations. After the freeze,
+only the durable runner may create the single scientific attempt; fixtures or
+legacy blocks 64 through 71 must never be substituted into that attempt or its
+evidence.
 
 Preserve negative cells and execution failures. Never average a failing model
 away, silently replace a failed model or asset, or convert a diagnostic FAIL

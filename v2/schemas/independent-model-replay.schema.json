@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v2/schemas/independent-model-replay.schema.json",
+  "title": "Core LM blind multi-model v2 independent real-model replay summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "attemptId",
+    "modelOrder",
+    "selectedCorpora",
+    "execution",
+    "runtime",
+    "models",
+    "totalReplayedPages",
+    "totalReplayedPredictions",
+    "totalReplayedContainers",
+    "exactTokenIds",
+    "exactLossFloat32Bits",
+    "exactTop1TokenIds",
+    "allContainerInputsBoundToBaselineCache",
+    "replayComplete",
+    "countsTowardScientificVerdict",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v2-independent-model-replay-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v2"
+    },
+    "attemptId": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+    },
+    "modelOrder": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/modelKey"}
+    },
+    "selectedCorpora": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/corpusProject"}
+    },
+    "execution": {"$ref": "#/$defs/execution"},
+    "runtime": {"$ref": "#/$defs/runtime"},
+    "models": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/modelReplay"}
+    },
+    "totalReplayedPages": {"const": 96},
+    "totalReplayedPredictions": {"const": 12288},
+    "totalReplayedContainers": {"const": 2048},
+    "exactTokenIds": {"const": true},
+    "exactLossFloat32Bits": {"const": true},
+    "exactTop1TokenIds": {"const": true},
+    "allContainerInputsBoundToBaselineCache": {"const": true},
+    "replayComplete": {"const": true},
+    "countsTowardScientificVerdict": {"const": true},
+    "contentSHA256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "modelKey": {
+      "enum": ["gpt-neo-125m", "smollm2-360m", "tiny-starcoder-py"]
+    },
+    "corpusProject": {
+      "enum": ["de.wikipedia.org", "en.wikipedia.org", "fr.wikipedia.org"]
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device",
+        "modelDtype",
+        "baselineCache",
+        "deterministicAlgorithms",
+        "intraOpThreads",
+        "interOpThreads",
+        "modelsSequential",
+        "networkUsed",
+        "fixtureBackendUsed"
+      ],
+      "properties": {
+        "device": {"const": "cpu"},
+        "modelDtype": {"const": "float32"},
+        "baselineCache": {"const": "bfloat16-roundtrip-to-float32"},
+        "deterministicAlgorithms": {"const": true},
+        "intraOpThreads": {"const": 2},
+        "interOpThreads": {"const": 1},
+        "modelsSequential": {"const": true},
+        "networkUsed": {"const": false},
+        "fixtureBackendUsed": {"const": false}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numpy", "safetensors", "tokenizers", "torch", "transformers"],
+      "properties": {
+        "numpy": {"type": "string", "minLength": 1},
+        "safetensors": {"type": "string", "minLength": 1},
+        "tokenizers": {"type": "string", "minLength": 1},
+        "torch": {"type": "string", "minLength": 1},
+        "transformers": {"type": "string", "minLength": 1}
+      }
+    },
+    "modelReplay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelKey",
+        "modelFileSetSHA256",
+        "weightSHA256",
+        "tokenizerSHA256",
+        "corpusRecordSetSHA256",
+        "rawTokenEvidenceSHA256",
+        "pageTokenEvidenceSHA256",
+        "containerEvidenceSHA256",
+        "containerByteSetSHA256",
+        "pageReplaySHA256",
+        "replayedPages",
+        "replayedPredictions",
+        "replayedContainers",
+        "exactTokenIds",
+        "exactLossFloat32Bits",
+        "exactTop1TokenIds",
+        "allContainerInputsBoundToBaselineCache"
+      ],
+      "properties": {
+        "modelKey": {"$ref": "#/$defs/modelKey"},
+        "modelFileSetSHA256": {"$ref": "#/$defs/sha256"},
+        "weightSHA256": {"$ref": "#/$defs/sha256"},
+        "tokenizerSHA256": {"$ref": "#/$defs/sha256"},
+        "corpusRecordSetSHA256": {"$ref": "#/$defs/sha256"},
+        "rawTokenEvidenceSHA256": {"$ref": "#/$defs/sha256"},
+        "pageTokenEvidenceSHA256": {"$ref": "#/$defs/sha256"},
+        "containerEvidenceSHA256": {"$ref": "#/$defs/sha256"},
+        "containerByteSetSHA256": {"$ref": "#/$defs/sha256"},
+        "pageReplaySHA256": {"$ref": "#/$defs/sha256"},
+        "replayedPages": {"const": 32},
+        "replayedPredictions": {"const": 4096},
+        "replayedContainers": {"type": "integer", "minimum": 32},
+        "exactTokenIds": {"const": true},
+        "exactLossFloat32Bits": {"const": true},
+        "exactTop1TokenIds": {"const": true},
+        "allContainerInputsBoundToBaselineCache": {"const": true}
+      }
+    }
+  }
+}

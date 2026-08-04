@@ -4,6 +4,24 @@ on:
   pull_request:
     paths:
       - "v2/**"
+      - "AGENTS.md"
+      - "CITATION.cff"
+      - "LICENSE"
+      - "NOTICE.md"
+      - "README.md"
+      - ".gitignore"
+      - "LICENSES/**"
+      - ".github/workflows/v2-development-controls.yml"
+  push:
+    paths:
+      - "v2/**"
+      - "AGENTS.md"
+      - "CITATION.cff"
+      - "LICENSE"
+      - "NOTICE.md"
+      - "README.md"
+      - ".gitignore"
+      - "LICENSES/**"
       - ".github/workflows/v2-development-controls.yml"
   workflow_dispatch:
 
@@ -14,16 +32,22 @@ concurrency:
   group: blind-v2-development-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  DO_NOT_TRACK: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  PYTHONDONTWRITEBYTECODE: "1"
+
 jobs:
-  offline-controls:
+  linux-locked-runtime:
+    name: Linux x86-64 locked runtime
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    env:
-      PYTHONDONTWRITEBYTECODE: "1"
+    timeout-minutes: 60
     steps:
       - name: Check out the lab source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Check out the exact codec source
@@ -38,27 +62,76 @@ jobs:
       - name: Set up the registered Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.12.13"
+          python-version: "3.12.10"
 
-      - name: Run dependency-free protocol controls
+      - name: Assert hosted runner architecture
         shell: bash
         run: |
           set -euo pipefail
-          python -m unittest discover -s v2/tests -v
-          python v2/verify_design.py
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+
+      - name: Build the exact asset-free Linux runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/corelm-v2-linux-runtime"
+          sh v2/bootstrap_runtime.sh \
+            --platform linux \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            --runtime "$runtime" \
+            --python "$(command -v python)"
+          printf 'V2_RUNTIME=%s\n' "$runtime" >> "$GITHUB_ENV"
+
+      - name: Acquire and pin the Linux release-attestation verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          cosign="$RUNNER_TEMP/cosign-v3.0.6-linux-amd64"
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --output "$cosign" \
+            https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64
+          test "$(wc -c <"$cosign" | tr -d '[:space:]')" = 135178161
+          printf '%s  %s\n' \
+            c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74 \
+            "$cosign" | sha256sum --check --strict
+          chmod 0700 "$cosign"
+          printf 'COSIGN_BINARY=%s\n' "$cosign" >> "$GITHUB_ENV"
+
+      - name: Enforce all protocol and adapter controls with zero skips
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$V2_RUNTIME/bin/python" -I -B v2/run_zero_skip_tests.py \
+            2>&1 | tee "$RUNNER_TEMP/v2-zero-skip-linux.log"
+          "$V2_RUNTIME/bin/python" -I -B v2/verify_design.py \
+            | tee "$RUNNER_TEMP/v2-design-check-linux.json"
+          test -x /usr/bin/unshare
+          sudo -n /usr/bin/unshare --net -- \
+            /usr/bin/env \
+            HTTP_PROXY=http://127.0.0.1:9 \
+            HTTPS_PROXY=http://127.0.0.1:9 \
+            ALL_PROXY=http://127.0.0.1:9 \
+            NO_PROXY= \
+            "$V2_RUNTIME/bin/python" -I -B \
+            v2/tests/integration_release_attestation_crypto_known_answer.py \
+            --cosign "$COSIGN_BINARY" \
+            --network-isolation LINUX_UNSHARE_NETWORK_NAMESPACE \
+            | tee "$RUNNER_TEMP/v2-release-attestation-known-answer-linux.json"
 
       - name: Prove that the development draft fails closed
         shell: bash
         run: |
           set -euo pipefail
           set +e
-          python v2/verify_design.py --require-freezable >/dev/null
+          "$V2_RUNTIME/bin/python" -I -B v2/verify_design.py \
+            --require-freezable >/dev/null
           freeze_rc=$?
           set -e
           test "$freeze_rc" -eq 2
 
           set +e
-          python v2/preflight.py \
+          "$V2_RUNTIME/bin/python" -I -B v2/preflight.py \
             --codec-root "$GITHUB_WORKSPACE/codec-source" \
             --require-execution-ready >/dev/null
           preflight_rc=$?
@@ -69,10 +142,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python v2/preflight.py \
+          "$V2_RUNTIME/bin/python" -I -B v2/preflight.py \
             --codec-root "$GITHUB_WORKSPACE/codec-source" \
-            >"$RUNNER_TEMP/v2-preflight.json"
-          python - "$RUNNER_TEMP/v2-preflight.json" <<'PY'
+            >"$RUNNER_TEMP/v2-preflight-linux.json"
+          "$V2_RUNTIME/bin/python" -I -B - \
+            "$RUNNER_TEMP/v2-preflight-linux.json" <<'PY'
           import json
           import pathlib
           import sys
@@ -83,6 +157,163 @@ jobs:
           assert report["networkUsed"] is False
           assert report["modelInferenceUsed"] is False
           assert report["corpusOpened"] is False
+          assert report["platformSafety"]["system"] == "Linux"
+          assert report["platformSafety"]["machine"] == "x86_64"
           assert report["codec"]["commit"] == "2e8d3b1591ee4a1ed822310f330317936871ff2b"
           assert report["codec"]["tree"] == "c0bb15784d252cd5036757bc64765c773a5f16e8"
           PY
+
+      - name: Inventory the complete Linux runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$V2_RUNTIME/bin/python" -I -B v2/create_runtime_manifest.py \
+            --runtime-root "$V2_RUNTIME" \
+            --requirements-lock "$GITHUB_WORKSPACE/codec-source/.github/locks/pip-bootstrap.txt" \
+            --requirements-lock "$GITHUB_WORKSPACE/codec-source/.github/locks/real-llm-linux-cpu-py312.txt" \
+            --requirements-lock "$GITHUB_WORKSPACE/codec-source/.github/locks/torch-linux-cpu-py312.txt" \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            --require-clean-git \
+            --output "$RUNNER_TEMP/v2-runtime-linux.json"
+
+      - name: Upload development provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: blind-v2-linux-development-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/v2-preflight-linux.json
+            ${{ runner.temp }}/v2-runtime-linux.json
+            ${{ runner.temp }}/v2-zero-skip-linux.log
+            ${{ runner.temp }}/v2-design-check-linux.json
+            ${{ runner.temp }}/v2-release-attestation-known-answer-linux.json
+          if-no-files-found: error
+          retention-days: 90
+
+  macos-arm64-clean-clone:
+    name: macOS arm64 clean clone
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Check out the lab source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check out the exact codec source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ALLPROTO/core-lm-benchmark
+          ref: 2e8d3b1591ee4a1ed822310f330317936871ff2b
+          path: codec-source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up the registered Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+
+      - name: Assert hosted runner architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -s)" = Darwin
+          test "$(uname -m)" = arm64
+
+      - name: Build the exact asset-free macOS runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/corelm-v2-macos-runtime"
+          sh v2/bootstrap_runtime.sh \
+            --platform macos \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            --runtime "$runtime" \
+            --python "$(command -v python)"
+          printf 'V2_RUNTIME=%s\n' "$runtime" >> "$GITHUB_ENV"
+
+      - name: Acquire and pin the macOS release-attestation verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          cosign="$RUNNER_TEMP/cosign-v3.0.6-darwin-arm64"
+          curl --proto '=https' --tlsv1.2 --fail --location --silent --show-error \
+            --output "$cosign" \
+            https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-darwin-arm64
+          test "$(wc -c <"$cosign" | tr -d '[:space:]')" = 134320242
+          printf '%s  %s\n' \
+            5fadd012ae6381a6a29ff86a7d39aa873878852f1073fc90b15995961ecfb084 \
+            "$cosign" | shasum -a 256 --check
+          chmod 0700 "$cosign"
+          printf 'COSIGN_BINARY=%s\n' "$cosign" >> "$GITHUB_ENV"
+
+      - name: Enforce all protocol and adapter controls with zero skips
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$V2_RUNTIME/bin/python" -I -B v2/run_zero_skip_tests.py \
+            2>&1 | tee "$RUNNER_TEMP/v2-zero-skip-macos.log"
+          "$V2_RUNTIME/bin/python" -I -B v2/verify_design.py \
+            | tee "$RUNNER_TEMP/v2-design-check-macos.json"
+          test -x /usr/bin/sandbox-exec
+          /usr/bin/sandbox-exec \
+            -p '(version 1)(allow default)(deny network*)' \
+            /usr/bin/env \
+            HTTP_PROXY=http://127.0.0.1:9 \
+            HTTPS_PROXY=http://127.0.0.1:9 \
+            ALL_PROXY=http://127.0.0.1:9 \
+            NO_PROXY= \
+            "$V2_RUNTIME/bin/python" -I -B \
+            v2/tests/integration_release_attestation_crypto_known_answer.py \
+            --cosign "$COSIGN_BINARY" \
+            --network-isolation MACOS_SANDBOX_DENY_NETWORK \
+            | tee "$RUNNER_TEMP/v2-release-attestation-known-answer-macos.json"
+
+      - name: Verify the read-only macOS development preflight
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$V2_RUNTIME/bin/python" -I -B v2/preflight.py \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            >"$RUNNER_TEMP/v2-preflight-macos.json"
+          "$V2_RUNTIME/bin/python" -I -B - \
+            "$RUNNER_TEMP/v2-preflight-macos.json" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          report = json.loads(pathlib.Path(sys.argv[1]).read_text())
+          assert report["status"] == "DEVELOPMENT_PREFLIGHT_ONLY"
+          assert report["executionReady"] is False
+          assert report["networkUsed"] is False
+          assert report["modelInferenceUsed"] is False
+          assert report["corpusOpened"] is False
+          assert report["platformSafety"]["system"] == "Darwin"
+          assert report["platformSafety"]["machine"] == "arm64"
+          PY
+
+      - name: Inventory the complete macOS runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$V2_RUNTIME/bin/python" -I -B v2/create_runtime_manifest.py \
+            --runtime-root "$V2_RUNTIME" \
+            --requirements-lock "$GITHUB_WORKSPACE/codec-source/.github/locks/pip-bootstrap.txt" \
+            --requirements-lock "$GITHUB_WORKSPACE/codec-source/RealLLM/requirements.lock" \
+            --codec-root "$GITHUB_WORKSPACE/codec-source" \
+            --require-clean-git \
+            --output "$RUNNER_TEMP/v2-runtime-macos.json"
+
+      - name: Upload development provenance
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: blind-v2-macos-development-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/v2-preflight-macos.json
+            ${{ runner.temp }}/v2-runtime-macos.json
+            ${{ runner.temp }}/v2-zero-skip-macos.log
+            ${{ runner.temp }}/v2-design-check-macos.json
+            ${{ runner.temp }}/v2-release-attestation-known-answer-macos.json
+          if-no-files-found: error
+          retention-days: 90

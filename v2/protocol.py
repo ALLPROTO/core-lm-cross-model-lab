@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
@@ -33,12 +34,17 @@ EXPECTED_TOP_LEVEL_FIELDS = {
     "countsTowardScientificVerdict",
     "claim",
     "scientificBoundary",
+    "developmentControls",
     "designRelease",
     "futureCorpus",
     "snapshotRelease",
+    "evidenceRelease",
+    "closeoutRelease",
+    "reschedulePolicy",
     "codecSource",
     "labSource",
     "runtime",
+    "continuousIntegration",
     "models",
     "candidate",
     "execution",
@@ -63,6 +69,120 @@ SNAPSHOT_RELEASE_NOT_BEFORE = datetime(2026, 8, 25, 6, tzinfo=timezone.utc)
 SNAPSHOT_RELEASE_DEADLINE = datetime(2026, 8, 26, 18, tzinfo=timezone.utc)
 MODEL_AGGREGATE_T = 1.6955187825458675
 MODEL_AGGREGATE_Z = 1.6448536269514715
+EXPECTED_DEVELOPMENT_CONTROLS = {
+    "status": "NON_SCIENTIFIC_PRE_FREEZE_ONLY",
+    "dataset": {
+        "datasetId": "UniversalDependencies/UD_English-PUD:r2.18:test",
+        "repository": "UniversalDependencies/UD_English-PUD",
+        "revision": "e173a1be1b442faf34e7d5a502189ad5d9d1e197",
+        "tree": "50f2ebe00ff016d2dca93f9bf6ee51c5f8493fde",
+        "releaseTag": "r2.18",
+        "split": "test",
+        "splitPurpose": (
+            "upstream test split reused only as a non-scientific development "
+            "control; it is not a blind scientific test result"
+        ),
+        "file": "en_pud-ud-test.conllu",
+        "format": "CoNLL-U",
+        "bytes": 1_386_858,
+        "sha256": "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa",
+        "rows": 1_000,
+        "rowExtraction": (
+            "exactly one '# text = ' value from each LF-delimited CoNLL-U "
+            "sentence block; prefix removed; text otherwise unchanged"
+        ),
+        "joinedTextBytes": 112_419,
+        "joinedTextSHA256": (
+            "69dd039b37979f91b165981e92ae578067ecdf0db69bbee0a431c9f337c0f8ea"
+        ),
+        "license": "CC-BY-SA-3.0",
+        "manifestPath": "v2/development-corpus.draft.json",
+        "manifestBytes": 1_985,
+        "manifestSHA256": "ce46322376c6795606ef9d651290f5db303a6bcf09075dfcada7db1a729ef402",
+    },
+    "allowedEntryPoints": [
+        {
+            "path": "v2/run_real_e2e_control.py",
+            "control": "producer-vtl5-independent-replay",
+            "candidateCodecInvoked": True,
+            "candidateMetricsComputed": True,
+        },
+    ],
+    "realPretrainedModelsRequired": True,
+    "realCorpusBytesRequired": True,
+    "syntheticInputsForbidden": True,
+    "futureCorpusUsed": False,
+    "nistUsed": False,
+    "scientificAttemptStateCreated": False,
+    "scientificResultRootUsed": False,
+    "countsTowardScientificVerdict": False,
+    "usedForCandidateSelectionOrTuning": False,
+    "configurationChangesAfterOutcome": "NEW_SUITE_AND_COMPLETE_TIMELINE_REQUIRED",
+    "unitFixtureBoundary": "ISOLATED_NON_RESULT_PROTOCOL_TESTS_ONLY",
+    "realDataE2EFreezeGate": {
+        "required": True,
+        "reportSchemaVersion": (
+            "corelm-crossmodel-v2-real-e2e-development-report-v1"
+        ),
+        "reportFileName": "development-control-report.json",
+        "completeNoLaterThan": "2026-08-09T00:00:00Z",
+        "serverTimestampedArchiveRequired": True,
+        "archiveTag": "corelm-crossmodel-livewiki-v2-development-control",
+        "archiveRequiredAssetRoles": [
+            "development-control-report",
+            "development-control-artifacts",
+            "sha256-manifest",
+        ],
+        "status": "UNBOUND_DRAFT",
+        "executionId": None,
+        "archiveReceiptSHA256": None,
+        "archivePublishedAt": None,
+        "archiveAttestedAt": None,
+        "releaseAttestationBundleSHA256": None,
+        "releaseAttestationOutputSHA256": None,
+        "reportSHA256": None,
+        "artifactSetSHA256": None,
+        "controlConfigurationSHA256": None,
+        "completedAt": None,
+    },
+}
+EXPECTED_CONTINUOUS_INTEGRATION = {
+    "workflowName": "Blind v2 development controls",
+    "workflowPath": ".github/workflows/v2-development-controls.yml",
+    "workflowFileBytes": 12487,
+    "workflowFileSHA256": (
+        "b9215fec0922fd8462ba5e8de83d6406a7e8fbd1f0c05adff05d0b406da92dbb"
+    ),
+    "requiredReviewDeclaration": (
+        "I independently reviewed the normative protocol, canonical schemas, "
+        "fail-closed implementation, zero-skip tests, and evidence plan on this "
+        "exact commit. I have no undisclosed conflict of interest with the "
+        "repository owner. I found no unresolved P0 blocker and approve freeze "
+        "publication."
+    ),
+    "reviewerMustDifferFromRepositoryOwner": True,
+    "githubAccountIdentityBoundary": (
+        "authenticated-account-statement-not-real-world-identity-or-conflict-proof"
+    ),
+    "allReturnedJobsMustCompleteSuccess": True,
+    "zeroSkippedOrCancelledJobs": True,
+    "gateReceiptArtifactBytesArchived": False,
+    "ciArtifactBytesMustBeArchivedSeparately": True,
+    "requiredJobs": [
+        {
+            "jobName": "Linux x86-64 locked runtime",
+            "runnerLabel": "ubuntu-24.04",
+            "system": "Linux",
+            "machine": "x86_64",
+        },
+        {
+            "jobName": "macOS arm64 clean clone",
+            "runnerLabel": "macos-15",
+            "system": "Darwin",
+            "machine": "arm64",
+        },
+    ],
+}
 
 
 def canonical_json_bytes(value: Any) -> bytes:
@@ -296,12 +416,13 @@ def validate_snapshot_registration(snapshot: Any, *, allow_fixture: bool) -> Non
         "schemaVersion",
         "suiteId",
         "status",
-        "designRelease",
-        "snapshotRelease",
+        "designPublicationReceiptSHA256",
+        "snapshotReleasePlan",
         "projects",
         "models",
         "ledgers",
-        "modelAssetManifestSHA256",
+        "modelAssetSourceManifestSHA256",
+        "fullAssetReceiptSHA256",
         "corpusManifestSHA256",
         "createdAt",
     }
@@ -309,61 +430,35 @@ def validate_snapshot_registration(snapshot: Any, *, allow_fixture: bool) -> Non
         raise ValueError("snapshot registration fields differ")
     if snapshot.get("suiteId") != SUITE_ID:
         raise ValueError("snapshot suiteId differs")
-    if snapshot.get("status") != "PUBLIC_SNAPSHOT_FROZEN":
-        raise ValueError("snapshot is not in the frozen public state")
+    if snapshot.get("status") != "SNAPSHOT_FROZEN_READY_FOR_PUBLICATION":
+        raise ValueError("snapshot is not in the frozen pre-publication state")
     if snapshot.get("projects") != PROJECTS:
         raise ValueError("snapshot projects differ")
     if snapshot.get("models") != MODELS:
         raise ValueError("snapshot models differ")
-    release_fields = {
-        "tag",
-        "commit",
-        "tree",
-        "publishedAt",
-        "freezeManifestSHA256",
+    expected_release_plan = {
+        "tag": "corelm-crossmodel-livewiki-v2-snapshot",
+        "publishNoLaterThan": "2026-08-26T18:00:00Z",
+        "serverTimestampRequired": True,
+        "immutableReleaseRequired": True,
+        "signedAnnotatedTagRequired": True,
     }
-    release_times: dict[str, datetime] = {}
-    for field, expected_tag in (
-        ("designRelease", "corelm-crossmodel-livewiki-v2-design"),
-        ("snapshotRelease", "corelm-crossmodel-livewiki-v2-snapshot"),
-    ):
-        release = snapshot.get(field)
-        if not isinstance(release, dict) or set(release) != release_fields:
-            raise ValueError(f"snapshot {field} fields differ")
-        if release.get("tag") != expected_tag:
-            raise ValueError(f"snapshot {field} tag differs")
-        for identity in ("commit", "tree"):
-            if not isinstance(release.get(identity), str) or not re.fullmatch(
-                r"[0-9a-f]{40}", release[identity]
-            ):
-                raise ValueError(f"snapshot {field} {identity} is invalid")
-        if not isinstance(release.get("freezeManifestSHA256"), str) or not re.fullmatch(
-            r"[0-9a-f]{64}", release["freezeManifestSHA256"]
-        ):
-            raise ValueError(f"snapshot {field} manifest digest is invalid")
-        release_times[field] = _parse_utc_seconds(
-            release.get("publishedAt"), label=f"snapshot {field} publishedAt"
-        )
-    if release_times["designRelease"] > DESIGN_RELEASE_DEADLINE:
-        raise ValueError("design release missed its registered deadline")
-    if not (
-        SNAPSHOT_RELEASE_NOT_BEFORE
-        <= release_times["snapshotRelease"]
-        <= SNAPSHOT_RELEASE_DEADLINE
-    ):
-        raise ValueError("snapshot release is outside its registered window")
+    if snapshot.get("snapshotReleasePlan") != expected_release_plan:
+        raise ValueError("snapshot release plan differs")
     created_at = _parse_utc_seconds(
         snapshot.get("createdAt"), label="snapshot createdAt"
     )
     if created_at < SNAPSHOT_RELEASE_NOT_BEFORE:
         raise ValueError("snapshot was created before the second registered crawl")
-    if created_at > release_times["snapshotRelease"]:
-        raise ValueError("snapshot cannot be created after its public release")
+    if created_at > SNAPSHOT_RELEASE_DEADLINE:
+        raise ValueError("snapshot was created after its registered release deadline")
     ledgers = snapshot.get("ledgers")
     if not isinstance(ledgers, dict) or set(ledgers) != set(PROJECTS):
         raise ValueError("snapshot ledger commitments differ")
     digests = [
-        snapshot.get("modelAssetManifestSHA256"),
+        snapshot.get("designPublicationReceiptSHA256"),
+        snapshot.get("modelAssetSourceManifestSHA256"),
+        snapshot.get("fullAssetReceiptSHA256"),
         snapshot.get("corpusManifestSHA256"),
         *ledgers.values(),
     ]
@@ -549,14 +644,34 @@ def validate_design_registration(registration: Any) -> list[str]:
         raise ValueError("unexpected suiteId")
     if registration.get("countsTowardScientificVerdict") is not False:
         raise ValueError("unpublished design must not count toward a scientific verdict")
-    for field in ("claim", "scientificBoundary"):
-        if not isinstance(registration.get(field), str) or not registration[field]:
-            raise ValueError(f"design text field is empty: {field}")
+    expected_claim = (
+        "One codec candidate fixed before corpus creation meets every registered "
+        "cell and model gate on each exact registered model in two NIST-selected "
+        "samples of sixteen eligible future Wikipedia creation revisions."
+    )
+    expected_scientific_boundary = (
+        "A PASS applies only to the exact three registered model revisions, the "
+        "thirty-two selected creation revisions, future-corpus snapshot, selection "
+        "pulse, candidate, runtime, codec, and metrics. It is not a claim about "
+        "either complete language-edition corpus, all Wikipedia, all LLMs, all "
+        "text, latency, throughput, weight compression, or state of the art."
+    )
+    if registration.get("claim") != expected_claim:
+        raise ValueError("scientific claim boundary differs")
+    if registration.get("scientificBoundary") != expected_scientific_boundary:
+        raise ValueError("scientific interpretation boundary differs")
+    if registration.get("developmentControls") != EXPECTED_DEVELOPMENT_CONTROLS:
+        raise ValueError("non-scientific development-control boundary differs")
     expected_design_release = {
         "tag": "corelm-crossmodel-livewiki-v2-design",
         "publishNoLaterThan": "2026-08-09T00:00:00Z",
+        "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
         "serverTimestampRequired": True,
         "immutableReleaseRequired": True,
+        "signedAnnotatedTagRequired": True,
+        "signatureType": "SSH",
+        "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+        "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c",
     }
     if registration.get("designRelease") != expected_design_release:
         raise ValueError("design release boundary differs")
@@ -582,6 +697,25 @@ def validate_design_registration(registration: Any) -> list[str]:
             "addSpecialTokens": False,
             "minimumTokensUnderEveryRegisteredTokenizer": 512,
         },
+        "prospectiveHoldout": {
+            "claimType": "PROSPECTIVE_BEACON_SELECTED_HOLDOUT",
+            "operatorBlindnessClaimed": False,
+            "futureCorpusUnavailableAtDesignFreeze": True,
+            "exactSelectionUnavailableUntilTargetPulse": True,
+            "preAttemptModelInferenceOnEligibleRecords": (
+                "FORBIDDEN_FROM_FIRST_COLLECTION_THROUGH_ATTEMPT_MARKER"
+            ),
+            "metricOrCandidateTuningUsingEligibleRecords": "FORBIDDEN",
+            "permittedPreAttemptProcessing": [
+                "collection",
+                "eligibility-validation",
+                "canonicalization",
+                "tokenization-for-minimum-length-only",
+                "hashing",
+                "packaging",
+            ],
+            "behavioralComplianceCryptographicallyAttested": False,
+        },
         "license": "CC-BY-SA-4.0",
         "attributionLedgerRequired": True,
     }
@@ -593,11 +727,70 @@ def validate_design_registration(registration: Any) -> list[str]:
     expected_snapshot_release = {
         "tag": "corelm-crossmodel-livewiki-v2-snapshot",
         "publishNoLaterThan": "2026-08-26T18:00:00Z",
+        "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
         "serverTimestampRequired": True,
         "immutableReleaseRequired": True,
+        "signedAnnotatedTagRequired": True,
+        "signatureType": "SSH",
+        "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+        "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c",
     }
     if registration.get("snapshotRelease") != expected_snapshot_release:
         raise ValueError("snapshot release boundary differs")
+    expected_evidence_release = {
+        "tag": "corelm-crossmodel-livewiki-v2-evidence",
+        "publishNoLaterThan": "2026-09-01T18:00:00Z",
+        "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
+        "serverTimestampRequired": True,
+        "immutableReleaseRequired": True,
+        "signedAnnotatedTagRequired": True,
+        "signatureType": "SSH",
+        "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+        "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c",
+    }
+    if registration.get("evidenceRelease") != expected_evidence_release:
+        raise ValueError("evidence release boundary differs")
+    expected_closeout_release = {
+        "tag": "corelm-crossmodel-livewiki-v2-closeout",
+        "publishNoLaterThan": "2026-09-08T18:00:00Z",
+        "sourcePolicy": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE",
+        "serverTimestampRequired": True,
+        "immutableReleaseRequired": True,
+        "signedAnnotatedTagRequired": True,
+        "signatureType": "SSH",
+        "signingKeyFingerprint": "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM",
+        "signingPublicKeySHA256": "7e0fab5da5fd49258faebf8b2f581b517159c0290aaff2fb1f79c77c9febba3c",
+    }
+    if registration.get("closeoutRelease") != expected_closeout_release:
+        raise ValueError("closeout release boundary differs")
+    expected_reschedule_policy = {
+        "decisionCheckpoint": "2026-08-08T12:00:00Z",
+        "requiredStateAtCheckpoint": (
+            "all pre-publication P0 inputs complete; independent review and exact-commit "
+            "CI observed through direct verified TLS and archived with no GitHub response "
+            "signature and offline structural-consistency-only verification; only immutable "
+            "design publication remains"
+        ),
+        "actionIfNotReady": "DO_NOT_FREEZE_OR_PUBLISH_THIS_SUITE",
+        "newSuiteIdRequired": True,
+        "minimumLeadTimesMustBePreserved": True,
+        "moveTogether": [
+            "designRelease.publishNoLaterThan",
+            "futureCorpus.creationInterval",
+            "futureCorpus.firstCrawlNotBefore",
+            "futureCorpus.secondCrawlNotBefore",
+            "snapshotRelease.publishNoLaterThan",
+            "beacon.targetTimestamp",
+            "beacon.targetUnixMilliseconds",
+            "beacon.pulseEndpoint",
+            "execution.oneShotNotBefore",
+            "execution.hardDeadline",
+            "evidenceRelease.publishNoLaterThan",
+            "closeoutRelease.publishNoLaterThan",
+        ],
+    }
+    if registration.get("reschedulePolicy") != expected_reschedule_policy:
+        raise ValueError("whole-window reschedule policy differs")
     expected_codec_source = {
         "repository": "https://github.com/ALLPROTO/core-lm-benchmark.git",
         "commit": "2e8d3b1591ee4a1ed822310f330317936871ff2b",
@@ -639,15 +832,18 @@ def validate_design_registration(registration: Any) -> list[str]:
     if lab_source != expected_lab_source:
         raise ValueError("draft lab source boundary differs")
     expected_runtime = {
-        "python": "3.12.13",
+        "python": "3.12.10",
         "primaryPlatform": "macOS-arm64-local-offline",
-        "postEvidenceReplication": "Linux-x86_64-GitHub-Actions",
+        "postEvidenceReplication": "NOT_IMPLEMENTED_OR_REGISTERED",
+        "pipBootstrapLockSHA256": "587c4946469d33bb2e83b0d34cbe54d0c4c4799896e5af672331e108743f1fca",
         "requirementsLockSHA256": "e731ab2076b171d731b42ee8609d5943954911a10c92564ab52b7bed7a9fa561",
         "status": "UNBOUND_DRAFT",
         "runtimeManifestSHA256": None,
     }
     if runtime != expected_runtime:
         raise ValueError("draft runtime boundary differs")
+    if registration.get("continuousIntegration") != EXPECTED_CONTINUOUS_INTEGRATION:
+        raise ValueError("continuous integration/review boundary differs")
     models = registration.get("models")
     if not isinstance(models, list) or len(models) != 3:
         raise ValueError("exactly three model specifications are required")
@@ -664,13 +860,14 @@ def validate_design_registration(registration: Any) -> list[str]:
         "architecture",
         "layers",
         "kvHeads",
+        "vocabSize",
         "weightFile",
         "weightBytes",
         "weightSHA256",
         "license",
         "candidateBitsByLayer",
         "candidateConfigurationSHA256",
-        "previouslyRunByThisLab",
+        "usedForCandidateSelectionOrTuning",
     }
     expected_models = {
         "gpt-neo-125m": {
@@ -679,6 +876,7 @@ def validate_design_registration(registration: Any) -> list[str]:
             "architecture": "gpt-neo-mixed-global-local",
             "layers": 12,
             "kvHeads": 12,
+            "vocabSize": 50257,
             "weightBytes": 525979192,
             "weightSHA256": "52738cbfb54e25a232598242f60ef19ee193d36090b98fe649b10c02724b3521",
             "license": "mit",
@@ -689,6 +887,7 @@ def validate_design_registration(registration: Any) -> list[str]:
             "architecture": "llama-gqa",
             "layers": 32,
             "kvHeads": 5,
+            "vocabSize": 49152,
             "weightBytes": 723674912,
             "weightSHA256": "7aaff6661428bed033abba9522bec81938678642cca3181fe752b6ca9e1e540f",
             "license": "apache-2.0",
@@ -699,6 +898,7 @@ def validate_design_registration(registration: Any) -> list[str]:
             "architecture": "gpt-bigcode-mqa",
             "layers": 20,
             "kvHeads": 1,
+            "vocabSize": 49152,
             "weightBytes": 656601304,
             "weightSHA256": "15fa942f055b618d5ca6283f5c27278a475ff12e53dc704b9658ffd5160d4021",
             "license": "bigcode-openrail-m",
@@ -715,8 +915,8 @@ def validate_design_registration(registration: Any) -> list[str]:
                 raise ValueError(f"model field differs: {model.get('key')}/{field}")
         if model.get("weightFile") != "model.safetensors":
             raise ValueError(f"unsafe weight file: {model.get('key')}")
-        if model.get("previouslyRunByThisLab") is not False:
-            raise ValueError("every v2 model must remain previously unrun")
+        if model.get("usedForCandidateSelectionOrTuning") is not False:
+            raise ValueError("v2 model was used for candidate selection or tuning")
         if not re.fullmatch(r"[0-9a-f]{40}", str(model.get("revision", ""))):
             raise ValueError(f"model revision is not a full commit: {model.get('key')}")
         if not re.fullmatch(r"[0-9a-f]{64}", str(model.get("weightSHA256", ""))):
@@ -756,14 +956,55 @@ def validate_design_registration(registration: Any) -> list[str]:
         "attentionImplementation": "eager",
         "prefillTokens": 383,
         "predictionTokensPerPage": 128,
-        "modelProcessIsolation": "one-model-per-process",
+        "modelProcessIsolation": "producer-one-model-per-process; independent verifier loads one model at a time sequentially",
         "acPowerRequired": True,
         "minimumFreeMemoryPercent": 50,
+        "maximumWorkerRSSBytes": 4294967296,
+        "watchdogPollMilliseconds": 250,
+        "minimumFreeDiskBytes": 12884901888,
         "deterministicAlgorithms": "fail-closed",
-        "networkAfterAttemptMarker": "forbidden",
+        "pulseFetchAfterAttemptMarker": True,
+        "pulseFetchAuthority": "supervisor-only",
+        "pulseFetchTotalTimeoutSeconds": 30,
+        "pulseFetchNetworkScope": "one HTTPS request to the exact registered NIST endpoint; redirects, proxies, alternate hosts, extra requests, and fallback are forbidden",
+        "networkAfterPulseSeal": "trusted-supervisor-python-socket-denial; OS-sandbox network denial for registered children",
+        "supervisorNetworkIsolationClaim": "trusted-control-flow guard, not OS capability isolation",
+        "inferenceChildNetwork": "forbidden-from-process-creation",
+        "networkIsolationBackend": "macOS sandbox-exec before Python startup",
+        "networkIsolationProfile": "(version 1)(allow default)(deny network*)",
         "pickle": "forbidden",
         "trustRemoteCode": "forbidden",
-        "filesystemModelLoadAfterMarker": "forbidden",
+        "assetReadAfterMarker": "one no-follow read per model evaluation in each registered producer or independent-verifier process from frozen private snapshot into verified anonymous buffers",
+        "pathBasedModelParsing": "forbidden",
+        "mmap": "forbidden",
+        "fromPretrained": "forbidden",
+        "independentModelReplay": {
+            "requiredForTerminalGateVerdict": True,
+            "implementation": "v2/independent_model_replay.py",
+            "producerModuleImports": "forbidden",
+            "modelOrder": "selection.modelExecutionOrder",
+            "modelsSequential": True,
+            "device": "cpu",
+            "modelDtype": "float32",
+            "retokenizeFrozenCorpusBytes": True,
+            "baselineCache": "regenerated-float32-to-bfloat16-to-float32",
+            "candidateCache": "independently-decode-archived-vtl5-and-bind-inputSha256-to-regenerated-baseline",
+            "compareEveryPrediction": True,
+            "comparisons": [
+                "first512TokenIds",
+                "targetTokenId",
+                "baselineLossF32Bits",
+                "candidateLossF32Bits",
+                "baselineTop1TokenId",
+                "candidateTop1TokenId",
+            ],
+            "network": "forbidden-from-process-creation",
+            "fixtureBackendScientificUse": "forbidden",
+            "bitExactReplayScope": "one-shot host and frozen runtime; archival cross-environment mismatches are failures, never tolerance",
+        },
+        "attemptStartTimeAuthority": "live NIST HTTPS Date observed over pinned hostname-verified TLS must be inside registered one-shot window; pulse signature does not cover HTTP Date",
+        "completionTimeAuthority": "host UTC clock plus process monotonic durations; no external completion attestation",
+        "oneShotNotBefore": "2026-08-28T18:00:00Z",
         "hardDeadline": "2026-08-29T18:00:00Z",
     }
     if registration.get("execution") != expected_execution:
@@ -772,6 +1013,14 @@ def validate_design_registration(registration: Any) -> list[str]:
         "targetTimestamp": "2026-08-27T18:00:00.000Z",
         "targetUnixMilliseconds": 1787853600000,
         "pulseEndpoint": "https://beacon.nist.gov/beacon/2.0/pulse/time/1787853600000",
+        "pulseVersion": "2.0",
+        "pulseCipherSuite": 0,
+        "pulsePeriodMilliseconds": 60000,
+        "transportCABundleSHA256": "22b557a27055b33606b6559f37703928d3e4ad79f110b407d04986e1843543d1",
+        "offlineTrustBundleSHA256": "3c17cb8f6086e201eb4babc692616f621054339dc17376a7acee730e6a8cfc71",
+        "nistTrustRootDERsSHA256": [
+            "cb3ccbb76031e5e0138f8dd39a23f9de47ffc35e43c1144cea27d46a5ab1cb5f"
+        ],
         "fallback": "forbidden",
         "exactTimestampRequired": True,
         "signatureAndOutputVerificationRequired": True,
@@ -785,7 +1034,7 @@ def validate_design_registration(registration: Any) -> list[str]:
         "corporaSelected": 2,
         "pagesPerCorpus": 16,
         "allModelsRequired": True,
-        "beaconControlsModelOrderOnly": True,
+        "beaconControlsCorpusPageAndModelOrder": True,
         "drawOrder": "corpus-A, corpus-B, 16 pages A, 16 pages B, first model, second model, append remaining model",
     }
     if registration.get("selection") != expected_selection:
@@ -823,15 +1072,37 @@ def validate_design_registration(registration: Any) -> list[str]:
     if registration.get("modelAggregateGates") != expected_model_aggregate_gates:
         raise ValueError("model aggregate gates differ")
     expected_state = {
-        "attemptMarkerBeforeSelectionOrDataOpen": True,
+        "attemptReservationBeforeMarker": True,
+        "attemptMarkerBeforeSelectionOrSelectedDataOpen": True,
+        "atomicStatePublication": (
+            "exclusive-pending-file-fsync-hardlink-directory-fsync-"
+            "unlink-directory-fsync"
+        ),
+        "phaseOrder": [
+            "preflight-seal-assets",
+            "pre-marker-networkless-locked-runtime-import-probe",
+            "durable-attempt-reservation",
+            "durable-attempt-marker",
+            "supervisor-fetch-and-verify-exact-nist-pulse",
+            "seal-pulse-and-install-scoped-supervisor-socket-denial",
+            "derive-selection",
+            "spawn-networkless-inference-workers-in-registered-order",
+            "consolidate-worker-evidence",
+            "publish-producer-result",
+            "publish-producer-evidence-manifest",
+            "spawn-networkless-independent-verifier",
+            "require-independent-real-model-replay-and-exact-result-match",
+            "publish-terminal-outcome",
+        ],
+        "durablePulseSealBeforeSelection": True,
+        "networklessChildStartsAfterPulseSeal": True,
+        "retryAfterReservation": "forbidden",
         "retryAfterMarker": "forbidden",
         "terminalStates": [
             "PASS",
             "FAIL_GATES",
             "FAIL_EXECUTION",
             "CONSUMED_INCOMPLETE",
-            "LATE_PUBLICATION_INVALID",
-            "NO_ATTEMPT_EXPIRED",
         ],
         "allLaterRuns": "regression-only",
     }
@@ -846,6 +1117,244 @@ def validate_design_registration(registration: Any) -> list[str]:
     if ready is not False or not blockers:
         raise ValueError("draft must fail closed with explicit blockers")
     return blockers
+
+
+def validate_frozen_design_registration(registration: Any) -> list[str]:
+    """Validate the frozen lifecycle plus every lifecycle-independent field.
+
+    The prospective and frozen documents intentionally share one normative
+    design body.  We first fail closed on every frozen-only binding, then
+    normalize only those lifecycle fields into their draft forms and reuse the
+    exhaustive draft-body validator.  No scientific parameter is normalized.
+    """
+
+    if not isinstance(registration, dict):
+        raise ValueError("design registration must be an object")
+    if set(registration) != EXPECTED_TOP_LEVEL_FIELDS:
+        raise ValueError("design registration top-level fields differ")
+    if registration.get("schemaVersion") != "corelm-crossmodel-livewiki-v2-design-v1":
+        raise ValueError("unexpected frozen design schemaVersion")
+    if registration.get("status") != "PUBLIC_DESIGN_FROZEN":
+        raise ValueError("design is not in the public frozen state")
+    if registration.get("readyToFreeze") is not True:
+        raise ValueError("frozen design does not declare readiness")
+    if registration.get("countsTowardScientificVerdict") is not False:
+        raise ValueError("design registration must not itself claim a verdict")
+    if registration.get("freezeBlockers") != []:
+        raise ValueError("frozen design must have an empty blocker list")
+
+    controls = registration.get("developmentControls")
+    gate = controls.get("realDataE2EFreezeGate") if isinstance(controls, dict) else None
+    if not isinstance(gate, dict) or set(gate) != set(
+        EXPECTED_DEVELOPMENT_CONTROLS["realDataE2EFreezeGate"]
+    ):
+        raise ValueError("frozen real-data E2E gate fields differ")
+    fixed_gate = {
+        key: value
+        for key, value in EXPECTED_DEVELOPMENT_CONTROLS[
+            "realDataE2EFreezeGate"
+        ].items()
+        if key
+        not in {
+            "status",
+            "executionId",
+            "archiveReceiptSHA256",
+            "archivePublishedAt",
+            "archiveAttestedAt",
+            "releaseAttestationBundleSHA256",
+            "releaseAttestationOutputSHA256",
+            "reportSHA256",
+            "artifactSetSHA256",
+            "controlConfigurationSHA256",
+            "completedAt",
+        }
+    }
+    if any(gate.get(key) != value for key, value in fixed_gate.items()):
+        raise ValueError("frozen real-data E2E gate contract differs")
+    if gate.get("status") != "ARCHIVED_VERIFIED_BEFORE_FREEZE":
+        raise ValueError("frozen real-data E2E gate is not complete")
+    if not isinstance(gate.get("executionId"), str) or re.fullmatch(
+        r"development-execution-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}",
+        gate["executionId"],
+    ) is None:
+        raise ValueError("frozen real-data E2E execution identity is invalid")
+
+    lab = registration.get("labSource")
+    runtime = registration.get("runtime")
+    beacon = registration.get("beacon")
+    if not isinstance(lab, dict) or lab.get("status") != "FROZEN_BOUND":
+        raise ValueError("frozen lab source binding is absent")
+    if not isinstance(runtime, dict) or runtime.get("status") != "FROZEN_BOUND":
+        raise ValueError("frozen runtime binding is absent")
+    if not isinstance(beacon, dict):
+        raise ValueError("frozen beacon binding is absent")
+
+    def require_hex(value: Any, width: int, label: str) -> None:
+        if not isinstance(value, str) or re.fullmatch(
+            rf"[0-9a-f]{{{width}}}", value
+        ) is None:
+            raise ValueError(f"frozen {label} is invalid")
+
+    require_hex(lab.get("commit"), 40, "lab commit")
+    require_hex(lab.get("tree"), 40, "lab tree")
+    require_hex(lab.get("freezeManifestSHA256"), 64, "lab freeze manifest")
+    require_hex(runtime.get("runtimeManifestSHA256"), 64, "runtime manifest")
+    require_hex(
+        gate.get("archiveReceiptSHA256"),
+        64,
+        "development-control archive receipt",
+    )
+    require_hex(
+        gate.get("releaseAttestationBundleSHA256"),
+        64,
+        "development-control release attestation bundle",
+    )
+    require_hex(
+        gate.get("releaseAttestationOutputSHA256"),
+        64,
+        "development-control release attestation output",
+    )
+    require_hex(gate.get("reportSHA256"), 64, "development-control report")
+    require_hex(
+        gate.get("artifactSetSHA256"),
+        64,
+        "development-control artifact set",
+    )
+    require_hex(
+        gate.get("controlConfigurationSHA256"),
+        64,
+        "development-control configuration",
+    )
+    completed_at = gate.get("completedAt")
+    if not isinstance(completed_at, str) or re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", completed_at
+    ) is None:
+        raise ValueError("frozen development-control completion time is invalid")
+    try:
+        completed_time = datetime.strptime(
+            completed_at, "%Y-%m-%dT%H:%M:%SZ"
+        ).replace(tzinfo=timezone.utc)
+    except ValueError as error:
+        raise ValueError(
+            "frozen development-control completion time is invalid"
+        ) from error
+    if completed_time >= DESIGN_RELEASE_DEADLINE:
+        raise ValueError("frozen development control missed the design deadline")
+    archive_times: dict[str, datetime] = {}
+    for field, label in (
+        ("archivePublishedAt", "publication"),
+        ("archiveAttestedAt", "attestation"),
+    ):
+        value = gate.get(field)
+        if not isinstance(value, str) or re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value
+        ) is None:
+            raise ValueError(
+                f"frozen development archive {label} time is invalid"
+            )
+        try:
+            archive_times[field] = datetime.strptime(
+                value, "%Y-%m-%dT%H:%M:%SZ"
+            ).replace(tzinfo=timezone.utc)
+        except ValueError as error:
+            raise ValueError(
+                f"frozen development archive {label} time is invalid"
+            ) from error
+    if (
+        archive_times["archivePublishedAt"] < completed_time
+        or archive_times["archivePublishedAt"]
+        > archive_times["archiveAttestedAt"]
+        or archive_times["archiveAttestedAt"] >= DESIGN_RELEASE_DEADLINE
+    ):
+        raise ValueError("frozen development archive timing differs")
+    require_hex(beacon.get("transportCABundleSHA256"), 64, "transport CA bundle")
+    require_hex(beacon.get("offlineTrustBundleSHA256"), 64, "offline trust bundle")
+    roots = beacon.get("nistTrustRootDERsSHA256")
+    if not isinstance(roots, list) or not roots or len(set(roots)) != len(roots):
+        raise ValueError("frozen NIST trust-root pins are invalid")
+    for root in roots:
+        require_hex(root, 64, "NIST trust-root DER")
+    for field in (
+        "designRelease",
+        "snapshotRelease",
+        "evidenceRelease",
+        "closeoutRelease",
+    ):
+        release = registration.get(field)
+        if not isinstance(release, dict):
+            raise ValueError(f"frozen {field} is absent")
+        fingerprint = release.get("signingKeyFingerprint")
+        if (
+            release.get("signedAnnotatedTagRequired") is not True
+            or release.get("signatureType") != "SSH"
+            or not isinstance(fingerprint, str)
+            or re.fullmatch(r"SHA256:[A-Za-z0-9+/]{43}", fingerprint) is None
+        ):
+            raise ValueError(f"frozen {field} signing identity is invalid")
+        require_hex(
+            release.get("signingPublicKeySHA256"),
+            64,
+            f"{field} signing public key",
+        )
+
+    normalized = copy.deepcopy(registration)
+    normalized["schemaVersion"] = "corelm-crossmodel-livewiki-v2-design-draft-v1"
+    normalized["status"] = "DRAFT_NOT_PREREGISTERED"
+    normalized["readyToFreeze"] = False
+    normalized["freezeBlockers"] = ["frozen-lifecycle-validation-sentinel"]
+    normalized["labSource"].update(
+        status="UNBOUND_DRAFT",
+        commit=None,
+        tree=None,
+        freezeManifestSHA256=None,
+    )
+    normalized["runtime"].update(
+        status="UNBOUND_DRAFT",
+        runtimeManifestSHA256=None,
+    )
+    normalized["developmentControls"]["realDataE2EFreezeGate"] = copy.deepcopy(
+        EXPECTED_DEVELOPMENT_CONTROLS["realDataE2EFreezeGate"]
+    )
+    normalized["beacon"].update(
+        transportCABundleSHA256="22b557a27055b33606b6559f37703928d3e4ad79f110b407d04986e1843543d1",
+        offlineTrustBundleSHA256="3c17cb8f6086e201eb4babc692616f621054339dc17376a7acee730e6a8cfc71",
+    )
+    release_identities: list[tuple[str, str]] = []
+    for field in (
+        "designRelease",
+        "snapshotRelease",
+        "evidenceRelease",
+        "closeoutRelease",
+    ):
+        release_identities.append(
+            (
+                registration[field]["signingKeyFingerprint"],
+                registration[field]["signingPublicKeySHA256"],
+            )
+        )
+    if len(set(release_identities)) != 1:
+        raise ValueError("all frozen release plans must use one signing identity")
+    validate_design_registration(normalized)
+    return []
+
+
+def validate_design_registration_lifecycle(registration: Any) -> list[str]:
+    """Dispatch to the only two permitted design lifecycle states."""
+
+    if not isinstance(registration, dict):
+        raise ValueError("design registration must be an object")
+    identity = (registration.get("schemaVersion"), registration.get("status"))
+    if identity == (
+        "corelm-crossmodel-livewiki-v2-design-draft-v1",
+        "DRAFT_NOT_PREREGISTERED",
+    ):
+        return validate_design_registration(registration)
+    if identity == (
+        "corelm-crossmodel-livewiki-v2-design-v1",
+        "PUBLIC_DESIGN_FROZEN",
+    ):
+        return validate_frozen_design_registration(registration)
+    raise ValueError("design schemaVersion/status lifecycle pair differs")
 
 
 def validate_model_asset_manifest(
