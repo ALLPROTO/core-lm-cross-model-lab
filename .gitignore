@@ -28,3 +28,11 @@ v3/.runtime/
 v3/.working/
 v3/results/*
 !v3/results/README.md
+
+# Author-verified v4 local state. V3 remains an immutable historical contour;
+# downloaded assets, runtimes, workspaces, and results are never committed.
+v4/.assets/
+v4/.runtime/
+v4/.working/
+v4/results/*
+!v4/results/README.md

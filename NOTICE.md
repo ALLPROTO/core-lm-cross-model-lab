@@ -6,7 +6,7 @@ Repository-authored source code is provided under the root MIT `LICENSE`.
 That license does not replace licenses attached to downloaded model,
 tokenizer, dataset, Wikipedia, or third-party dependency assets.
 
-The Git checkout does not contain v2/v3 model weights or the real
+The Git checkout does not contain v2/v3/v4 model weights or the real
 UD English PUD r2.18 corpus; both are downloaded from exact immutable upstream revisions
 into an ignored local directory. Model weights are not redistributed by this
 project. The separately published development-control evidence release does

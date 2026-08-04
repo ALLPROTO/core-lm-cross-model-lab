@@ -1,0 +1,1749 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v4/schemas/design.schema.json",
+  "title": "Core LM blind multi-model v4 design registration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "suiteId",
+    "readyToFreeze",
+    "countsTowardScientificVerdict",
+    "claim",
+    "scientificBoundary",
+    "developmentControls",
+    "designRelease",
+    "futureCorpus",
+    "snapshotRelease",
+    "evidenceRelease",
+    "closeoutRelease",
+    "reschedulePolicy",
+    "codecSource",
+    "labSource",
+    "runtime",
+    "continuousIntegration",
+    "models",
+    "candidate",
+    "execution",
+    "beacon",
+    "selection",
+    "cellGates",
+    "modelAggregateGates",
+    "oneShotStateMachine",
+    "freezeBlockers"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "enum": [
+        "corelm-crossmodel-livewiki-v4-design-draft-v1",
+        "corelm-crossmodel-livewiki-v4-design-v1"
+      ]
+    },
+    "status": {
+      "enum": [
+        "DRAFT_NOT_PREREGISTERED",
+        "PUBLIC_DESIGN_FROZEN"
+      ]
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v4-author-verified"
+    },
+    "readyToFreeze": {
+      "type": "boolean"
+    },
+    "countsTowardScientificVerdict": {
+      "type": "boolean"
+    },
+    "claim": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scientificBoundary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "developmentControls": {
+      "$ref": "#/$defs/developmentControls"
+    },
+    "designRelease": {
+      "$ref": "#/$defs/releasePlan"
+    },
+    "futureCorpus": {
+      "$ref": "#/$defs/futureCorpus"
+    },
+    "snapshotRelease": {
+      "$ref": "#/$defs/releasePlan"
+    },
+    "evidenceRelease": {
+      "$ref": "#/$defs/releasePlan"
+    },
+    "closeoutRelease": {
+      "$ref": "#/$defs/closeoutReleasePlan"
+    },
+    "reschedulePolicy": {
+      "$ref": "#/$defs/reschedulePolicy"
+    },
+    "codecSource": {
+      "$ref": "#/$defs/codecSource"
+    },
+    "labSource": {
+      "$ref": "#/$defs/labSource"
+    },
+    "runtime": {
+      "$ref": "#/$defs/runtime"
+    },
+    "continuousIntegration": {
+      "$ref": "#/$defs/continuousIntegration"
+    },
+    "models": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/model"
+      }
+    },
+    "candidate": {
+      "$ref": "#/$defs/candidate"
+    },
+    "execution": {
+      "$ref": "#/$defs/execution"
+    },
+    "beacon": {
+      "$ref": "#/$defs/beacon"
+    },
+    "selection": {
+      "$ref": "#/$defs/selection"
+    },
+    "cellGates": {
+      "$ref": "#/$defs/cellGates"
+    },
+    "modelAggregateGates": {
+      "$ref": "#/$defs/modelAggregateGates"
+    },
+    "oneShotStateMachine": {
+      "$ref": "#/$defs/oneShotStateMachine"
+    },
+    "freezeBlockers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "DRAFT_NOT_PREREGISTERED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "schemaVersion": {
+            "const": "corelm-crossmodel-livewiki-v4-design-draft-v1"
+          },
+          "readyToFreeze": {
+            "const": false
+          },
+          "countsTowardScientificVerdict": {
+            "const": false
+          },
+          "developmentControls": {
+            "properties": {
+              "realDataE2EFreezeGate": {
+                "properties": {
+                  "status": {"const": "UNBOUND_DRAFT"},
+                  "executionId": {"type": "null"},
+                  "archiveReceiptSHA256": {"type": "null"},
+                  "archivePublishedAt": {"type": "null"},
+                  "archiveAttestedAt": {"type": "null"},
+                  "releaseAttestationBundleSHA256": {"type": "null"},
+                  "releaseAttestationOutputSHA256": {"type": "null"},
+                  "reportSHA256": {"type": "null"},
+                  "artifactSetSHA256": {"type": "null"},
+                  "controlConfigurationSHA256": {"type": "null"},
+                  "completedAt": {"type": "null"}
+                }
+              }
+            }
+          },
+          "designRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "snapshotRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "evidenceRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "closeoutRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "labSource": {
+            "properties": {
+              "status": {
+                "const": "UNBOUND_DRAFT"
+              },
+              "commit": {
+                "type": "null"
+              },
+              "tree": {
+                "type": "null"
+              },
+              "freezeManifestSHA256": {
+                "type": "null"
+              }
+            }
+          },
+          "runtime": {
+            "properties": {
+              "status": {
+                "const": "UNBOUND_DRAFT"
+              },
+              "runtimeManifestSHA256": {
+                "type": "null"
+              }
+            }
+          },
+          "beacon": {
+            "properties": {
+              "transportCABundleSHA256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "offlineTrustBundleSHA256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          },
+          "freezeBlockers": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "PUBLIC_DESIGN_FROZEN"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "schemaVersion": {
+            "const": "corelm-crossmodel-livewiki-v4-design-v1"
+          },
+          "readyToFreeze": {
+            "const": true
+          },
+          "countsTowardScientificVerdict": {
+            "const": false
+          },
+          "developmentControls": {
+            "properties": {
+              "realDataE2EFreezeGate": {
+                "properties": {
+                  "status": {"const": "ARCHIVED_VERIFIED_BEFORE_FREEZE"},
+                  "executionId": {
+                    "type": "string",
+                    "pattern": "^development-execution-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+                  },
+                  "archiveReceiptSHA256": {"$ref": "#/$defs/sha256"},
+                  "archivePublishedAt": {"$ref": "#/$defs/utcSecond"},
+                  "archiveAttestedAt": {"$ref": "#/$defs/utcSecond"},
+                  "releaseAttestationBundleSHA256": {"$ref": "#/$defs/sha256"},
+                  "releaseAttestationOutputSHA256": {"$ref": "#/$defs/sha256"},
+                  "reportSHA256": {"$ref": "#/$defs/sha256"},
+                  "artifactSetSHA256": {"$ref": "#/$defs/sha256"},
+                  "controlConfigurationSHA256": {"$ref": "#/$defs/sha256"},
+                  "completedAt": {"$ref": "#/$defs/utcSecond"}
+                }
+              }
+            }
+          },
+          "designRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "snapshotRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "evidenceRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "closeoutRelease": {
+            "properties": {
+              "signingKeyFingerprint": {
+                "type": "string",
+                "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+              },
+              "signingPublicKeySHA256": {"$ref": "#/$defs/sha256"}
+            }
+          },
+          "labSource": {
+            "properties": {
+              "status": {
+                "const": "FROZEN_BOUND"
+              },
+              "commit": {
+                "$ref": "#/$defs/gitObject"
+              },
+              "tree": {
+                "$ref": "#/$defs/gitObject"
+              },
+              "freezeManifestSHA256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          },
+          "runtime": {
+            "properties": {
+              "status": {
+                "const": "FROZEN_BOUND"
+              },
+              "runtimeManifestSHA256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          },
+          "beacon": {
+            "properties": {
+              "transportCABundleSHA256": {
+                "$ref": "#/$defs/sha256"
+              },
+              "offlineTrustBundleSHA256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          },
+          "freezeBlockers": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "gitObject": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "developmentControls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "dataset",
+        "allowedEntryPoints",
+        "realPretrainedModelsRequired",
+        "realCorpusBytesRequired",
+        "syntheticInputsForbidden",
+        "futureCorpusUsed",
+        "nistUsed",
+        "scientificAttemptStateCreated",
+        "scientificResultRootUsed",
+        "countsTowardScientificVerdict",
+        "usedForCandidateSelectionOrTuning",
+        "configurationChangesAfterOutcome",
+        "unitFixtureBoundary",
+        "realDataE2EFreezeGate"
+      ],
+      "properties": {
+        "status": {"const": "NON_SCIENTIFIC_PRE_FREEZE_ONLY"},
+        "dataset": {
+          "const": {
+            "datasetId": "UniversalDependencies/UD_English-PUD:r2.18:test",
+            "repository": "UniversalDependencies/UD_English-PUD",
+            "revision": "e173a1be1b442faf34e7d5a502189ad5d9d1e197",
+            "tree": "50f2ebe00ff016d2dca93f9bf6ee51c5f8493fde",
+            "releaseTag": "r2.18",
+            "split": "test",
+            "splitPurpose": "upstream test split reused only as a non-scientific development control; it is not a blind scientific test result",
+            "file": "en_pud-ud-test.conllu",
+            "format": "CoNLL-U",
+            "bytes": 1386858,
+            "sha256": "c80584f2bc2b31d5bada78a1136f9feec7ac49e5e18898db02dea434b5b8f0aa",
+            "rows": 1000,
+            "rowExtraction": "exactly one '# text = ' value from each LF-delimited CoNLL-U sentence block; prefix removed; text otherwise unchanged",
+            "joinedTextBytes": 112419,
+            "joinedTextSHA256": "69dd039b37979f91b165981e92ae578067ecdf0db69bbee0a431c9f337c0f8ea",
+            "license": "CC-BY-SA-3.0",
+            "manifestPath": "v4/development-corpus.draft.json",
+            "manifestBytes": 1985,
+            "manifestSHA256": "eed647bcf91ffb1f82a6a41cdc72a3b5bda00825497a4523a7a5966e25fe1b87"
+          }
+        },
+        "allowedEntryPoints": {
+          "const": [
+            {
+              "path": "v4/run_real_e2e_control.py",
+              "control": "producer-vtl5-independent-replay",
+              "candidateCodecInvoked": true,
+              "candidateMetricsComputed": true
+            }
+          ]
+        },
+        "realPretrainedModelsRequired": {"const": true},
+        "realCorpusBytesRequired": {"const": true},
+        "syntheticInputsForbidden": {"const": true},
+        "futureCorpusUsed": {"const": false},
+        "nistUsed": {"const": false},
+        "scientificAttemptStateCreated": {"const": false},
+        "scientificResultRootUsed": {"const": false},
+        "countsTowardScientificVerdict": {"const": false},
+        "usedForCandidateSelectionOrTuning": {"const": false},
+        "configurationChangesAfterOutcome": {
+          "const": "NEW_SUITE_AND_COMPLETE_TIMELINE_REQUIRED"
+        },
+        "unitFixtureBoundary": {
+          "const": "ISOLATED_NON_RESULT_PROTOCOL_TESTS_ONLY"
+        },
+        "realDataE2EFreezeGate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "required",
+            "reportSchemaVersion",
+            "reportFileName",
+            "completeNoLaterThan",
+            "serverTimestampedArchiveRequired",
+            "archiveTag",
+            "archiveRequiredAssetRoles",
+            "status",
+            "executionId",
+            "archiveReceiptSHA256",
+            "archivePublishedAt",
+            "archiveAttestedAt",
+            "releaseAttestationBundleSHA256",
+            "releaseAttestationOutputSHA256",
+            "reportSHA256",
+            "artifactSetSHA256",
+            "controlConfigurationSHA256",
+            "completedAt"
+          ],
+          "properties": {
+            "required": {"const": true},
+            "reportSchemaVersion": {
+              "const": "corelm-crossmodel-v4-real-e2e-development-report-v1"
+            },
+            "reportFileName": {"const": "development-control-report.json"},
+            "completeNoLaterThan": {"const": "2026-09-07T00:00:00Z"},
+            "serverTimestampedArchiveRequired": {"const": true},
+            "archiveTag": {
+              "const": "corelm-crossmodel-livewiki-v4-development-control"
+            },
+            "archiveRequiredAssetRoles": {
+              "const": [
+                "development-control-report",
+                "development-control-artifacts",
+                "sha256-manifest"
+              ]
+            },
+            "status": {
+              "enum": ["UNBOUND_DRAFT", "ARCHIVED_VERIFIED_BEFORE_FREEZE"]
+            },
+            "executionId": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^development-execution-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+                },
+                {"type": "null"}
+              ]
+            },
+            "archiveReceiptSHA256": {
+              "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+            },
+            "archivePublishedAt": {
+              "oneOf": [{"$ref": "#/$defs/utcSecond"}, {"type": "null"}]
+            },
+            "archiveAttestedAt": {
+              "oneOf": [{"$ref": "#/$defs/utcSecond"}, {"type": "null"}]
+            },
+            "releaseAttestationBundleSHA256": {
+              "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+            },
+            "releaseAttestationOutputSHA256": {
+              "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+            },
+            "reportSHA256": {
+              "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+            },
+            "artifactSetSHA256": {
+              "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+            },
+            "controlConfigurationSHA256": {
+              "oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+            },
+            "completedAt": {
+              "oneOf": [{"$ref": "#/$defs/utcSecond"}, {"type": "null"}]
+            }
+          }
+        }
+      }
+    },
+    "releasePlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "publishNoLaterThan",
+        "sourcePolicy",
+        "serverTimestampRequired",
+        "immutableReleaseRequired",
+        "signedAnnotatedTagRequired",
+        "signatureType",
+        "signingKeyFingerprint",
+        "signingPublicKeySHA256"
+      ],
+      "properties": {
+        "tag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "publishNoLaterThan": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "sourcePolicy": {
+          "const": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE"
+        },
+        "serverTimestampRequired": {
+          "const": true
+        },
+        "immutableReleaseRequired": {
+          "const": true
+        },
+        "signedAnnotatedTagRequired": {
+          "const": true
+        },
+        "signatureType": {
+          "const": "SSH"
+        },
+        "signingKeyFingerprint": {
+          "type": ["string", "null"]
+        },
+        "signingPublicKeySHA256": {
+          "oneOf": [
+            {"$ref": "#/$defs/sha256"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "closeoutReleasePlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tag",
+        "publishNoLaterThan",
+        "sourcePolicy",
+        "serverTimestampRequired",
+        "immutableReleaseRequired",
+        "signedAnnotatedTagRequired",
+        "signatureType",
+        "signingKeyFingerprint",
+        "signingPublicKeySHA256"
+      ],
+      "properties": {
+        "tag": {"type": "string", "minLength": 1},
+        "publishNoLaterThan": {"$ref": "#/$defs/utcSecond"},
+        "sourcePolicy": {
+          "const": "EXACT_FROZEN_DESIGN_LAB_SOURCE_COMMIT_TREE"
+        },
+        "serverTimestampRequired": {"const": true},
+        "immutableReleaseRequired": {"const": true},
+        "signedAnnotatedTagRequired": {"const": true},
+        "signatureType": {"const": "SSH"},
+        "signingKeyFingerprint": {"type": ["string", "null"]},
+        "signingPublicKeySHA256": {
+          "oneOf": [
+            {"$ref": "#/$defs/sha256"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "futureCorpus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "projects",
+        "creationInterval",
+        "snapshotPolicy",
+        "firstCrawlNotBefore",
+        "secondCrawlNotBefore",
+        "minimumEligibleRevisionsPerProject",
+        "pagesSelectedPerCorpus",
+        "tokenization",
+        "prospectiveHoldout",
+        "license",
+        "attributionLedgerRequired"
+      ],
+      "properties": {
+        "projects": {
+          "const": [
+            "de.wikipedia.org",
+            "en.wikipedia.org",
+            "fr.wikipedia.org"
+          ]
+        },
+        "creationInterval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "startInclusive",
+            "endExclusive"
+          ],
+          "properties": {
+            "startInclusive": {
+              "$ref": "#/$defs/utcSecond"
+            },
+            "endExclusive": {
+              "$ref": "#/$defs/utcSecond"
+            }
+          }
+        },
+        "snapshotPolicy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "firstCrawlNotBefore": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "secondCrawlNotBefore": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "minimumEligibleRevisionsPerProject": {
+          "type": "integer",
+          "minimum": 64
+        },
+        "pagesSelectedPerCorpus": {
+          "const": 16
+        },
+        "tokenization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "unicodeNormalization",
+            "utf8",
+            "addSpecialTokens",
+            "minimumTokensUnderEveryRegisteredTokenizer"
+          ],
+          "properties": {
+            "input": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unicodeNormalization": {
+              "const": "none"
+            },
+            "utf8": {
+              "const": "strict"
+            },
+            "addSpecialTokens": {
+              "const": false
+            },
+            "minimumTokensUnderEveryRegisteredTokenizer": {
+              "type": "integer",
+              "minimum": 512
+            }
+          }
+        },
+        "prospectiveHoldout": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "claimType",
+            "operatorBlindnessClaimed",
+            "futureCorpusUnavailableAtDesignFreeze",
+            "exactSelectionUnavailableUntilTargetPulse",
+            "preAttemptModelInferenceOnEligibleRecords",
+            "metricOrCandidateTuningUsingEligibleRecords",
+            "permittedPreAttemptProcessing",
+            "behavioralComplianceCryptographicallyAttested"
+          ],
+          "properties": {
+            "claimType": {"const": "PROSPECTIVE_BEACON_SELECTED_HOLDOUT"},
+            "operatorBlindnessClaimed": {"const": false},
+            "futureCorpusUnavailableAtDesignFreeze": {"const": true},
+            "exactSelectionUnavailableUntilTargetPulse": {"const": true},
+            "preAttemptModelInferenceOnEligibleRecords": {
+              "const": "FORBIDDEN_FROM_FIRST_COLLECTION_THROUGH_ATTEMPT_MARKER"
+            },
+            "metricOrCandidateTuningUsingEligibleRecords": {"const": "FORBIDDEN"},
+            "permittedPreAttemptProcessing": {
+              "const": [
+                "collection",
+                "eligibility-validation",
+                "canonicalization",
+                "tokenization-for-minimum-length-only",
+                "hashing",
+                "packaging"
+              ]
+            },
+            "behavioralComplianceCryptographicallyAttested": {"const": false}
+          }
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attributionLedgerRequired": {
+          "const": true
+        }
+      }
+    },
+    "reschedulePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decisionCheckpoint",
+        "requiredStateAtCheckpoint",
+        "actionIfNotReady",
+        "newSuiteIdRequired",
+        "minimumLeadTimesMustBePreserved",
+        "moveTogether"
+      ],
+      "properties": {
+        "decisionCheckpoint": {"const": "2026-09-06T12:00:00Z"},
+        "requiredStateAtCheckpoint": {
+          "const": "all pre-publication P0 inputs complete; author self-verification recorded; exact-commit CI observed through direct verified TLS and archived with no GitHub response signature and offline structural-consistency-only verification; only immutable design publication remains"
+        },
+        "actionIfNotReady": {"const": "DO_NOT_FREEZE_OR_PUBLISH_THIS_SUITE"},
+        "newSuiteIdRequired": {"const": true},
+        "minimumLeadTimesMustBePreserved": {"const": true},
+        "moveTogether": {
+          "const": [
+            "designRelease.publishNoLaterThan",
+            "futureCorpus.creationInterval",
+            "futureCorpus.firstCrawlNotBefore",
+            "futureCorpus.secondCrawlNotBefore",
+            "snapshotRelease.publishNoLaterThan",
+            "beacon.targetTimestamp",
+            "beacon.targetUnixMilliseconds",
+            "beacon.pulseEndpoint",
+            "execution.oneShotNotBefore",
+            "execution.hardDeadline",
+            "evidenceRelease.publishNoLaterThan",
+            "closeoutRelease.publishNoLaterThan"
+          ]
+        }
+      }
+    },
+    "fileCommitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "codecSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "commit",
+        "tree",
+        "requiredFiles"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "format": "uri"
+        },
+        "commit": {
+          "$ref": "#/$defs/gitObject"
+        },
+        "tree": {
+          "$ref": "#/$defs/gitObject"
+        },
+        "requiredFiles": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "RealLLM/app_proof_core.py",
+            "RealLLM/benchmark_real_llm.py",
+            "RealLLM/codecs.py",
+            "RealLLM/requirements.lock",
+            "RealLLM/voidtoken_v5.py"
+          ],
+          "properties": {
+            "RealLLM/app_proof_core.py": {
+              "$ref": "#/$defs/fileCommitment"
+            },
+            "RealLLM/benchmark_real_llm.py": {
+              "$ref": "#/$defs/fileCommitment"
+            },
+            "RealLLM/codecs.py": {
+              "$ref": "#/$defs/fileCommitment"
+            },
+            "RealLLM/requirements.lock": {
+              "$ref": "#/$defs/fileCommitment"
+            },
+            "RealLLM/voidtoken_v5.py": {
+              "$ref": "#/$defs/fileCommitment"
+            }
+          }
+        }
+      }
+    },
+    "labSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "status",
+        "commit",
+        "tree",
+        "freezeManifestSHA256"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "format": "uri"
+        },
+        "status": {
+          "enum": [
+            "UNBOUND_DRAFT",
+            "FROZEN_BOUND"
+          ]
+        },
+        "commit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/gitObject"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tree": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/gitObject"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "freezeManifestSHA256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "python",
+        "primaryPlatform",
+        "postEvidenceReplication",
+        "pipBootstrapLockSHA256",
+        "requirementsLockSHA256",
+        "status",
+        "runtimeManifestSHA256"
+      ],
+      "properties": {
+        "python": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primaryPlatform": {
+          "type": "string",
+          "minLength": 1
+        },
+        "postEvidenceReplication": {
+          "const": "NOT_IMPLEMENTED_OR_REGISTERED"
+        },
+        "pipBootstrapLockSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "requirementsLockSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "status": {
+          "enum": [
+            "UNBOUND_DRAFT",
+            "FROZEN_BOUND"
+          ]
+        },
+        "runtimeManifestSHA256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "continuousIntegration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflowName",
+        "workflowPath",
+        "workflowFileBytes",
+        "workflowFileSHA256",
+        "verificationMode",
+        "authorName",
+        "authorORCID",
+        "authorGitHubLogin",
+        "authorDeclaration",
+        "independentHumanReviewRequired",
+        "independentHumanReviewPerformed",
+        "claimBoundary",
+        "allReturnedJobsMustCompleteSuccess",
+        "zeroSkippedOrCancelledJobs",
+        "gateReceiptArtifactBytesArchived",
+        "ciArtifactBytesMustBeArchivedSeparately",
+        "requiredJobs"
+      ],
+      "properties": {
+        "workflowName": {
+          "const": "Author-verified v4 development controls"
+        },
+        "workflowPath": {
+          "const": ".github/workflows/v4-development-controls.yml"
+        },
+        "workflowFileBytes": {
+          "const": 13560
+        },
+        "workflowFileSHA256": {
+          "const": "cc68011dc189b4616cece9376adb077f769f7d3405f40b32cfacbe57a663714e"
+        },
+        "verificationMode": {
+          "const": "AUTHOR_SELF_VERIFICATION"
+        },
+        "authorName": {
+          "const": "Ivan Tyshchenko"
+        },
+        "authorORCID": {
+          "const": "https://orcid.org/0009-0000-7935-6090"
+        },
+        "authorGitHubLogin": {
+          "const": "ALLPROTO"
+        },
+        "authorDeclaration": {
+          "const": "I am the author and experiment operator. I verified this exact implementation commit, its canonical schemas, zero-skip Linux and macOS arm64 CI, evidence packaging, and real-data development control. No independent human review was performed. This self-attestation is not peer review, operator blindness, independent replication, or independent validation."
+        },
+        "independentHumanReviewRequired": {
+          "const": false
+        },
+        "independentHumanReviewPerformed": {
+          "const": false
+        },
+        "claimBoundary": {
+          "const": "Author-operated and author-self-verified prospective artifact. No independent human review, peer review, operator blindness, independent replication, or independent validation is claimed."
+        },
+        "allReturnedJobsMustCompleteSuccess": {
+          "const": true
+        },
+        "zeroSkippedOrCancelledJobs": {
+          "const": true
+        },
+        "gateReceiptArtifactBytesArchived": {
+          "const": false
+        },
+        "ciArtifactBytesMustBeArchivedSeparately": {
+          "const": true
+        },
+        "requiredJobs": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "$ref": "#/$defs/linuxCIJob"
+            },
+            {
+              "$ref": "#/$defs/macOSCIJob"
+            }
+          ],
+          "items": false
+        }
+      }
+    },
+    "linuxCIJob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jobName", "runnerLabel", "system", "machine"],
+      "properties": {
+        "jobName": {"const": "Linux x86-64 locked runtime"},
+        "runnerLabel": {"const": "ubuntu-24.04"},
+        "system": {"const": "Linux"},
+        "machine": {"const": "x86_64"}
+      }
+    },
+    "macOSCIJob": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jobName", "runnerLabel", "system", "machine"],
+      "properties": {
+        "jobName": {"const": "macOS arm64 clean clone"},
+        "runnerLabel": {"const": "macos-15"},
+        "system": {"const": "Darwin"},
+        "machine": {"const": "arm64"}
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "repository",
+        "revision",
+        "architecture",
+        "layers",
+        "kvHeads",
+        "vocabSize",
+        "weightFile",
+        "weightBytes",
+        "weightSHA256",
+        "license",
+        "candidateBitsByLayer",
+        "candidateConfigurationSHA256",
+        "usedForCandidateSelectionOrTuning"
+      ],
+      "properties": {
+        "key": {
+          "enum": [
+            "gpt-neo-125m",
+            "smollm2-360m",
+            "tiny-starcoder-py"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "$ref": "#/$defs/gitObject"
+        },
+        "architecture": {
+          "type": "string",
+          "minLength": 1
+        },
+        "layers": {
+          "type": "integer",
+          "minimum": 3
+        },
+        "kvHeads": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "vocabSize": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967296
+        },
+        "weightFile": {
+          "const": "model.safetensors"
+        },
+        "weightBytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "weightSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidateBitsByLayer": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "integer",
+            "minimum": 4,
+            "maximum": 16
+          }
+        },
+        "candidateConfigurationSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "usedForCandidateSelectionOrTuning": {
+          "const": false
+        }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "groupSize",
+        "transformBlockSize",
+        "codeCompression",
+        "scaleCompression",
+        "signMode",
+        "bitScheduleRule",
+        "candidateRuleSHA256",
+        "calibration",
+        "architectureSpecificRetuning"
+      ],
+      "properties": {
+        "backend": {
+          "const": "voidtoken-v5"
+        },
+        "groupSize": {
+          "const": 128
+        },
+        "transformBlockSize": {
+          "const": 128
+        },
+        "codeCompression": {
+          "const": "zlib-9"
+        },
+        "scaleCompression": {
+          "const": "zlib-9"
+        },
+        "signMode": {
+          "const": "none"
+        },
+        "bitScheduleRule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidateRuleSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "calibration": {
+          "const": "forbidden"
+        },
+        "architectureSpecificRetuning": {
+          "const": "forbidden"
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device",
+        "intraOpThreads",
+        "interOpThreads",
+        "modelDtype",
+        "cacheBaseline",
+        "attentionImplementation",
+        "prefillTokens",
+        "predictionTokensPerPage",
+        "modelProcessIsolation",
+        "acPowerRequired",
+        "minimumFreeMemoryPercent",
+        "maximumWorkerRSSBytes",
+        "watchdogPollMilliseconds",
+        "minimumFreeDiskBytes",
+        "deterministicAlgorithms",
+        "pulseFetchAfterAttemptMarker",
+        "pulseFetchAuthority",
+        "pulseFetchTotalTimeoutSeconds",
+        "pulseFetchNetworkScope",
+        "networkAfterPulseSeal",
+        "supervisorNetworkIsolationClaim",
+        "inferenceChildNetwork",
+        "networkIsolationBackend",
+        "networkIsolationProfile",
+        "pickle",
+        "trustRemoteCode",
+        "assetReadAfterMarker",
+        "pathBasedModelParsing",
+        "mmap",
+        "fromPretrained",
+        "independentModelReplay",
+        "attemptStartTimeAuthority",
+        "completionTimeAuthority",
+        "oneShotNotBefore",
+        "hardDeadline"
+      ],
+      "properties": {
+        "device": {
+          "const": "cpu"
+        },
+        "intraOpThreads": {
+          "const": 2
+        },
+        "interOpThreads": {
+          "const": 1
+        },
+        "modelDtype": {
+          "const": "float32"
+        },
+        "cacheBaseline": {
+          "type": "string",
+          "minLength": 1
+        },
+        "attentionImplementation": {
+          "const": "eager"
+        },
+        "prefillTokens": {
+          "const": 383
+        },
+        "predictionTokensPerPage": {
+          "const": 128
+        },
+        "modelProcessIsolation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acPowerRequired": {
+          "const": true
+        },
+        "minimumFreeMemoryPercent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "maximumWorkerRSSBytes": {
+          "const": 4294967296
+        },
+        "watchdogPollMilliseconds": {
+          "const": 250
+        },
+        "minimumFreeDiskBytes": {
+          "const": 12884901888
+        },
+        "deterministicAlgorithms": {
+          "const": "fail-closed"
+        },
+        "pulseFetchAfterAttemptMarker": {
+          "const": true
+        },
+        "pulseFetchAuthority": {
+          "const": "supervisor-only"
+        },
+        "pulseFetchTotalTimeoutSeconds": {
+          "const": 30
+        },
+        "pulseFetchNetworkScope": {
+          "type": "string",
+          "minLength": 1
+        },
+        "networkAfterPulseSeal": {
+          "const": "trusted-supervisor-python-socket-denial; OS-sandbox network denial for registered children"
+        },
+        "supervisorNetworkIsolationClaim": {
+          "const": "trusted-control-flow guard, not OS capability isolation"
+        },
+        "inferenceChildNetwork": {
+          "const": "forbidden-from-process-creation"
+        },
+        "networkIsolationBackend": {
+          "const": "macOS sandbox-exec before Python startup"
+        },
+        "networkIsolationProfile": {
+          "const": "(version 1)(allow default)(deny network*)"
+        },
+        "pickle": {
+          "const": "forbidden"
+        },
+        "trustRemoteCode": {
+          "const": "forbidden"
+        },
+        "assetReadAfterMarker": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pathBasedModelParsing": {
+          "const": "forbidden"
+        },
+        "mmap": {
+          "const": "forbidden"
+        },
+        "fromPretrained": {
+          "const": "forbidden"
+        },
+        "independentModelReplay": {
+          "$ref": "#/$defs/independentModelReplay"
+        },
+        "attemptStartTimeAuthority": {
+          "const": "live NIST HTTPS Date observed over pinned hostname-verified TLS must be inside registered one-shot window; pulse signature does not cover HTTP Date"
+        },
+        "completionTimeAuthority": {
+          "const": "host UTC clock plus process monotonic durations; no external completion attestation"
+        },
+        "oneShotNotBefore": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "hardDeadline": {
+          "$ref": "#/$defs/utcSecond"
+        }
+      }
+    },
+    "independentModelReplay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredForTerminalGateVerdict",
+        "implementation",
+        "producerModuleImports",
+        "modelOrder",
+        "modelsSequential",
+        "device",
+        "modelDtype",
+        "retokenizeFrozenCorpusBytes",
+        "baselineCache",
+        "candidateCache",
+        "compareEveryPrediction",
+        "comparisons",
+        "network",
+        "fixtureBackendScientificUse",
+        "bitExactReplayScope"
+      ],
+      "properties": {
+        "requiredForTerminalGateVerdict": {
+          "const": true
+        },
+        "implementation": {
+          "const": "v4/independent_model_replay.py"
+        },
+        "producerModuleImports": {
+          "const": "forbidden"
+        },
+        "modelOrder": {
+          "const": "selection.modelExecutionOrder"
+        },
+        "modelsSequential": {
+          "const": true
+        },
+        "device": {
+          "const": "cpu"
+        },
+        "modelDtype": {
+          "const": "float32"
+        },
+        "retokenizeFrozenCorpusBytes": {
+          "const": true
+        },
+        "baselineCache": {
+          "const": "regenerated-float32-to-bfloat16-to-float32"
+        },
+        "candidateCache": {
+          "const": "independently-decode-archived-vtl5-and-bind-inputSha256-to-regenerated-baseline"
+        },
+        "compareEveryPrediction": {
+          "const": true
+        },
+        "comparisons": {
+          "const": [
+            "first512TokenIds",
+            "targetTokenId",
+            "baselineLossF32Bits",
+            "candidateLossF32Bits",
+            "baselineTop1TokenId",
+            "candidateTop1TokenId"
+          ]
+        },
+        "network": {
+          "const": "forbidden-from-process-creation"
+        },
+        "fixtureBackendScientificUse": {
+          "const": "forbidden"
+        },
+        "bitExactReplayScope": {
+          "const": "one-shot host and frozen runtime; archival cross-environment mismatches are failures, never tolerance"
+        }
+      }
+    },
+    "beacon": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetTimestamp",
+        "targetUnixMilliseconds",
+        "pulseEndpoint",
+        "pulseVersion",
+        "pulseCipherSuite",
+        "pulsePeriodMilliseconds",
+        "transportCABundleSHA256",
+        "offlineTrustBundleSHA256",
+        "nistTrustRootDERsSHA256",
+        "fallback",
+        "exactTimestampRequired",
+        "signatureAndOutputVerificationRequired",
+        "selectionDomainASCIIWithTerminalNUL",
+        "selectionDigest",
+        "moduloBias"
+      ],
+      "properties": {
+        "targetTimestamp": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetUnixMilliseconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pulseEndpoint": {
+          "type": "string",
+          "format": "uri"
+        },
+        "pulseVersion": {
+          "const": "2.0"
+        },
+        "pulseCipherSuite": {
+          "const": 0
+        },
+        "pulsePeriodMilliseconds": {
+          "const": 60000
+        },
+        "transportCABundleSHA256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "offlineTrustBundleSHA256": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "nistTrustRootDERsSHA256": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sha256"}
+        },
+        "fallback": {
+          "const": "forbidden"
+        },
+        "exactTimestampRequired": {
+          "const": true
+        },
+        "signatureAndOutputVerificationRequired": {
+          "const": true
+        },
+        "selectionDomainASCIIWithTerminalNUL": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selectionDigest": {
+          "const": "SHA-512"
+        },
+        "moduloBias": {
+          "const": "rejection-sampling"
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corporaSelected",
+        "pagesPerCorpus",
+        "allModelsRequired",
+        "beaconControlsCorpusPageAndModelOrder",
+        "drawOrder"
+      ],
+      "properties": {
+        "corporaSelected": {
+          "const": 2
+        },
+        "pagesPerCorpus": {
+          "const": 16
+        },
+        "allModelsRequired": {
+          "const": true
+        },
+        "beaconControlsCorpusPageAndModelOrder": {
+          "const": true
+        },
+        "drawOrder": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "cellGates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minimumCompressionRatioVsBF16",
+        "maximumDeltaNLLNatPerToken",
+        "minimumTop1Agreement",
+        "structuralReplayRequiredForEveryContainer",
+        "allSixCellsMustPass"
+      ],
+      "properties": {
+        "minimumCompressionRatioVsBF16": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maximumDeltaNLLNatPerToken": {
+          "type": "number"
+        },
+        "minimumTop1Agreement": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "structuralReplayRequiredForEveryContainer": {
+          "const": true
+        },
+        "allSixCellsMustPass": {
+          "const": true
+        }
+      }
+    },
+    "modelAggregateGates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pagesPerModel",
+        "predictionsPerPage",
+        "totalPredictionsPerModel",
+        "canonicalBlockOrder",
+        "blockDeltaDefinition",
+        "blockTop1Definition",
+        "meanFunction",
+        "sampleStandardDeviationFunction",
+        "squareRootFunction",
+        "studentTOneSided95Df31",
+        "normalZOneSided95",
+        "deltaUpperFormula",
+        "top1LowerFormula",
+        "wilsonLowerFormula",
+        "maximumDeltaUpperNLLNatPerToken",
+        "minimumTop1Lower",
+        "minimumWilsonLower",
+        "allThreeModelsMustPass",
+        "interpretation"
+      ],
+      "properties": {
+        "pagesPerModel": {
+          "const": 32
+        },
+        "predictionsPerPage": {
+          "const": 128
+        },
+        "totalPredictionsPerModel": {
+          "const": 4096
+        },
+        "canonicalBlockOrder": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blockDeltaDefinition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blockTop1Definition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "meanFunction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sampleStandardDeviationFunction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "squareRootFunction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "studentTOneSided95Df31": {
+          "type": "number"
+        },
+        "normalZOneSided95": {
+          "type": "number"
+        },
+        "deltaUpperFormula": {
+          "type": "string",
+          "minLength": 1
+        },
+        "top1LowerFormula": {
+          "type": "string",
+          "minLength": 1
+        },
+        "wilsonLowerFormula": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maximumDeltaUpperNLLNatPerToken": {
+          "type": "number"
+        },
+        "minimumTop1Lower": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "minimumWilsonLower": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "allThreeModelsMustPass": {
+          "const": true
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "oneShotStateMachine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attemptReservationBeforeMarker",
+        "attemptMarkerBeforeSelectionOrSelectedDataOpen",
+        "atomicStatePublication",
+        "phaseOrder",
+        "durablePulseSealBeforeSelection",
+        "networklessChildStartsAfterPulseSeal",
+        "retryAfterReservation",
+        "retryAfterMarker",
+        "terminalStates",
+        "allLaterRuns"
+      ],
+      "properties": {
+        "attemptReservationBeforeMarker": {
+          "const": true
+        },
+        "attemptMarkerBeforeSelectionOrSelectedDataOpen": {
+          "const": true
+        },
+        "atomicStatePublication": {
+          "const": "exclusive-pending-file-fsync-hardlink-directory-fsync-unlink-directory-fsync"
+        },
+        "phaseOrder": {
+          "const": [
+            "preflight-seal-assets",
+            "pre-marker-networkless-locked-runtime-import-probe",
+            "durable-attempt-reservation",
+            "durable-attempt-marker",
+            "supervisor-fetch-and-verify-exact-nist-pulse",
+            "seal-pulse-and-install-scoped-supervisor-socket-denial",
+            "derive-selection",
+            "spawn-networkless-inference-workers-in-registered-order",
+            "consolidate-worker-evidence",
+            "publish-producer-result",
+            "publish-producer-evidence-manifest",
+            "spawn-networkless-independent-verifier",
+            "require-independent-real-model-replay-and-exact-result-match",
+            "publish-terminal-outcome"
+          ]
+        },
+        "durablePulseSealBeforeSelection": {
+          "const": true
+        },
+        "networklessChildStartsAfterPulseSeal": {
+          "const": true
+        },
+        "retryAfterReservation": {
+          "const": "forbidden"
+        },
+        "retryAfterMarker": {
+          "const": "forbidden"
+        },
+        "terminalStates": {
+          "const": [
+            "PASS",
+            "FAIL_GATES",
+            "FAIL_EXECUTION",
+            "CONSUMED_INCOMPLETE"
+          ]
+        },
+        "allLaterRuns": {
+          "const": "regression-only"
+        }
+      }
+    }
+  }
+}

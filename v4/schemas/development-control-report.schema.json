@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v4/schemas/development-control-report.schema.json",
+  "title": "Core LM real-data non-scientific development E2E report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "runId",
+    "executionId",
+    "status",
+    "countsTowardScientificVerdict",
+    "usedForCandidateSelectionOrTuning",
+    "scientificAttemptStateCreated",
+    "nistUsed",
+    "futureCorpusUsed",
+    "thresholdsApplied",
+    "candidateCodecInvoked",
+    "realModelsUsed",
+    "realDevelopmentCorpusUsed",
+    "independentRealModelReplayComplete",
+    "startedAt",
+    "completedAt",
+    "controlConfigurationSHA256",
+    "plan",
+    "inputs",
+    "runtime",
+    "hostSafetyChecks",
+    "networkIsolationBackend",
+    "workerProcessesSequential",
+    "replayModelsSequential",
+    "supervision",
+    "independentReplay",
+    "artifactInventory",
+    "artifactSetSHA256",
+    "scientificClaim",
+    "candidateSelectionOrTuning",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-v4-real-e2e-development-report-v1"
+    },
+    "suiteId": {"const": "corelm-voidtoken-crossmodel-v4-author-verified-development-e2e"},
+    "runId": {"pattern": "^development-e2e-[0-9a-f]{64}$"},
+    "executionId": {
+      "type": "string",
+      "pattern": "^development-execution-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+    },
+    "status": {"const": "NON_SCIENTIFIC_REAL_DATA_E2E_CONTROL_PASS"},
+    "countsTowardScientificVerdict": {"const": false},
+    "usedForCandidateSelectionOrTuning": {"const": false},
+    "scientificAttemptStateCreated": {"const": false},
+    "nistUsed": {"const": false},
+    "futureCorpusUsed": {"const": false},
+    "thresholdsApplied": {"const": false},
+    "candidateCodecInvoked": {"const": true},
+    "realModelsUsed": {"const": true},
+    "realDevelopmentCorpusUsed": {"const": true},
+    "independentRealModelReplayComplete": {"const": true},
+    "startedAt": {"$ref": "#/$defs/utcSecond"},
+    "completedAt": {"$ref": "#/$defs/utcSecond"},
+    "controlConfigurationSHA256": {"$ref": "#/$defs/sha256"},
+    "plan": {"$ref": "#/$defs/digestRecord"},
+    "inputs": {"type": "object"},
+    "runtime": {"type": "object"},
+    "hostSafetyChecks": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {"type": "object"}
+    },
+    "networkIsolationBackend": {"const": "macOS-sandbox-exec-deny-network"},
+    "workerProcessesSequential": {"const": true},
+    "replayModelsSequential": {"const": true},
+    "supervision": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"type": "object"}
+    },
+    "independentReplay": {"type": "object"},
+    "artifactInventory": {
+      "type": "array",
+      "minItems": 2088,
+      "maxItems": 2088,
+      "items": {"$ref": "#/$defs/artifactRecord"}
+    },
+    "artifactSetSHA256": {"$ref": "#/$defs/sha256"},
+    "scientificClaim": {"const": "forbidden"},
+    "candidateSelectionOrTuning": {"const": "forbidden"},
+    "contentSHA256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "digestRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "sha256"],
+      "properties": {
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "artifactRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
