@@ -1,0 +1,4 @@
+# Preserve archived upstream provenance byte for byte.  Some upstream payloads
+# intentionally contain trailing whitespace or conflict-marker text; treating
+# them as opaque evidence prevents Git from normalizing or linting those bytes.
+LICENSES/upstream/** -text -diff

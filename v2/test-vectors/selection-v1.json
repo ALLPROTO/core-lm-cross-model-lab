@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "corelm-crossmodel-livewiki-v2-selection-vector-v1",
+  "fixtureOnly": true,
+  "countsTowardScientificVerdict": false,
+  "snapshotRegistration": {
+    "schemaVersion": "corelm-crossmodel-livewiki-v2-snapshot-fixture-v1",
+    "fixtureOnly": true,
+    "purpose": "known-answer protocol control; contains no model or corpus evidence"
+  },
+  "nistOutputValue": "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F",
+  "projects": [
+    "de.wikipedia.org",
+    "en.wikipedia.org",
+    "fr.wikipedia.org"
+  ],
+  "models": [
+    "gpt-neo-125m",
+    "smollm2-360m",
+    "tiny-starcoder-py"
+  ],
+  "ledgers": {
+    "de.wikipedia.org": [
+      {"timestamp": "2026-08-10T00:00:01Z", "pageid": 11001, "revid": 1001},
+      {"timestamp": "2026-08-10T00:00:02Z", "pageid": 11002, "revid": 1002},
+      {"timestamp": "2026-08-10T00:00:03Z", "pageid": 11003, "revid": 1003},
+      {"timestamp": "2026-08-10T00:00:04Z", "pageid": 11004, "revid": 1004},
+      {"timestamp": "2026-08-10T00:00:05Z", "pageid": 11005, "revid": 1005},
+      {"timestamp": "2026-08-10T00:00:06Z", "pageid": 11006, "revid": 1006},
+      {"timestamp": "2026-08-10T00:00:07Z", "pageid": 11007, "revid": 1007},
+      {"timestamp": "2026-08-10T00:00:08Z", "pageid": 11008, "revid": 1008},
+      {"timestamp": "2026-08-10T00:00:09Z", "pageid": 11009, "revid": 1009},
+      {"timestamp": "2026-08-10T00:00:10Z", "pageid": 11010, "revid": 1010},
+      {"timestamp": "2026-08-10T00:00:11Z", "pageid": 11011, "revid": 1011},
+      {"timestamp": "2026-08-10T00:00:12Z", "pageid": 11012, "revid": 1012},
+      {"timestamp": "2026-08-10T00:00:13Z", "pageid": 11013, "revid": 1013},
+      {"timestamp": "2026-08-10T00:00:14Z", "pageid": 11014, "revid": 1014},
+      {"timestamp": "2026-08-10T00:00:15Z", "pageid": 11015, "revid": 1015},
+      {"timestamp": "2026-08-10T00:00:16Z", "pageid": 11016, "revid": 1016},
+      {"timestamp": "2026-08-10T00:00:17Z", "pageid": 11017, "revid": 1017},
+      {"timestamp": "2026-08-10T00:00:18Z", "pageid": 11018, "revid": 1018}
+    ],
+    "en.wikipedia.org": [
+      {"timestamp": "2026-08-10T00:01:01Z", "pageid": 12001, "revid": 2001},
+      {"timestamp": "2026-08-10T00:01:02Z", "pageid": 12002, "revid": 2002},
+      {"timestamp": "2026-08-10T00:01:03Z", "pageid": 12003, "revid": 2003},
+      {"timestamp": "2026-08-10T00:01:04Z", "pageid": 12004, "revid": 2004},
+      {"timestamp": "2026-08-10T00:01:05Z", "pageid": 12005, "revid": 2005},
+      {"timestamp": "2026-08-10T00:01:06Z", "pageid": 12006, "revid": 2006},
+      {"timestamp": "2026-08-10T00:01:07Z", "pageid": 12007, "revid": 2007},
+      {"timestamp": "2026-08-10T00:01:08Z", "pageid": 12008, "revid": 2008},
+      {"timestamp": "2026-08-10T00:01:09Z", "pageid": 12009, "revid": 2009},
+      {"timestamp": "2026-08-10T00:01:10Z", "pageid": 12010, "revid": 2010},
+      {"timestamp": "2026-08-10T00:01:11Z", "pageid": 12011, "revid": 2011},
+      {"timestamp": "2026-08-10T00:01:12Z", "pageid": 12012, "revid": 2012},
+      {"timestamp": "2026-08-10T00:01:13Z", "pageid": 12013, "revid": 2013},
+      {"timestamp": "2026-08-10T00:01:14Z", "pageid": 12014, "revid": 2014},
+      {"timestamp": "2026-08-10T00:01:15Z", "pageid": 12015, "revid": 2015},
+      {"timestamp": "2026-08-10T00:01:16Z", "pageid": 12016, "revid": 2016},
+      {"timestamp": "2026-08-10T00:01:17Z", "pageid": 12017, "revid": 2017},
+      {"timestamp": "2026-08-10T00:01:18Z", "pageid": 12018, "revid": 2018}
+    ],
+    "fr.wikipedia.org": [
+      {"timestamp": "2026-08-10T00:02:01Z", "pageid": 13001, "revid": 3001},
+      {"timestamp": "2026-08-10T00:02:02Z", "pageid": 13002, "revid": 3002},
+      {"timestamp": "2026-08-10T00:02:03Z", "pageid": 13003, "revid": 3003},
+      {"timestamp": "2026-08-10T00:02:04Z", "pageid": 13004, "revid": 3004},
+      {"timestamp": "2026-08-10T00:02:05Z", "pageid": 13005, "revid": 3005},
+      {"timestamp": "2026-08-10T00:02:06Z", "pageid": 13006, "revid": 3006},
+      {"timestamp": "2026-08-10T00:02:07Z", "pageid": 13007, "revid": 3007},
+      {"timestamp": "2026-08-10T00:02:08Z", "pageid": 13008, "revid": 3008},
+      {"timestamp": "2026-08-10T00:02:09Z", "pageid": 13009, "revid": 3009},
+      {"timestamp": "2026-08-10T00:02:10Z", "pageid": 13010, "revid": 3010},
+      {"timestamp": "2026-08-10T00:02:11Z", "pageid": 13011, "revid": 3011},
+      {"timestamp": "2026-08-10T00:02:12Z", "pageid": 13012, "revid": 3012},
+      {"timestamp": "2026-08-10T00:02:13Z", "pageid": 13013, "revid": 3013},
+      {"timestamp": "2026-08-10T00:02:14Z", "pageid": 13014, "revid": 3014},
+      {"timestamp": "2026-08-10T00:02:15Z", "pageid": 13015, "revid": 3015},
+      {"timestamp": "2026-08-10T00:02:16Z", "pageid": 13016, "revid": 3016},
+      {"timestamp": "2026-08-10T00:02:17Z", "pageid": 13017, "revid": 3017},
+      {"timestamp": "2026-08-10T00:02:18Z", "pageid": 13018, "revid": 3018}
+    ]
+  },
+  "expectedSelectedCorpora": [
+    "de.wikipedia.org",
+    "fr.wikipedia.org"
+  ],
+  "expectedModelExecutionOrder": [
+    "smollm2-360m",
+    "gpt-neo-125m",
+    "tiny-starcoder-py"
+  ],
+  "expectedSelectedPageRevisionIds": {
+    "de.wikipedia.org": [1010, 1011, 1005, 1016, 1018, 1001, 1006, 1003, 1004, 1002, 1015, 1007, 1014, 1008, 1009, 1013],
+    "fr.wikipedia.org": [3013, 3009, 3012, 3016, 3011, 3010, 3015, 3007, 3018, 3008, 3001, 3006, 3017, 3005, 3002, 3014]
+  },
+  "expectedFirstDraw": {
+    "counter": 0,
+    "digestSHA512": "9c2851ad565c49da2cfe3b0dce1fcd2e1251a9ad23bca573b574d6c02f0be1e440f66e44339e54bee533d38bc419a25181705580c215ede73c0e12d57814963e",
+    "drawIndex": 0,
+    "kind": "corpus",
+    "populationSizeBefore": 3,
+    "selected": "de.wikipedia.org",
+    "selectedPosition": 0
+  },
+  "expectedLastDraw": {
+    "counter": 0,
+    "digestSHA512": "941536d2dc26f72358e8a1c736babdc3472ec7024a48d5c4cc25d3d4d54060ef22ee7a17f3846365fc52e138afae2acdb2198a966d92e600f84921620dbb681c",
+    "drawIndex": 35,
+    "kind": "model",
+    "populationSizeBefore": 2,
+    "selected": "gpt-neo-125m",
+    "selectedPosition": 0
+  },
+  "expectedDrawsSHA256": "394b91408f2a087cf64c89268d1c8db4ef8eafc82df49f977ca68a1e088bbd4f",
+  "expectedSelectionSHA256": "8aed2d5d837d1c586fc46790cd3854c72618d2d9e569ed65cc2282056987f38a"
+}

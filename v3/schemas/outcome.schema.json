@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v3/schemas/outcome.schema.json",
+  "title": "Core LM blind multi-model v3 immutable local terminal outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "attemptId",
+    "terminalState",
+    "completedAt",
+    "attemptMarkerFileSHA256",
+    "resultSHA256",
+    "evidenceManifestSHA256",
+    "independentVerifierSHA256",
+    "failureReason",
+    "retryPermitted",
+    "countsTowardScientificVerdict"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v3-outcome-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v3-author-verified"
+    },
+    "attemptId": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+    },
+    "terminalState": {
+      "enum": [
+        "PASS",
+        "FAIL_GATES",
+        "FAIL_EXECUTION",
+        "CONSUMED_INCOMPLETE"
+      ]
+    },
+    "completedAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "attemptMarkerFileSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "resultSHA256": {
+      "$ref": "#/$defs/nullableSha256"
+    },
+    "evidenceManifestSHA256": {
+      "$ref": "#/$defs/nullableSha256"
+    },
+    "independentVerifierSHA256": {
+      "$ref": "#/$defs/nullableSha256"
+    },
+    "failureReason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "retryPermitted": {
+      "const": false
+    },
+    "countsTowardScientificVerdict": {
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "terminalState": {
+            "enum": [
+              "PASS",
+              "FAIL_GATES"
+            ]
+          }
+        },
+        "required": [
+          "terminalState"
+        ]
+      },
+      "then": {
+        "properties": {
+          "resultSHA256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "evidenceManifestSHA256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "independentVerifierSHA256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "failureReason": {
+            "type": "null"
+          },
+          "countsTowardScientificVerdict": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "terminalState": {
+            "enum": [
+              "FAIL_EXECUTION",
+              "CONSUMED_INCOMPLETE"
+            ]
+          }
+        },
+        "required": [
+          "terminalState"
+        ]
+      },
+      "then": {
+        "properties": {
+          "failureReason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "countsTowardScientificVerdict": {
+            "const": false
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nullableSha256": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    }
+  }
+}

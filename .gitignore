@@ -3,9 +3,28 @@ __pycache__/
 *.py[cod]
 .venv/
 .runtime/
+.assets/
+.working/
 .codec-assets/
 .cross-model-assets/
 runs/
 *.partial/
 prompt-workload/
-V2_PREREGISTRATION_DRAFT.md
+codec-source/
+
+# Blind v2 local state. Normative source and empty result instructions stay
+# tracked; downloaded assets, crawl workspaces, runtimes, and one-shot outputs
+# must never be swept into a commit accidentally.
+v2/.assets/
+v2/.runtime/
+v2/.working/
+v2/results/*
+!v2/results/README.md
+
+# Author-verified v3 local state. The v2 paths above are retained so the
+# superseded draft remains reproducible from its historical commits.
+v3/.assets/
+v3/.runtime/
+v3/.working/
+v3/results/*
+!v3/results/README.md

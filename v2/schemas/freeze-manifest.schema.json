@@ -1,0 +1,424 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v2/schemas/freeze-manifest.schema.json",
+  "title": "Core LM blind multi-model v2 implementation freeze manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "suiteId",
+    "countsTowardScientificVerdict",
+    "freezeProcedure",
+    "implementation",
+    "codec",
+    "developmentControl",
+    "artifacts",
+    "review",
+    "continuousIntegration",
+    "createdAt",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-crossmodel-livewiki-v2-freeze-manifest-v1"
+    },
+    "status": {
+      "const": "IMPLEMENTATION_FREEZE_READY_FOR_DESIGN_BINDING"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v2"
+    },
+    "countsTowardScientificVerdict": {
+      "const": false
+    },
+    "freezeProcedure": {
+      "$ref": "#/$defs/freezeProcedure"
+    },
+    "implementation": {
+      "$ref": "#/$defs/sourceIdentity"
+    },
+    "codec": {
+      "$ref": "#/$defs/sourceIdentity"
+    },
+    "developmentControl": {
+      "$ref": "#/$defs/developmentControl"
+    },
+    "artifacts": {
+      "$ref": "#/$defs/artifacts"
+    },
+    "review": {
+      "$ref": "#/$defs/review"
+    },
+    "continuousIntegration": {
+      "$ref": "#/$defs/continuousIntegration"
+    },
+    "createdAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "gitObject": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "githubRepository": {
+      "type": "string",
+      "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\\.git)?$"
+    },
+    "freezeProcedure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "implementationStage",
+        "manifestStage",
+        "designBindingStage",
+        "designBindingField",
+        "designBindingDigest",
+        "implementationMutationAfterManifest",
+        "manifestContainsOwnFileSHA256"
+      ],
+      "properties": {
+        "implementationStage": {
+          "const": "REVIEWED_GREEN_IMPLEMENTATION_COMMIT"
+        },
+        "manifestStage": {
+          "const": "CANONICAL_MANIFEST_GENERATED_OUTSIDE_IMPLEMENTATION_TREE"
+        },
+        "designBindingStage": {
+          "const": "FROZEN_DESIGN_BINDS_EXACT_MANIFEST_FILE_SHA256"
+        },
+        "designBindingField": {
+          "const": "labSource.freezeManifestSHA256"
+        },
+        "designBindingDigest": {
+          "const": "sha256(canonical-json-with-contentSHA256-plus-terminal-LF)"
+        },
+        "implementationMutationAfterManifest": {
+          "const": "FORBIDDEN"
+        },
+        "manifestContainsOwnFileSHA256": {
+          "const": false
+        }
+      }
+    },
+    "sourceIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "commit",
+        "tree"
+      ],
+      "properties": {
+        "repository": {
+          "$ref": "#/$defs/githubRepository"
+        },
+        "commit": {
+          "$ref": "#/$defs/gitObject"
+        },
+        "tree": {
+          "$ref": "#/$defs/gitObject"
+        }
+      }
+    },
+    "developmentControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reportSchemaVersion",
+        "reportFileName",
+        "executionId",
+        "artifactCount",
+        "completedAt",
+        "archivePublishedAt",
+        "archiveAttestedAt",
+        "serverTimestampedArchiveVerified",
+        "countsTowardScientificVerdict",
+        "usedForCandidateSelectionOrTuning",
+        "scientificAttemptStateCreated",
+        "nistUsed",
+        "futureCorpusUsed",
+        "thresholdsApplied"
+      ],
+      "properties": {
+        "status": {"const": "VERIFIED_REAL_DATA_E2E_FREEZE_GATE"},
+        "reportSchemaVersion": {
+          "const": "corelm-crossmodel-v2-real-e2e-development-report-v1"
+        },
+        "reportFileName": {"const": "development-control-report.json"},
+        "executionId": {
+          "type": "string",
+          "pattern": "^development-execution-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+        },
+        "artifactCount": {"type": "integer", "const": 2088},
+        "completedAt": {"$ref": "#/$defs/utcSecond"},
+        "archivePublishedAt": {"$ref": "#/$defs/utcSecond"},
+        "archiveAttestedAt": {"$ref": "#/$defs/utcSecond"},
+        "serverTimestampedArchiveVerified": {"const": true},
+        "countsTowardScientificVerdict": {"const": false},
+        "usedForCandidateSelectionOrTuning": {"const": false},
+        "scientificAttemptStateCreated": {"const": false},
+        "nistUsed": {"const": false},
+        "futureCorpusUsed": {"const": false},
+        "thresholdsApplied": {"const": false}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtimeManifestSHA256",
+        "fullAssetReceiptSHA256",
+        "transportCABundleSHA256",
+        "offlineTrustBundleSHA256",
+        "githubGateReceiptSHA256",
+        "developmentControlReportSHA256",
+        "developmentControlArtifactSetSHA256",
+        "developmentControlConfigurationSHA256",
+        "developmentControlArchiveReceiptSHA256",
+        "developmentControlReleaseAttestationBundleSHA256",
+        "developmentControlReleaseAttestationOutputSHA256",
+        "developmentControlArtifactArchiveSHA256",
+        "developmentControlArchiveManifestSHA256"
+      ],
+      "properties": {
+        "runtimeManifestSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "fullAssetReceiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "transportCABundleSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "offlineTrustBundleSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "githubGateReceiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlReportSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlArtifactSetSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlConfigurationSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlArchiveReceiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlReleaseAttestationBundleSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlReleaseAttestationOutputSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlArtifactArchiveSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "developmentControlArchiveManifestSHA256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pullRequestURL",
+        "pullRequestNumber",
+        "approvedReview"
+      ],
+      "properties": {
+        "pullRequestURL": {
+          "type": "string",
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[1-9][0-9]*$"
+        },
+        "pullRequestNumber": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "approvedReview": {
+          "$ref": "#/$defs/approvedReview"
+        }
+      }
+    },
+    "approvedReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "reviewerLogin",
+        "state",
+        "commitSHA",
+        "submittedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reviewerLogin": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
+        },
+        "state": {
+          "const": "APPROVED"
+        },
+        "commitSHA": {
+          "$ref": "#/$defs/gitObject"
+        },
+        "submittedAt": {
+          "$ref": "#/$defs/utcSecond"
+        }
+      }
+    },
+    "continuousIntegration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runURL",
+        "runId",
+        "workflowId",
+        "workflowName",
+        "workflowPath",
+        "status",
+        "conclusion",
+        "headSHA",
+        "allJobsCompletedSuccess",
+        "zeroSkippedOrCancelledJobs",
+        "jobIds",
+        "linuxJobIds",
+        "macOSArm64JobIds",
+        "artifactSHA256",
+        "evidenceBoundary",
+        "gateFirstServerDate",
+        "gateLastServerDate",
+        "observationCapturedAt"
+      ],
+      "properties": {
+        "runURL": {
+          "type": "string",
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/actions/runs/[1-9][0-9]*$"
+        },
+        "runId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "workflowId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "workflowName": {
+          "const": "Blind v2 development controls"
+        },
+        "workflowPath": {
+          "const": ".github/workflows/v2-development-controls.yml"
+        },
+        "status": {
+          "const": "completed"
+        },
+        "conclusion": {
+          "const": "success"
+        },
+        "headSHA": {
+          "$ref": "#/$defs/gitObject"
+        },
+        "allJobsCompletedSuccess": {
+          "const": true
+        },
+        "zeroSkippedOrCancelledJobs": {
+          "const": true
+        },
+        "jobIds": {
+          "$ref": "#/$defs/jobIds"
+        },
+        "linuxJobIds": {
+          "$ref": "#/$defs/platformJobIds"
+        },
+        "macOSArm64JobIds": {
+          "$ref": "#/$defs/platformJobIds"
+        },
+        "artifactSHA256": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "sha256"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^blind-v2-linux-development-[1-9][0-9]*-[1-9][0-9]*$"
+                },
+                "sha256": {"$ref": "#/$defs/sha256"}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "sha256"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^blind-v2-macos-development-[1-9][0-9]*-[1-9][0-9]*$"
+                },
+                "sha256": {"$ref": "#/$defs/sha256"}
+              }
+            }
+          ],
+          "items": false
+        },
+        "evidenceBoundary": {
+          "const": "DIRECT_TLS_VERIFIED_AT_COLLECTION;NO_GITHUB_RESPONSE_SIGNATURE;OFFLINE_STRUCTURAL_CONSISTENCY_ONLY"
+        },
+        "gateFirstServerDate": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "gateLastServerDate": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "observationCapturedAt": {
+          "$ref": "#/$defs/utcSecond"
+        }
+      }
+    },
+    "jobIds": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "platformJobIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,400 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/v3/schemas/zenodo-deposit-manifest.schema.json",
+  "title": "Core LM manifested Zenodo archival superset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "releaseKind",
+    "manifestFileName",
+    "fileSetPolicy",
+    "githubRelease",
+    "developmentControlArchive",
+    "githubGate",
+    "zenodoReservation",
+    "rightsDeclarations",
+    "manifestRightsIds",
+    "files",
+    "fileCount",
+    "totalBytes",
+    "githubReleaseAssetCount",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-zenodo-deposit-manifest-v1"
+    },
+    "suiteId": {
+      "const": "corelm-voidtoken-crossmodel-livewiki-v3-author-verified"
+    },
+    "releaseKind": {
+      "enum": ["design", "snapshot", "evidence", "closeout"]
+    },
+    "manifestFileName": {
+      "const": "zenodo-deposit-manifest.json"
+    },
+    "fileSetPolicy": {
+      "const": "EXACT_MANIFESTED_SUPERSET_PLUS_THIS_MANIFEST"
+    },
+    "githubRelease": {
+      "$ref": "#/$defs/githubRelease"
+    },
+    "developmentControlArchive": {
+      "oneOf": [
+        {"$ref": "#/$defs/developmentControlArchive"},
+        {"type": "null"}
+      ]
+    },
+    "githubGate": {
+      "$ref": "#/$defs/githubGate"
+    },
+    "zenodoReservation": {
+      "$ref": "#/$defs/zenodoReservation"
+    },
+    "rightsDeclarations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/rightsDeclaration"
+      }
+    },
+    "manifestRightsIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 99,
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    },
+    "fileCount": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 99
+    },
+    "totalBytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 50000000000
+    },
+    "githubReleaseAssetCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 98
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"releaseKind": {"const": "design"}},
+        "required": ["releaseKind"]
+      },
+      "then": {
+        "properties": {
+          "developmentControlArchive": {
+            "$ref": "#/$defs/developmentControlArchive"
+          }
+        }
+      },
+      "else": {
+        "properties": {"developmentControlArchive": {"type": "null"}}
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "gitOID": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*//)[A-Za-z0-9](?:[A-Za-z0-9._/+ -]{0,510}[A-Za-z0-9._+ -])?$"
+    },
+    "githubRelease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "kind",
+        "tag",
+        "releaseId",
+        "commit",
+        "tree",
+        "publishedAt",
+        "attestedAt",
+        "releaseAttestationBundleSHA256",
+        "releaseAttestationOutputSHA256",
+        "receiptPath",
+        "receiptBytes",
+        "receiptSHA256",
+        "receiptContentSHA256"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "kind": {
+          "enum": ["design", "snapshot", "evidence", "closeout"]
+        },
+        "tag": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        },
+        "releaseId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "commit": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "tree": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "publishedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "attestedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "releaseAttestationBundleSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "releaseAttestationOutputSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "receiptPath": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "receiptBytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "receiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "receiptContentSHA256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "developmentControlArchive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "tag",
+        "releaseId",
+        "commit",
+        "tree",
+        "publishedAt",
+        "deadline",
+        "archiveAttestedAt",
+        "releaseAttestationBundleSHA256",
+        "releaseAttestationOutputSHA256",
+        "receiptSHA256",
+        "receiptContentSHA256"
+      ],
+      "properties": {
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "tag": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+        },
+        "releaseId": {"type": "integer", "minimum": 1},
+        "commit": {"$ref": "#/$defs/gitOID"},
+        "tree": {"$ref": "#/$defs/gitOID"},
+        "publishedAt": {"$ref": "#/$defs/utcSecond"},
+        "deadline": {"$ref": "#/$defs/utcSecond"},
+        "archiveAttestedAt": {"$ref": "#/$defs/utcSecond"},
+        "releaseAttestationBundleSHA256": {"$ref": "#/$defs/sha256"},
+        "releaseAttestationOutputSHA256": {"$ref": "#/$defs/sha256"},
+        "receiptSHA256": {"$ref": "#/$defs/sha256"},
+        "receiptContentSHA256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "githubGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "receiptPath",
+        "receiptBytes",
+        "receiptSHA256",
+        "implementationCommit",
+        "workflowRunId",
+        "artifactCount"
+      ],
+      "properties": {
+        "receiptPath": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "receiptBytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "receiptSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "implementationCommit": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "workflowRunId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "artifactCount": {
+          "const": 2
+        }
+      }
+    },
+    "zenodoReservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["depositionId", "recordId", "doi"],
+      "properties": {
+        "depositionId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "recordId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "doi": {
+          "type": "string",
+          "pattern": "^10\\.5281/zenodo\\.[1-9][0-9]*$"
+        }
+      }
+    },
+    "rightsDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rightsId",
+        "title",
+        "uri",
+        "zenodoIdentifier"
+      ],
+      "properties": {
+        "rightsId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "uri": {
+          "type": "string",
+          "pattern": "^https://\\S+$"
+        },
+        "zenodoIdentifier": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "role",
+        "githubAssetRole",
+        "githubActionsArtifactName",
+        "mediaType",
+        "rightsIds",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "role": {
+          "enum": [
+            "github-release-asset",
+            "github-release-receipt",
+            "github-gate-receipt",
+            "release-specific-citation",
+            "rights-metadata",
+            "license-material",
+            "notice",
+            "sbom",
+            "signed-tag-verification",
+            "linux-ci-artifact",
+            "macos-arm64-ci-artifact",
+            "lab-source-archive",
+            "codec-source-archive",
+            "other-provenance"
+          ]
+        },
+        "githubAssetRole": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z0-9][a-z0-9-]{0,127}$"
+        },
+        "githubActionsArtifactName": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$"
+        },
+        "mediaType": {
+          "type": "string",
+          "pattern": "^[a-z0-9!#$&^_.+-]+/[a-z0-9!#$&^_.+-]+$"
+        },
+        "rightsIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          }
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50000000000
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    }
+  }
+}
