@@ -82,6 +82,16 @@ now public. They remain non-scientific and do not close the NIST blocker. For
 exact tag/key verification, the Linux portability boundary, and a separately
 labelled macOS real-model regression, follow [`REPRODUCE.md`](REPRODUCE.md).
 
+The completed post-release chain is also public: the immutable
+[`source-identity release`](https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-regression-v1),
+its immutable
+[`metadata correction`](https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-identity-correction-v1),
+and the immutable
+[`macOS real-model evidence release`](https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1).
+The last release preserves both the first host-memory FAIL and the successful
+three-model retry. Its verification class is `AUTHOR_SELF_VERIFICATION`; it is
+not a scientific, blind, generalization, or NIST result.
+
 The former [`v3/`](v3/README.md) contour and its immutable development release
 are retained as a transparent non-scientific failed-freeze archive. Its
 reports, receipt identity, tag, and release cannot be reused as v4 evidence.
