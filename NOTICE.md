@@ -6,8 +6,9 @@ Repository-authored source code is provided under the root MIT `LICENSE`.
 That license does not replace licenses attached to downloaded model,
 tokenizer, dataset, Wikipedia, or third-party dependency assets.
 
-The Git checkout does not contain v2/v3/v4 model weights or the real
-UD English PUD r2.18 corpus; both are downloaded from exact immutable upstream revisions
+The Git checkout does not contain model weights or the real
+UD English PUD r2.18 corpus. Blind V1 downloads the three excluded development-control models
+and the six confirmatory-pool revisions from exact immutable upstream revisions
 into an ignored local directory. Model weights are not redistributed by this
 project. The separately published development-control evidence release does
 include the exact UD English PUD source and source-derived evidence under CC
@@ -26,11 +27,22 @@ extraction and partitioning changes, remain under CC BY-SA 3.0 or a compatible
 license, and impose no additional effective restrictions. The exact upstream
 README, license, and repository revision are retained as source evidence.
 
-The future Wikipedia snapshot is not present in this development draft. If it
-is lawfully published, it must preserve per-revision attribution, source links,
-history links, and the applicable CC BY-SA terms. Removing a MediaWiki bot flag
+The Blind V1 future Wikipedia snapshot is not present in this development
+draft. If it is lawfully published, it must preserve per-revision attribution,
+source links, history links, and the applicable CC BY-SA terms. Removing a MediaWiki bot flag
 does not establish human authorship and the project makes no claim that future
 text is free of AI-generated material.
+
+The Blind V1 confirmatory pool comprises exact Pythia-160M, Pythia-70M,
+SmolLM-135M, SmolLM-360M, GPT-2, and DistilGPT2 revisions. Their pinned
+upstream license declarations, immutable revision URLs, exact model-card bytes,
+byte counts, and SHA-256 hashes are recorded in
+`blind_v1/model-assets.draft.json`,
+`LICENSES/blind-v1-model-card-evidence.json`, and
+`LICENSES/ASSET_LICENSES.md`. None of those exact revision trees contains a
+standalone `LICENSE*` or `NOTICE*` file; the project does not fabricate one or
+mislabel a generic license text as an exact upstream-revision file. These
+records do not relicense the upstream assets.
 
 Python packages and native libraries retain their own licenses. The generated
 CycloneDX SBOM and runtime manifest inventory exact installed components but do

@@ -1,0 +1,387 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/github-gate-receipt.schema.json",
+  "title": "Core LM archived GitHub PR and Actions CI gate receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "githubAPIVersion",
+    "evidenceBoundary",
+    "repository",
+    "implementationCommit",
+    "pullRequestNumber",
+    "authorVerification",
+    "ciGate",
+    "capturePolicy",
+    "githubAPIResponses",
+    "receiptCreatedAt",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-github-ci-gate-receipt-v2"
+    },
+    "suiteId": {
+      "const": "corelm-blind-crossmodel-v1"
+    },
+    "githubAPIVersion": {
+      "const": "2026-03-10"
+    },
+    "evidenceBoundary": {
+      "const": "DIRECT_TLS_VERIFIED_AT_COLLECTION;NO_GITHUB_RESPONSE_SIGNATURE;OFFLINE_STRUCTURAL_CONSISTENCY_ONLY"
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "htmlURL", "apiURL"],
+      "properties": {
+        "slug": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$"
+        },
+        "htmlURL": {
+          "type": "string",
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "apiURL": {
+          "type": "string",
+          "pattern": "^https://api\\.github\\.com/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        }
+      }
+    },
+    "implementationCommit": {
+      "$ref": "#/$defs/gitOID"
+    },
+    "pullRequestNumber": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "authorVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "authorName",
+        "authorORCID",
+        "authorGitHubLogin",
+        "independentHumanReviewRequired",
+        "independentHumanReviewPerformed",
+        "declaration",
+        "claimBoundary"
+      ],
+      "properties": {
+        "mode": {
+          "const": "AUTHOR_SELF_VERIFICATION"
+        },
+        "authorName": {
+          "const": "Ivan Tyshchenko"
+        },
+        "authorORCID": {
+          "const": "https://orcid.org/0009-0000-7935-6090"
+        },
+        "authorGitHubLogin": {
+          "const": "ALLPROTO"
+        },
+        "independentHumanReviewRequired": {
+          "const": false
+        },
+        "independentHumanReviewPerformed": {
+          "const": false
+        },
+        "declaration": {
+          "const": "I, Ivan Tyshchenko, repository owner and author, personally verified the normative protocol, canonical schemas, fail-closed implementation, zero-skip tests, and evidence plan on this exact commit. This is author self-verification only; it is not independent human review, peer review, operator blindness, or independent replication."
+        },
+        "claimBoundary": {
+          "const": "AUTHOR_SELF_VERIFICATION_ONLY;NO_INDEPENDENT_HUMAN_REVIEW;NO_PEER_REVIEW;NO_OPERATOR_BLINDNESS;NO_INDEPENDENT_REPLICATION"
+        }
+      }
+    },
+    "ciGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runId",
+        "workflowId",
+        "workflowName",
+        "workflowPath",
+        "headSHA",
+        "status",
+        "conclusion",
+        "totalJobs",
+        "allJobsCompletedSuccess",
+        "zeroSkippedOrCancelledJobs",
+        "jobIds",
+        "linuxJobIds",
+        "macOSArm64JobIds",
+        "artifactSHA256"
+      ],
+      "properties": {
+        "runId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "workflowId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "workflowName": {
+          "const": "Author-verified blind-v1 development controls"
+        },
+        "workflowPath": {
+          "const": ".github/workflows/blind-v1-development-controls.yml"
+        },
+        "headSHA": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "status": {
+          "const": "completed"
+        },
+        "conclusion": {
+          "const": "success"
+        },
+        "totalJobs": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 100
+        },
+        "allJobsCompletedSuccess": {
+          "const": true
+        },
+        "zeroSkippedOrCancelledJobs": {
+          "const": true
+        },
+        "jobIds": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "linuxJobIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "macOSArm64JobIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "artifactSHA256": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "sha256"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^author-blind_v1-linux-development-[1-9][0-9]*-[1-9][0-9]*$"
+                },
+                "sha256": {"$ref": "#/$defs/sha256"}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "sha256"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^author-blind_v1-macos-development-[1-9][0-9]*-[1-9][0-9]*$"
+                },
+                "sha256": {"$ref": "#/$defs/sha256"}
+              }
+            }
+          ],
+          "items": false
+        }
+      }
+    },
+    "capturePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxResultsPerListEndpoint",
+        "paginationAllowed",
+        "redirectsAllowed",
+        "retriesAllowed",
+        "proxyEnvironmentAllowed",
+        "maximumServerDateSpanSeconds",
+        "ciSnapshotIsTimeBounded",
+        "platformEvidenceBoundary",
+        "artifactBytesArchived"
+      ],
+      "properties": {
+        "maxResultsPerListEndpoint": {
+          "const": 100
+        },
+        "paginationAllowed": {
+          "const": false
+        },
+        "redirectsAllowed": {
+          "const": false
+        },
+        "retriesAllowed": {
+          "const": false
+        },
+        "proxyEnvironmentAllowed": {
+          "const": false
+        },
+        "maximumServerDateSpanSeconds": {
+          "const": 120
+        },
+        "ciSnapshotIsTimeBounded": {
+          "const": true
+        },
+        "platformEvidenceBoundary": {
+          "const": "GITHUB_ACTIONS_SCHEDULER_LABELS_NOT_MEASURED_CPU"
+        },
+        "artifactBytesArchived": {
+          "const": false
+        }
+      }
+    },
+    "githubAPIResponses": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {"$ref": "#/$defs/pullRequestResponse"},
+        {"$ref": "#/$defs/workflowRunResponse"},
+        {"$ref": "#/$defs/workflowJobsResponse"},
+        {"$ref": "#/$defs/workflowArtifactsResponse"}
+      ],
+      "items": false
+    },
+    "receiptCreatedAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "gitOID": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "workflowPath": {
+      "type": "string",
+      "pattern": "^\\.github/workflows/[A-Za-z0-9][A-Za-z0-9._/-]{0,240}$"
+    },
+    "archivedBytes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["encoding", "bytes", "sha256", "dataBase64"],
+      "properties": {
+        "encoding": {
+          "const": "base64"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "dataBase64": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        }
+      }
+    },
+    "apiResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "requestURL",
+        "statusCode",
+        "serverDate",
+        "capturedAt",
+        "responseHeaders",
+        "responseBody"
+      ],
+      "properties": {
+        "role": {
+          "enum": [
+            "pull-request",
+            "workflow-run",
+            "workflow-jobs",
+            "workflow-artifacts"
+          ]
+        },
+        "requestURL": {
+          "type": "string",
+          "pattern": "^https://api\\.github\\.com/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/.+$"
+        },
+        "statusCode": {
+          "const": 200
+        },
+        "serverDate": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "capturedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "responseHeaders": {
+          "$ref": "#/$defs/archivedBytes"
+        },
+        "responseBody": {
+          "$ref": "#/$defs/archivedBytes"
+        }
+      }
+    },
+    "pullRequestResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "pull-request"}}}
+      ]
+    },
+    "workflowRunResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "workflow-run"}}}
+      ]
+    },
+    "workflowJobsResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "workflow-jobs"}}}
+      ]
+    },
+    "workflowArtifactsResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "workflow-artifacts"}}}
+      ]
+    }
+  }
+}

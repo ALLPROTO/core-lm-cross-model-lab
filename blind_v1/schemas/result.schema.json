@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/result.schema.json",
+  "title": "Core LM blind multi-model blind-v1 recomputed scientific result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "attemptId",
+    "selectionSHA256",
+    "pulseVerificationSHA256",
+    "cells",
+    "modelAggregates",
+    "suitePass",
+    "countsTowardScientificVerdict"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-blind-crossmodel-v1-result-v1"
+    },
+    "suiteId": {
+      "const": "corelm-blind-crossmodel-v1"
+    },
+    "attemptId": {
+      "type": "string",
+      "pattern": "^20260821T180000Z-[0-9a-f]{16}$"
+    },
+    "selectionSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "pulseVerificationSHA256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "cells": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "$ref": "#/$defs/cell"
+      }
+    },
+    "modelAggregates": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/modelAggregate"
+      }
+    },
+    "suitePass": {
+      "type": "boolean"
+    },
+    "countsTowardScientificVerdict": {
+      "const": true
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "modelKey": {
+      "enum": [
+        "pythia-160m",
+        "pythia-70m",
+        "smollm-135m",
+        "smollm-360m",
+        "gpt2-124m",
+        "distilgpt2-82m"
+      ]
+    },
+    "corpusProject": {
+      "enum": [
+        "de.wikipedia.org",
+        "en.wikipedia.org",
+        "fr.wikipedia.org"
+      ]
+    },
+    "finiteNumber": {
+      "type": "number"
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelKey",
+        "corpusProject",
+        "pages",
+        "predictions",
+        "denseBF16Bytes",
+        "containerBytes",
+        "compressionRatioVsBF16",
+        "deltaNLLNatPerToken",
+        "top1Agreement",
+        "structuralReplay",
+        "pass"
+      ],
+      "properties": {
+        "modelKey": {
+          "$ref": "#/$defs/modelKey"
+        },
+        "corpusProject": {
+          "$ref": "#/$defs/corpusProject"
+        },
+        "pages": {
+          "const": 16
+        },
+        "predictions": {
+          "const": 2048
+        },
+        "denseBF16Bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "containerBytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "compressionRatioVsBF16": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "deltaNLLNatPerToken": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "top1Agreement": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "structuralReplay": {
+          "const": true
+        },
+        "pass": {
+          "type": "boolean"
+        }
+      }
+    },
+    "modelAggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "modelKey",
+        "pages",
+        "predictions",
+        "deltaUpper",
+        "top1Lower",
+        "wilsonLower",
+        "pass"
+      ],
+      "properties": {
+        "modelKey": {
+          "$ref": "#/$defs/modelKey"
+        },
+        "pages": {
+          "const": 32
+        },
+        "predictions": {
+          "const": 4096
+        },
+        "deltaUpper": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "top1Lower": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "wilsonLower": {
+          "$ref": "#/$defs/finiteNumber"
+        },
+        "pass": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 # Core LM cross-model lab
 
 [![Linux cross-model regression](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/linux-cross-model.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/linux-cross-model.yml)
+[![Blind V1 development controls](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/blind-v1-development-controls.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/blind-v1-development-controls.yml)
 [![Repository secret scan](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/repository-secret-scan.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/repository-secret-scan.yml)
 
 The legacy root regression runs one unchanged VoidToken v5 cache-compression
@@ -10,7 +11,31 @@ mocked, or beacon input is accepted by that legacy runner. The separate
 archived v4 development contour retains a read-only fail-closed beacon runner
 and protocol, but its scientific path is no longer active.
 
-The four model cells are independent:
+## Blind V1 prospective suite — active draft
+
+[`blind_v1/`](blind_v1/README.md) is the new, separate prospective,
+beacon-selected exact-revision and future-record holdout study. The author
+declares that this project has not behaviorally run its six exact confirmatory
+revisions. It also has a future Wikipedia corpus interval, a candidate offline
+NIST trust chain, a public pre-pulse execution reservation, and one future
+NIST-selected three-model one-shot. The macOS arm64 scientific runtime is
+primary; Linux x86-64 and macOS arm64 CI are clean-clone development gates.
+
+Current status is deliberately
+`DRAFT_NOT_PREREGISTERED`, `readyToFreeze=false`, and
+`countsTowardScientificVerdict=false`. No confirmatory model forward pass,
+future-corpus selection, target-pulse request, or scientific attempt has run.
+Only a future terminal `PASS` from the frozen one-shot could support the narrow
+registered claim. The complete schedule, limitations, zero-retry state
+machine, evidence obligations, and freeze blockers are in
+[`blind_v1/PROTOCOL.md`](blind_v1/PROTOCOL.md) and
+[`blind_v1/FREEZE_READINESS.md`](blind_v1/FREEZE_READINESS.md).
+
+## Legacy four-model public-validation regression
+
+The following four model cells belong only to the legacy root regression; they
+are not members of the Blind V1 confirmatory pool or its three-model future
+selection. The cells are independent:
 
 | Key | Model | Revision | Role |
 |---|---|---|---|
@@ -76,6 +101,8 @@ non-scientific development archive. Any future blind/generalization experiment
 must use a new suite identity and timeline, replacement trust pinned before its
 pulse, and new dependent commitments. V4 candidate inference on a future
 corpus, one-shot selection, and scientific attempt state remain forbidden.
+Blind V1 is that separately identified successor; it does not repair, continue,
+or retroactively validate V4.
 
 The signed V4 development-control tag and its three-asset immutable release are
 now public. They remain non-scientific and do not close the NIST blocker. For
@@ -184,10 +211,11 @@ outside the scientific verdict.
 ## License
 
 The lab code is MIT-licensed. Downloaded model assets retain their upstream
-licenses listed in `models.json`; in particular, BLOOM uses the BigScience
-BLOOM RAIL 1.0 license. The v4 model/data rights matrix, exact UD English
-PUD r2.18 source evidence, CC BY-SA 3.0 attribution/share-alike handling, and
-the boundary that upstream declarations are not an independent ownership
-conclusion are documented in
+licenses listed in the applicable exact-revision manifests; in particular,
+BLOOM uses the BigScience BLOOM RAIL 1.0 license, while the Blind V1 pool is
+listed in `blind_v1/model-assets.draft.json`. The current model/data rights
+matrix, exact UD English PUD r2.18 source evidence, CC BY-SA 3.0
+attribution/share-alike handling, and the boundary that upstream declarations
+are not an independent ownership conclusion are documented in
 [`LICENSES/ASSET_LICENSES.md`](LICENSES/ASSET_LICENSES.md) and
 [`NOTICE.md`](NOTICE.md).

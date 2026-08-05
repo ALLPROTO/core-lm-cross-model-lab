@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blob/main/blind_v1/schemas/prior-observations.schema.json",
+  "title": "Core LM blind-v1 disclosed prior observations",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "status",
+    "candidate",
+    "observations",
+    "confirmatoryPoolPolicy",
+    "claimBoundary"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "corelm-blind-crossmodel-v1-prior-observations-v1"},
+    "suiteId": {"const": "corelm-blind-crossmodel-v1"},
+    "status": {"const": "COMPLETE_DISCLOSED_PRIOR_LINEAGE"},
+    "candidate": {"type": "object"},
+    "observations": {
+      "type": "array",
+      "minItems": 7,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["modelKey", "repository", "revision", "role", "outcome", "source"],
+        "properties": {
+          "modelKey": {"type": "string", "minLength": 1},
+          "repository": {"type": "string", "pattern": "^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"},
+          "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "role": {"type": "string", "minLength": 1},
+          "outcome": {"type": "string", "minLength": 1},
+          "source": {"type": "string", "format": "uri"}
+        }
+      }
+    },
+    "confirmatoryPoolPolicy": {"type": "object"},
+    "claimBoundary": {"type": "string", "minLength": 1}
+  }
+}
