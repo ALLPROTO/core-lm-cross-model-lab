@@ -1,12 +1,14 @@
 # Core LM cross-model lab
 
 [![Linux cross-model regression](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/linux-cross-model.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/linux-cross-model.yml)
+[![Repository secret scan](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/repository-secret-scan.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/repository-secret-scan.yml)
 
 The legacy root regression runs one unchanged VoidToken v5 cache-compression
 profile on four pinned, real pretrained causal language models. Its workload is
 the pinned real WikiText-2 `validation` parquet; no synthetic, generated,
 mocked, or beacon input is accepted by that legacy runner. The separate
-prospective v4 contour has its own fail-closed beacon runner and protocol.
+archived v4 development contour retains a read-only fail-closed beacon runner
+and protocol, but its scientific path is no longer active.
 
 The four model cells are independent:
 
@@ -57,30 +59,28 @@ LM scientific verdict, and cannot establish corpus-wide or LLM-wide
 generalization. A model failure remains a first-class negative result; one
 model's PASS cannot hide another model's FAIL.
 
-## Prospective beacon-selected multi-model v4
+## Archived v4 development contour
 
-The active prospective model-holdout development contour lives under
-[`v4/`](v4/README.md). It uses three model revisions that were not used to
-select or tune the candidate and Wikipedia creation revisions that do not exist
-at design time. Before freeze, the exact model revisions may be exercised only
-by one fixed full candidate-pipeline readiness control on the pinned UD English
-PUD r2.18 CoNLL-U source. Its upstream `test` split is development-only input,
-not the prospective scientific holdout; the control includes the lossless
-adapter invariant. It may compute diagnostics but cannot be used to change the
-candidate, gates, models, runtime, or protocol. It forbids
-future-corpus/NIST/attempt state and reports
-`countsTowardScientificVerdict=false`; it is not scientific evidence. The v4
-files are a new draft with a new suite identity and future timeline, not yet a
-preregistration and not evidence. Its governance is explicitly
-`AUTHOR_SELF_VERIFICATION`: no independent human review, peer review, operator
-blindness, or independent replication is claimed. Candidate inference on eligible future corpus, one-shot
-selection, and scientific attempt state remain forbidden until every freeze
-blocker is closed and an immutable public design release exists.
+The [`v4/`](v4/README.md) tree records the former prospective model-holdout
+design and its fixed real-data development control. The control used pinned UD
+English PUD r2.18 bytes, forbade future-corpus/NIST/attempt state, and reported
+`countsTowardScientificVerdict=false`. It remains useful for source,
+architecture, and real-model regression verification, but it is not a blind
+result, preregistration, or scientific evidence. Its governance was
+`AUTHOR_SELF_VERIFICATION`; no independent human review, peer review, operator
+blindness, or independent replication is claimed.
 
-The current tracked NIST signing leaf expires before the proposed v4 pulse.
-That is an explicit P0 freeze blocker, not a tolerated warning: replacement
-trust must be pinned and verified before publication, or the entire suite and
-dependent timeline must move again.
+V4 did not reach a scientific freeze: its tracked NIST signing leaf expires
+before the proposed pulse. The contour is therefore retained only as a
+non-scientific development archive. Any future blind/generalization experiment
+must use a new suite identity and timeline, replacement trust pinned before its
+pulse, and new dependent commitments. V4 candidate inference on a future
+corpus, one-shot selection, and scientific attempt state remain forbidden.
+
+The signed V4 development-control tag and its three-asset immutable release are
+now public. They remain non-scientific and do not close the NIST blocker. For
+exact tag/key verification, the Linux portability boundary, and a separately
+labelled macOS real-model regression, follow [`REPRODUCE.md`](REPRODUCE.md).
 
 The former [`v3/`](v3/README.md) contour and its immutable development release
 are retained as a transparent non-scientific failed-freeze archive. Its
@@ -125,31 +125,41 @@ does not claim bit-identical floating-point output across arbitrary hosts.
 ## Reproduce on another Linux machine
 
 The commands below use a clean checkout of the exact codec source. They require
-network access for the first hash-locked runtime and model-asset build.
+network access for the first hash-locked runtime and model-asset build, plus an
+absolute path to CPython 3.12.13. A stock Ubuntu 24.04 interpreter and a
+possibly absent `python` alias are not substitutes for that registered patch
+version.
 
 ```bash
-git clone https://github.com/ALLPROTO/core-lm-cross-model-lab.git
+set -eu
+git clone https://github.com/ALLPROTO/core-lm-cross-model-lab.git lab
 git clone https://github.com/ALLPROTO/core-lm-benchmark.git codec-source
+git -C lab checkout --detach 6731c6d203f9a3ceafbcc82d64cfcc11a15386e5
+test "$(git -C lab rev-parse 'HEAD^{tree}')" = \
+  364d320a1cf2ebbb472d75a3f4c6aa8c1652d3de
 git -C codec-source checkout --detach 61afcf1a44007dec54bd1c56e3403bc74182a400
+cd lab
 
-export CORELM_LINUX_PYTHON=python
+export CORELM_LINUX_PYTHON=/absolute/path/to/python3.12.13
+test "$($CORELM_LINUX_PYTHON -I -B -c \
+  'import platform; print(platform.python_version())')" = 3.12.13
 export CORELM_LINUX_RUNTIME="$PWD/.runtime"
 export CORELM_LINUX_HF_HOME="$PWD/.codec-assets"
-./codec-source/corelm linux doctor
-./codec-source/corelm linux build
+../codec-source/corelm linux doctor
+../codec-source/corelm linux build
 
 "$CORELM_LINUX_RUNTIME/bin/python" -I -B run_cross_model.py \
   --model qwen2.5-0.5b \
   --device cpu \
   --start-block 64 \
   --blocks 8 \
-  --codec-root "$PWD/codec-source" \
+  --codec-root "$PWD/../codec-source" \
   --cache-dir "$PWD/.cross-model-assets" \
   --output-root "$PWD/runs"
 
 RESULT=$(find runs/qwen2.5-0.5b -name result.json -type f -print -quit)
 "$CORELM_LINUX_RUNTIME/bin/python" -I -B verify_run.py "$RESULT" \
-  --codec-root "$PWD/codec-source"
+  --codec-root "$PWD/../codec-source"
 ```
 
 Run each remaining model in a fresh process without changing the protocol.
