@@ -6,6 +6,8 @@ import copy
 import hashlib
 import io
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -37,6 +39,27 @@ def _digest_record() -> dict[str, object]:
 
 def _digest_bytes(raw: bytes) -> dict[str, object]:
     return {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+
+
+def _frozen_source() -> dict[str, object]:
+    return {
+        "tag": control.FROZEN_DEVELOPMENT_TAG,
+        "tagObject": control.FROZEN_DEVELOPMENT_TAG_OBJECT,
+        "commit": control.FROZEN_DEVELOPMENT_COMMIT,
+        "tree": control.FROZEN_DEVELOPMENT_TREE,
+        "signatureVerified": True,
+        "signingPublicKeySHA256": control.SIGNING_PUBLIC_KEY_SHA256,
+        "allowedSignersSHA256": control.ALLOWED_SIGNERS_SHA256,
+        "signingKeyFingerprint": control.SIGNING_KEY_FINGERPRINT,
+        "postReleaseChangedPaths": sorted(control.POST_RELEASE_ALLOWED_CHANGES),
+        "postReleaseSource": {
+            "tag": control.POST_RELEASE_SOURCE_TAG,
+            "tagObject": "c" * 40,
+            "commit": "d" * 40,
+            "tree": "e" * 40,
+            "signatureVerified": True,
+        },
+    }
 
 
 def _model_bindings() -> tuple[list[dict[str, object]], list[dict[str, object]]]:
@@ -929,6 +952,14 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
             with (
                 mock.patch.object(
                     control,
+                    "verify_canonical_execution_source",
+                    return_value={
+                        "commit": control.FROZEN_DEVELOPMENT_COMMIT,
+                        "tree": control.FROZEN_DEVELOPMENT_TREE,
+                    },
+                ),
+                mock.patch.object(
+                    control,
                     "_load_fixed_inputs",
                     return_value=(
                         design,
@@ -1058,6 +1089,14 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
             with (
                 mock.patch.object(
                     control,
+                    "verify_canonical_execution_source",
+                    return_value={
+                        "commit": control.FROZEN_DEVELOPMENT_COMMIT,
+                        "tree": control.FROZEN_DEVELOPMENT_TREE,
+                    },
+                ),
+                mock.patch.object(
+                    control,
                     "_load_fixed_inputs",
                     return_value=(
                         design,
@@ -1127,6 +1166,14 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
                 output=output,
             )
             with (
+                mock.patch.object(
+                    control,
+                    "verify_canonical_execution_source",
+                    return_value={
+                        "commit": control.FROZEN_DEVELOPMENT_COMMIT,
+                        "tree": control.FROZEN_DEVELOPMENT_TREE,
+                    },
+                ),
                 mock.patch.object(
                     control,
                     "_load_fixed_inputs",
@@ -1212,6 +1259,11 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
                 design,
                 now=datetime(2026, 9, 7, 0, 0, 0, tzinfo=timezone.utc),
             )
+        control.verify_development_lifecycle(
+            design,
+            now=datetime(2027, 9, 7, 0, 0, 0, tzinfo=timezone.utc),
+            allow_after_cutoff_for_post_release_regression=True,
+        )
         bound = copy.deepcopy(design)
         bound["developmentControls"]["realDataE2EFreezeGate"]["status"] = (
             "BOUND_ARCHIVED_PASS"
@@ -1220,6 +1272,334 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
             control.verify_development_lifecycle(
                 bound,
                 now=datetime(2026, 9, 6, 0, 0, 0, tzinfo=timezone.utc),
+            )
+
+    def test_post_release_profile_uses_distinct_source_and_execution_id(self) -> None:
+        arguments = argparse.Namespace()
+        with mock.patch.object(
+            control, "_run_control", return_value={"status": "fixture"}
+        ) as runner:
+            self.assertEqual(
+                control.run_control(arguments, post_release_regression=True),
+                {"status": "fixture"},
+            )
+        self.assertRegex(
+            arguments._execution_id,
+            r"post-release-regression-execution-\d{8}T\d{6}Z-[0-9a-f]{16}\Z",
+        )
+        self.assertIs(arguments._post_release_regression, True)
+        self.assertIs(runner.call_args.kwargs["post_release_regression"], True)
+        self.assertNotIn("frozen_source", runner.call_args.kwargs)
+
+    def test_inner_control_owns_source_gate_before_loading_inputs(self) -> None:
+        arguments = argparse.Namespace()
+        with (
+            mock.patch.object(
+                control,
+                "verify_post_release_source",
+                side_effect=control.DevelopmentControlError("source rejected"),
+            ) as source_verifier,
+            mock.patch.object(control, "_load_fixed_inputs") as input_loader,
+        ):
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "source rejected"
+            ):
+                control._run_control(
+                    arguments,
+                    started="2027-01-01T00:00:00Z",
+                    execution_id=(
+                        "post-release-regression-execution-"
+                        "20270101T000000Z-0123456789abcdef"
+                    ),
+                    post_release_regression=True,
+                )
+        source_verifier.assert_called_once_with()
+        input_loader.assert_not_called()
+
+        with (
+            mock.patch.object(
+                control,
+                "verify_canonical_execution_source",
+                side_effect=control.DevelopmentControlError("canonical rejected"),
+            ) as canonical_verifier,
+            mock.patch.object(control, "_load_fixed_inputs") as input_loader,
+        ):
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "canonical rejected"
+            ):
+                control._run_control(
+                    arguments,
+                    started="2026-01-01T00:00:00Z",
+                    execution_id=(
+                        "development-execution-"
+                        "20260101T000000Z-0123456789abcdef"
+                    ),
+                )
+        canonical_verifier.assert_called_once_with()
+        input_loader.assert_not_called()
+
+    def test_git_source_helpers_reject_hidden_index_bytes_and_modes(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_PARENT) as temporary:
+            root = Path(temporary)
+
+            def git(*arguments: str) -> None:
+                subprocess.run(
+                    ("/usr/bin/git", *arguments),
+                    cwd=root,
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+
+            git("init", "-q")
+            git("config", "user.name", "Unit Test")
+            git("config", "user.email", "unit@example.invalid")
+            source = root / "source.txt"
+            source.write_text("VALUE = 1\n", encoding="utf-8")
+            executable = root / "bootstrap.sh"
+            executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            executable.chmod(0o755)
+            git("add", "source.txt", "bootstrap.sh")
+            git("commit", "-q", "-m", "fixture")
+            control._verify_clean_checkout(root, label="fixture")
+            control._verify_head_files(root, ("source.txt",), label="fixture")
+
+            executable.chmod(0o644)
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "tracked file mode differs"
+            ):
+                control._verify_head_tracked_files(root, label="fixture")
+            executable.chmod(0o755)
+
+            git("update-index", "--assume-unchanged", "source.txt")
+            source.write_text("VALUE = 2\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "non-canonical tracked flags"
+            ):
+                control._verify_clean_checkout(root, label="fixture")
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "live source differs"
+            ):
+                control._verify_head_files(root, ("source.txt",), label="fixture")
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "live tracked file differs"
+            ):
+                control._verify_head_tracked_files(root, label="fixture")
+
+    def test_git_source_gate_rejects_local_worktree_and_ignored_shadow(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_PARENT) as temporary:
+            root = Path(temporary)
+
+            def git(*arguments: str) -> None:
+                subprocess.run(
+                    ("/usr/bin/git", *arguments),
+                    cwd=root,
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+
+            git("init", "-q")
+            git("config", "user.name", "Unit Test")
+            git("config", "user.email", "unit@example.invalid")
+            (root / ".gitignore").write_text("shadow-package/\n", encoding="utf-8")
+            (root / "source.py").write_text("VALUE = 1\n", encoding="utf-8")
+            git("add", ".gitignore", "source.py")
+            git("commit", "-q", "-m", "fixture")
+            shadow = root / "shadow-package"
+            shadow.mkdir()
+            (shadow / "torch.py").write_text("raise SystemExit(9)\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "ignored untracked paths"
+            ):
+                control._verify_clean_checkout(root, label="fixture")
+            (shadow / "torch.py").unlink()
+            shadow.rmdir()
+            git("config", "filter.hidden.clean", "cat")
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "path or filter configuration"
+            ):
+                control._verify_clean_checkout(root, label="fixture")
+            git("config", "--unset-all", "filter.hidden.clean")
+            attributes = root / ".git" / "info" / "attributes"
+            attributes.write_text("source.py filter=hidden\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "local Git attributes"
+            ):
+                control._verify_clean_checkout(root, label="fixture")
+            attributes.unlink()
+            alternate = root.parent / "alternate-worktree"
+            git("config", "core.worktree", str(alternate))
+            with self.assertRaisesRegex(
+                control.DevelopmentControlError, "path or filter configuration"
+            ):
+                control._verify_clean_checkout(root, label="fixture")
+
+    def test_public_regression_wrapper_requires_empty_isolated_pycache(self) -> None:
+        wrapper = control.V4_ROOT / "run_post_release_regression.py"
+        without_prefix = subprocess.run(
+            (sys.executable, "-I", "-B", str(wrapper), "--help"),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            text=True,
+        )
+        self.assertNotEqual(without_prefix.returncode, 0)
+        self.assertIn("explicit empty -X pycache_prefix", without_prefix.stderr)
+
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_PARENT) as temporary:
+            prefix = Path(temporary) / "pycache"
+            prefix.mkdir()
+            command = (
+                sys.executable,
+                "-I",
+                "-B",
+                "-X",
+                f"pycache_prefix={prefix}",
+                str(wrapper),
+                "--help",
+            )
+            gated = subprocess.run(
+                command,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                text=True,
+            )
+            self.assertNotEqual(gated.returncode, 0)
+            self.assertIn("pre-import", gated.stderr)
+            (prefix / "unexpected.pyc").write_bytes(b"not bytecode")
+            rejected = subprocess.run(
+                command,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                text=True,
+            )
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn("pycache prefix is not empty", rejected.stderr)
+
+        wrapper_text = wrapper.read_text(encoding="utf-8")
+        self.assertLess(
+            wrapper_text.index("_preimport_source_gate()"),
+            wrapper_text.index("from v4.run_real_e2e_control import main"),
+        )
+        guide = (control.PROJECT_ROOT / "REPRODUCE.md").read_text(encoding="utf-8")
+        self.assertIn("/usr/bin/env -i", guide)
+        self.assertIn("PYTHONHASHSEED=0", guide)
+        self.assertIn('"$RUNTIME_ROOT/bin/python" -P -s -B', guide)
+        self.assertEqual(
+            guide.count(
+                "v4/run_post_release_regression.py --verify-source-only"
+            ),
+            2,
+        )
+        self.assertEqual(
+            guide.count(
+                "verify_live_entry v4/run_post_release_regression.py 100644"
+            ),
+            2,
+        )
+        self.assertEqual(
+            guide.count("GIT_NO_REPLACE_OBJECTS=1 GIT_OPTIONAL_LOCKS=0"), 2
+        )
+        self.assertEqual(
+            guide.count(
+                "source_git for-each-ref --format='%(refname)' refs/replace"
+            ),
+            2,
+        )
+
+    def test_post_release_report_is_incompatible_with_canonical_verifier(self) -> None:
+        started = "2027-01-01T00:00:00Z"
+        report = control._with_content_digest(
+            {
+                "schemaVersion": control.POST_RELEASE_REPORT_SCHEMA,
+                "suiteId": independent.SUITE_ID,
+                "runId": "development-e2e-" + HEX_A,
+                "executionId": (
+                    "post-release-regression-execution-"
+                    "20270101T000000Z-0123456789abcdef"
+                ),
+                "status": (
+                    "NON_SCIENTIFIC_POST_RELEASE_REAL_MODEL_REGRESSION_PASS"
+                ),
+                "countsTowardScientificVerdict": False,
+                "usedForCandidateSelectionOrTuning": False,
+                "scientificAttemptStateCreated": False,
+                "nistUsed": False,
+                "futureCorpusUsed": False,
+                "thresholdsApplied": False,
+                "candidateCodecInvoked": True,
+                "realModelsUsed": True,
+                "realDevelopmentCorpusUsed": True,
+                "independentRealModelReplayComplete": True,
+                "startedAt": started,
+                "completedAt": started,
+                "controlConfigurationSHA256": HEX_A,
+                "plan": _digest_record(),
+                "inputs": {
+                    "labSource": {
+                        "commit": "d" * 40,
+                        "tree": "e" * 40,
+                    }
+                },
+                "runtime": {},
+                "hostSafetyChecks": [],
+                "networkIsolationBackend": "macOS-sandbox-exec-deny-network",
+                "workerProcessesSequential": True,
+                "replayModelsSequential": True,
+                "supervision": [],
+                "independentReplay": {},
+                "artifactInventory": [],
+                "artifactSetSHA256": HEX_A,
+                "scientificClaim": "forbidden",
+                "candidateSelectionOrTuning": "forbidden",
+                "executionClass": control.POST_RELEASE_PROFILE,
+                "canonicalDevelopmentControlPackaging": "forbidden",
+                "scientificEvidenceUse": "forbidden",
+                "frozenDevelopmentSource": _frozen_source(),
+            }
+        )
+        self.assertEqual(
+            control.validate_post_release_regression_report(report), report
+        )
+        with self.assertRaises(control.FreezeManifestError):
+            control.validate_development_control_report(report)
+
+    def test_post_release_failure_never_uses_canonical_filename(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEMPORARY_PARENT) as temporary:
+            output = Path(temporary) / "regression"
+            output.mkdir()
+            (output / "post-release-regression-start.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+            arguments = argparse.Namespace(
+                _claimed_output_root=output,
+                _post_release_regression=True,
+                _execution_id=(
+                    "post-release-regression-execution-"
+                    "20270101T000000Z-0123456789abcdef"
+                ),
+                _control_started_at="2027-01-01T00:00:00Z",
+                _verified_source=_frozen_source(),
+            )
+            control._write_failure_receipt(
+                arguments, control.DevelopmentControlError("fixture failure")
+            )
+            self.assertTrue(
+                (output / "post-release-regression-failure.json").is_file()
+            )
+            self.assertFalse((output / "development-control-failure.json").exists())
+            self.assertFalse((output / "development-control-report.json").exists())
+            failure = json.loads(
+                (output / "post-release-regression-failure.json").read_bytes()
+            )
+            self.assertEqual(
+                failure["frozenDevelopmentSource"], _frozen_source()
             )
 
     def test_registered_boundary_and_cli_expose_no_tuning_controls(self) -> None:

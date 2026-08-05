@@ -32,7 +32,7 @@ import sys
 import tempfile
 import time
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
 
@@ -103,6 +103,37 @@ from v4.reproducibility import (  # noqa: E402
 
 
 REPORT_SCHEMA = "corelm-crossmodel-v4-real-e2e-development-report-v1"
+POST_RELEASE_REPORT_SCHEMA = (
+    "corelm-crossmodel-v4-real-e2e-post-release-regression-report-v1"
+)
+POST_RELEASE_PROFILE = "POST_RELEASE_DEVELOPMENT_REGRESSION"
+FROZEN_DEVELOPMENT_TAG = "corelm-crossmodel-livewiki-v4-development-control"
+FROZEN_DEVELOPMENT_TAG_OBJECT = "767e114baacf864fbeb195b42e9df2be22e6133d"
+FROZEN_DEVELOPMENT_COMMIT = "f46a5365a585e18f0c198235729fc8259b55abcc"
+FROZEN_DEVELOPMENT_TREE = "1e15fb82aee21b51cd21e6d8a5f5ff21b35ff658"
+POST_RELEASE_SOURCE_TAG = "corelm-crossmodel-v4-post-release-regression-v1"
+SIGNING_PUBLIC_KEY_SHA256 = (
+    "9d299ff032927caef3f1355fb55c01f206ebf27ef35bcb5da547f962168b1274"
+)
+ALLOWED_SIGNERS_SHA256 = (
+    "36fb4a170eee7664be32f2a5d562db209fa4f6f1f24667cf6a3ef0166d155c16"
+)
+SIGNING_KEY_FINGERPRINT = "SHA256:8A4y/GkoFglweSfg3rP21BtWWqIBOeQAUoAJDQM8sMM"
+POST_RELEASE_ALLOWED_CHANGES = frozenset(
+    {
+        ".github/workflows/repository-secret-scan.yml",
+        "README.md",
+        "REPRODUCE.md",
+        "security/__init__.py",
+        "security/scan_repository_secrets.py",
+        "security/tests/__init__.py",
+        "security/tests/test_repository_secret_scan.py",
+        "v4/bootstrap_runtime.sh",
+        "v4/run_post_release_regression.py",
+        "v4/run_real_e2e_control.py",
+        "v4/tests/test_real_e2e_control.py",
+    }
+)
 WORKER_SUMMARY_SCHEMA = (
     "corelm-crossmodel-v4-real-e2e-development-worker-summary-v1"
 )
@@ -157,7 +188,10 @@ def _utc_now() -> str:
 
 
 def verify_development_lifecycle(
-    design: Mapping[str, Any], *, now: datetime | None = None
+    design: Mapping[str, Any],
+    *,
+    now: datetime | None = None,
+    allow_after_cutoff_for_post_release_regression: bool = False,
 ) -> None:
     controls = design.get("developmentControls")
     gate = controls.get("realDataE2EFreezeGate") if isinstance(controls, dict) else None
@@ -206,7 +240,12 @@ def verify_development_lifecycle(
         raise DevelopmentControlError(
             "real E2E control is permitted only on the unbound pre-freeze draft"
         )
-    if current >= DEVELOPMENT_COMPLETE_NO_LATER_THAN:
+    if type(allow_after_cutoff_for_post_release_regression) is not bool:
+        raise DevelopmentControlError("development lifecycle profile is invalid")
+    if (
+        current >= DEVELOPMENT_COMPLETE_NO_LATER_THAN
+        and not allow_after_cutoff_for_post_release_regression
+    ):
         raise DevelopmentControlError("real E2E development cutoff has passed")
 
 
@@ -214,7 +253,12 @@ def _digest_bytes(raw: bytes) -> dict[str, Any]:
     return {"bytes": len(raw), "sha256": sha256_bytes(raw)}
 
 
-def _read_regular(path: Path, *, maximum_bytes: int) -> bytes:
+def _read_regular(
+    path: Path,
+    *,
+    maximum_bytes: int,
+    expected_executable: bool | None = None,
+) -> bytes:
     flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
     try:
         descriptor = os.open(path, flags)
@@ -244,6 +288,11 @@ def _read_regular(path: Path, *, maximum_bytes: int) -> bytes:
         )
         if identity(after) != identity(metadata):
             raise DevelopmentControlError(f"fixed input changed while read: {path.name}")
+        if (
+            expected_executable is not None
+            and bool(metadata.st_mode & stat.S_IXUSR) != expected_executable
+        ):
+            raise DevelopmentControlError("tracked file mode differs from HEAD")
         return b"".join(chunks)
     finally:
         os.close(descriptor)
@@ -344,20 +393,458 @@ def claim_output(output: Path) -> Path:
     return parent / name
 
 
-def _git_output(root: Path, arguments: list[str]) -> str:
+def _git_environment() -> dict[str, str]:
+    return {
+        "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_NOSYSTEM": "1",
+        "GIT_NO_REPLACE_OBJECTS": "1",
+        "GIT_OPTIONAL_LOCKS": "0",
+    }
+
+
+def _git_bytes(
+    root: Path,
+    arguments: list[str],
+    *,
+    maximum_bytes: int = 16 * 1024 * 1024,
+    allow_missing_config: bool = False,
+) -> bytes:
     completed = subprocess.run(
-        ["git", "-C", str(root), *arguments],
+        [
+            "/usr/bin/git",
+            "-C",
+            str(root),
+            "-c",
+            f"core.worktree={root}",
+            "-c",
+            "core.bare=false",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.ignoreStat=false",
+            "-c",
+            "core.untrackedCache=false",
+            *arguments,
+        ],
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
-        text=True,
         timeout=10,
-        env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "C", "LC_ALL": "C"},
+        env=_git_environment(),
     )
-    if completed.returncode != 0 or completed.stderr:
-        raise DevelopmentControlError("codec Git identity cannot be verified")
-    return completed.stdout.strip()
+    if (
+        allow_missing_config
+        and completed.returncode == 1
+        and not completed.stderr
+    ):
+        return b""
+    if (
+        completed.returncode != 0
+        or completed.stderr
+        or len(completed.stdout) > maximum_bytes
+    ):
+        raise DevelopmentControlError("Git source identity cannot be verified")
+    return completed.stdout
+
+
+def _git_output(root: Path, arguments: list[str]) -> str:
+    raw = _git_bytes(root, arguments)
+    try:
+        value = raw.decode("utf-8", errors="strict").strip()
+    except UnicodeDecodeError as error:
+        raise DevelopmentControlError("Git source identity is not UTF-8") from error
+    if "\x00" in value:
+        raise DevelopmentControlError("Git source identity contains NUL")
+    return value
+
+
+def _verify_repository_layout(root: Path, *, label: str) -> None:
+    try:
+        resolved_root = root.resolve(strict=True)
+        dot_git_path = root / ".git"
+        dot_git_metadata = dot_git_path.lstat()
+        dot_git = dot_git_path.resolve(strict=True)
+    except OSError as error:
+        raise DevelopmentControlError(f"{label} repository layout is unavailable") from error
+    local_config = _git_bytes(
+        root, ["config", "--local", "--name-only", "--list", "-z"]
+    )
+    if local_config and not local_config.endswith(b"\x00"):
+        raise DevelopmentControlError(f"{label} local Git configuration is invalid")
+    try:
+        local_names = {
+            name.decode("utf-8", errors="strict").casefold()
+            for name in local_config[:-1].split(b"\x00")
+            if name
+        }
+    except UnicodeDecodeError as error:
+        raise DevelopmentControlError(
+            f"{label} local Git configuration is invalid"
+        ) from error
+    forbidden_names = {
+        "core.attributesfile",
+        "core.excludesfile",
+        "core.worktree",
+        "extensions.worktreeconfig",
+    }
+    if local_names & forbidden_names or any(
+        name.startswith("filter.") for name in local_names
+    ):
+        raise DevelopmentControlError(
+            f"{label} repository has forbidden local path or filter configuration"
+        )
+    try:
+        top = Path(_git_output(root, ["rev-parse", "--show-toplevel"])).resolve(
+            strict=True
+        )
+        git_dir = Path(
+            _git_output(root, ["rev-parse", "--absolute-git-dir"])
+        ).resolve(strict=True)
+        common_dir = Path(
+            _git_output(
+                root,
+                ["rev-parse", "--path-format=absolute", "--git-common-dir"],
+            )
+        ).resolve(strict=True)
+    except OSError as error:
+        raise DevelopmentControlError(f"{label} repository layout is unavailable") from error
+    if (
+        resolved_root != root
+        or not stat.S_ISDIR(dot_git_metadata.st_mode)
+        or stat.S_ISLNK(dot_git_metadata.st_mode)
+        or top != root
+        or git_dir != dot_git
+        or common_dir != dot_git
+    ):
+        raise DevelopmentControlError(
+            f"{label} repository is not a standalone physical checkout"
+        )
+    exclude_path = dot_git / "info" / "exclude"
+    if exclude_path.exists() or exclude_path.is_symlink():
+        raw = _read_regular(exclude_path, maximum_bytes=64 * 1024)
+        try:
+            lines = raw.decode("utf-8", errors="strict").splitlines()
+        except UnicodeDecodeError as error:
+            raise DevelopmentControlError(
+                f"{label} local exclude policy is invalid"
+            ) from error
+        if any(line.strip() and not line.lstrip().startswith("#") for line in lines):
+            raise DevelopmentControlError(
+                f"{label} repository has local exclude patterns"
+            )
+    attributes_path = dot_git / "info" / "attributes"
+    if attributes_path.exists() or attributes_path.is_symlink():
+        raise DevelopmentControlError(
+            f"{label} repository has local Git attributes"
+        )
+
+
+def _verify_isolated_pycache_prefix() -> Path:
+    raw = sys.pycache_prefix
+    if not isinstance(raw, str) or not raw or "\x00" in raw:
+        raise DevelopmentControlError(
+            "post-release runner requires an explicit empty pycache prefix"
+        )
+    candidate = Path(os.path.abspath(raw))
+    if (
+        raw != str(candidate)
+        or candidate == PROJECT_ROOT
+        or PROJECT_ROOT in candidate.parents
+    ):
+        raise DevelopmentControlError(
+            "post-release pycache prefix must be normalized and outside the repository"
+        )
+    try:
+        metadata = candidate.lstat()
+        entries = tuple(candidate.iterdir())
+    except OSError as error:
+        raise DevelopmentControlError(
+            "post-release pycache prefix cannot be inspected"
+        ) from error
+    if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode) or entries:
+        raise DevelopmentControlError(
+            "post-release pycache prefix must be an empty real directory"
+        )
+    return candidate
+
+
+def _verify_clean_checkout(root: Path, *, label: str) -> None:
+    _verify_repository_layout(root, label=label)
+    replacement_refs = _git_bytes(
+        root, ["for-each-ref", "--format=%(refname)", "refs/replace"]
+    )
+    if replacement_refs:
+        raise DevelopmentControlError(f"{label} repository has replacement refs")
+    graft_path_raw = _git_bytes(
+        root, ["rev-parse", "--path-format=absolute", "--git-path", "info/grafts"]
+    )
+    try:
+        graft_path = Path(graft_path_raw.decode("utf-8", errors="strict").strip())
+    except UnicodeDecodeError as error:
+        raise DevelopmentControlError(f"{label} graft path is invalid") from error
+    if graft_path.exists() or graft_path.is_symlink():
+        raise DevelopmentControlError(f"{label} repository has a grafts file")
+    index_entries = _git_bytes(root, ["ls-files", "-v", "-z"])
+    if index_entries and (
+        not index_entries.endswith(b"\x00")
+        or any(
+            len(entry) < 3 or entry[:2] != b"H "
+            for entry in index_entries[:-1].split(b"\x00")
+        )
+    ):
+        raise DevelopmentControlError(
+            f"{label} index has non-canonical tracked flags or state"
+        )
+    status = _git_bytes(
+        root,
+        [
+            "status",
+            "--porcelain=v1",
+            "--untracked-files=all",
+            "--ignore-submodules=none",
+        ],
+    )
+    if status:
+        raise DevelopmentControlError(f"{label} worktree is not clean")
+    ignored = _git_bytes(
+        root,
+        ["ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+    )
+    if ignored:
+        raise DevelopmentControlError(
+            f"{label} repository contains ignored untracked paths"
+        )
+    _verify_head_tracked_files(root, label=label)
+
+
+def _verify_head_tracked_files(root: Path, *, label: str) -> None:
+    inventory = _git_bytes(root, ["ls-tree", "-r", "-z", "HEAD"])
+    for raw_entry in inventory.split(b"\x00"):
+        if not raw_entry:
+            continue
+        try:
+            header, raw_path = raw_entry.split(b"\t", 1)
+            raw_mode, raw_type, raw_object_id = header.split(b" ", 2)
+        except ValueError as error:
+            raise DevelopmentControlError(
+                f"{label} tracked-file inventory is invalid"
+            ) from error
+        if (
+            raw_mode not in {b"100644", b"100755"}
+            or raw_type != b"blob"
+            or len(raw_object_id) != 40
+            or any(byte not in b"0123456789abcdef" for byte in raw_object_id)
+        ):
+            raise DevelopmentControlError(
+                f"{label} tracked entry is not a regular Git blob"
+            )
+        try:
+            relative = raw_path.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as error:
+            raise DevelopmentControlError(f"{label} tracked path is not UTF-8") from error
+        pure = PurePosixPath(relative)
+        if pure.is_absolute() or ".." in pure.parts:
+            raise DevelopmentControlError(f"{label} tracked path is unsafe")
+        live = _read_regular(
+            root / relative,
+            maximum_bytes=16 * 1024 * 1024,
+            expected_executable=raw_mode == b"100755",
+        )
+        committed = _git_bytes(
+            root,
+            ["cat-file", "blob", raw_object_id.decode("ascii")],
+            maximum_bytes=16 * 1024 * 1024,
+        )
+        if live != committed:
+            raise DevelopmentControlError(
+                f"{label} live tracked file differs from HEAD"
+            )
+
+
+def _verify_head_files(root: Path, paths: tuple[str, ...], *, label: str) -> None:
+    for relative in paths:
+        live = _read_regular(root / relative, maximum_bytes=16 * 1024 * 1024)
+        object_id = _git_output(
+            root, ["rev-parse", "--verify", f"HEAD:{relative}"]
+        )
+        if HEX_40.fullmatch(object_id) is None:
+            raise DevelopmentControlError(f"{label} source object differs")
+        committed = _git_bytes(
+            root,
+            ["cat-file", "blob", object_id],
+            maximum_bytes=16 * 1024 * 1024,
+        )
+        if committed != live:
+            raise DevelopmentControlError(f"{label} live source differs from HEAD")
+
+
+def _verify_tag_signature(root: Path, allowed_signers: Path, tag: str) -> None:
+    completed = subprocess.run(
+        [
+            "/usr/bin/git",
+            "-C",
+            str(root),
+            "-c",
+            f"core.worktree={root}",
+            "-c",
+            "core.bare=false",
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "core.ignoreStat=false",
+            "-c",
+            "core.untrackedCache=false",
+            "-c",
+            "gpg.format=ssh",
+            "-c",
+            f"gpg.ssh.allowedSignersFile={allowed_signers}",
+            "-c",
+            "gpg.ssh.program=/usr/bin/ssh-keygen",
+            "verify-tag",
+            tag,
+        ],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        timeout=15,
+        env=_git_environment(),
+    )
+    if completed.returncode != 0:
+        raise DevelopmentControlError(
+            f"signed source tag cannot be verified: {tag}"
+        )
+
+
+def verify_canonical_execution_source() -> dict[str, Any]:
+    """Prevent a later main commit from creating a second canonical report."""
+
+    root = PROJECT_ROOT.resolve(strict=True)
+    _verify_isolated_pycache_prefix()
+    commit = _git_output(root, ["rev-parse", "--verify", "HEAD^{commit}"])
+    tree = _git_output(root, ["rev-parse", "--verify", "HEAD^{tree}"])
+    if commit != FROZEN_DEVELOPMENT_COMMIT or tree != FROZEN_DEVELOPMENT_TREE:
+        raise DevelopmentControlError(
+            "canonical development control is restricted to its frozen commit; "
+            "use run_post_release_regression.py on later source"
+        )
+    _verify_clean_checkout(root, label="canonical lab")
+    _verify_head_files(
+        root,
+        tuple(dict.fromkeys(("v4/__init__.py", *CONTROL_SOURCE_PATHS))),
+        label="canonical lab",
+    )
+    return {"commit": commit, "tree": tree}
+
+
+def _post_release_path_allowed(relative: str) -> bool:
+    return relative in POST_RELEASE_ALLOWED_CHANGES
+
+
+def verify_post_release_source() -> dict[str, Any]:
+    """Bind a regression to the signed frozen source and an explicit delta."""
+
+    root = PROJECT_ROOT.resolve(strict=True)
+    _verify_isolated_pycache_prefix()
+    repository = _git_output(root, ["remote", "get-url", "origin"])
+    if repository.rstrip("/").removesuffix(".git") != (
+        "https://github.com/ALLPROTO/core-lm-cross-model-lab"
+    ):
+        raise DevelopmentControlError("post-release lab repository differs")
+    _verify_clean_checkout(root, label="post-release lab")
+    public_key = V4_ROOT / "signing" / "corelm-crossmodel-v4-signing.pub"
+    allowed_signers = V4_ROOT / "signing" / "allowed_signers"
+    if sha256_bytes(_read_regular(public_key, maximum_bytes=4096)) != (
+        SIGNING_PUBLIC_KEY_SHA256
+    ):
+        raise DevelopmentControlError("release signing public key differs")
+    if sha256_bytes(_read_regular(allowed_signers, maximum_bytes=4096)) != (
+        ALLOWED_SIGNERS_SHA256
+    ):
+        raise DevelopmentControlError("allowed-signers policy differs")
+
+    object_type = _git_output(root, ["cat-file", "-t", FROZEN_DEVELOPMENT_TAG])
+    tag_object = _git_output(root, ["rev-parse", FROZEN_DEVELOPMENT_TAG])
+    commit = _git_output(root, ["rev-list", "-n", "1", FROZEN_DEVELOPMENT_TAG])
+    tree = _git_output(root, ["rev-parse", f"{FROZEN_DEVELOPMENT_TAG}^{{tree}}"])
+    if (
+        object_type != "tag"
+        or tag_object != FROZEN_DEVELOPMENT_TAG_OBJECT
+        or commit != FROZEN_DEVELOPMENT_COMMIT
+        or tree != FROZEN_DEVELOPMENT_TREE
+    ):
+        raise DevelopmentControlError("frozen development tag identity differs")
+    _verify_tag_signature(root, allowed_signers, FROZEN_DEVELOPMENT_TAG)
+    _git_output(
+        root,
+        ["merge-base", "--is-ancestor", FROZEN_DEVELOPMENT_COMMIT, "HEAD"],
+    )
+
+    post_type = _git_output(root, ["cat-file", "-t", POST_RELEASE_SOURCE_TAG])
+    post_tag_object = _git_output(root, ["rev-parse", POST_RELEASE_SOURCE_TAG])
+    post_commit = _git_output(
+        root, ["rev-list", "-n", "1", POST_RELEASE_SOURCE_TAG]
+    )
+    post_tree = _git_output(
+        root, ["rev-parse", f"{POST_RELEASE_SOURCE_TAG}^{{tree}}"]
+    )
+    current_commit = _git_output(root, ["rev-parse", "HEAD"])
+    current_tree = _git_output(root, ["rev-parse", "HEAD^{tree}"])
+    if (
+        post_type != "tag"
+        or post_commit != current_commit
+        or post_tree != current_tree
+    ):
+        raise DevelopmentControlError(
+            "signed post-release source tag does not target the current source"
+        )
+    _verify_tag_signature(root, allowed_signers, POST_RELEASE_SOURCE_TAG)
+
+    changed_raw = _git_output(
+        root,
+        ["diff", "--name-only", FROZEN_DEVELOPMENT_COMMIT, "HEAD", "--"],
+    )
+    changed = tuple(line for line in changed_raw.splitlines() if line)
+    forbidden = tuple(path for path in changed if not _post_release_path_allowed(path))
+    if forbidden or set(changed) != POST_RELEASE_ALLOWED_CHANGES:
+        raise DevelopmentControlError(
+            "post-release source delta is not the registered reproduction-only delta"
+        )
+    _verify_head_files(
+        root,
+        tuple(
+            dict.fromkeys(
+                (
+                    "v4/__init__.py",
+                    "v4/run_post_release_regression.py",
+                    *CONTROL_SOURCE_PATHS,
+                )
+            )
+        ),
+        label="post-release lab",
+    )
+    return {
+        "tag": FROZEN_DEVELOPMENT_TAG,
+        "tagObject": tag_object,
+        "commit": commit,
+        "tree": tree,
+        "signatureVerified": True,
+        "signingPublicKeySHA256": SIGNING_PUBLIC_KEY_SHA256,
+        "allowedSignersSHA256": ALLOWED_SIGNERS_SHA256,
+        "signingKeyFingerprint": SIGNING_KEY_FINGERPRINT,
+        "postReleaseChangedPaths": sorted(changed),
+        "postReleaseSource": {
+            "tag": POST_RELEASE_SOURCE_TAG,
+            "tagObject": post_tag_object,
+            "commit": post_commit,
+            "tree": post_tree,
+            "signatureVerified": True,
+        },
+    }
 
 
 def verify_codec(codec_root: Path, design: Mapping[str, Any]) -> dict[str, Any]:
@@ -374,8 +861,7 @@ def verify_codec(codec_root: Path, design: Mapping[str, Any]) -> dict[str, Any]:
     tree = _git_output(root, ["rev-parse", "HEAD^{tree}"])
     if commit != source.get("commit") or tree != source.get("tree"):
         raise DevelopmentControlError("codec commit/tree differs from exact v4 binding")
-    if _git_output(root, ["status", "--porcelain=v1", "--untracked-files=all"]):
-        raise DevelopmentControlError("codec worktree is not clean")
+    _verify_clean_checkout(root, label="codec")
     required = source.get("requiredFiles")
     if not isinstance(required, dict) or not required:
         raise DevelopmentControlError("codec required file binding is absent")
@@ -388,6 +874,7 @@ def verify_codec(codec_root: Path, design: Mapping[str, Any]) -> dict[str, Any]:
         if digest != commitment:
             raise DevelopmentControlError(f"codec file differs: {relative}")
         observed[relative] = digest
+    _verify_head_files(root, tuple(sorted(required)), label="codec")
     return {
         "repository": source.get("repository"),
         "commit": commit,
@@ -408,8 +895,20 @@ def verify_lab_source(design: Mapping[str, Any]) -> dict[str, Any]:
         "/"
     ).removesuffix(".git"):
         raise DevelopmentControlError("lab source repository differs")
-    if _git_output(root, ["status", "--porcelain=v1", "--untracked-files=all"]):
-        raise DevelopmentControlError("lab worktree must be clean for the real E2E control")
+    _verify_clean_checkout(root, label="lab")
+    _verify_head_files(
+        root,
+        tuple(
+            dict.fromkeys(
+                (
+                    "v4/__init__.py",
+                    "v4/run_post_release_regression.py",
+                    *CONTROL_SOURCE_PATHS,
+                )
+            )
+        ),
+        label="lab",
+    )
     return {
         "repository": source["repository"],
         "commit": commit,
@@ -821,7 +1320,14 @@ def build_plan(
 
 
 def _development_child_command(script: Path, *arguments: str) -> tuple[list[str], str]:
-    command = python_command(sys.executable, str(script), *arguments)
+    pycache_prefix = _verify_isolated_pycache_prefix()
+    command = python_command(
+        sys.executable,
+        "-X",
+        f"pycache_prefix={pycache_prefix}",
+        str(script),
+        *arguments,
+    )
     if platform.system() == "Darwin" and platform.machine() == "arm64":
         return networkless_macos_command(command), "macOS-sandbox-exec-deny-network"
     raise DevelopmentControlError(
@@ -1169,16 +1675,183 @@ def validate_replay_summary(summary: Any, *, plan: Mapping[str, Any]) -> None:
             )
 
 
+def validate_post_release_regression_report(value: Any) -> dict[str, Any]:
+    """Structurally validate a report incompatible with freeze input.
+
+    Live Git and signature verification is performed before execution; this
+    pure validator checks the exact record carried into the report.
+    """
+
+    canonical_fields = {
+        "schemaVersion",
+        "suiteId",
+        "runId",
+        "executionId",
+        "status",
+        "countsTowardScientificVerdict",
+        "usedForCandidateSelectionOrTuning",
+        "scientificAttemptStateCreated",
+        "nistUsed",
+        "futureCorpusUsed",
+        "thresholdsApplied",
+        "candidateCodecInvoked",
+        "realModelsUsed",
+        "realDevelopmentCorpusUsed",
+        "independentRealModelReplayComplete",
+        "startedAt",
+        "completedAt",
+        "controlConfigurationSHA256",
+        "plan",
+        "inputs",
+        "runtime",
+        "hostSafetyChecks",
+        "networkIsolationBackend",
+        "workerProcessesSequential",
+        "replayModelsSequential",
+        "supervision",
+        "independentReplay",
+        "artifactInventory",
+        "artifactSetSHA256",
+        "scientificClaim",
+        "candidateSelectionOrTuning",
+        "contentSHA256",
+    }
+    regression_fields = {
+        "executionClass",
+        "canonicalDevelopmentControlPackaging",
+        "scientificEvidenceUse",
+        "frozenDevelopmentSource",
+    }
+    if (
+        not isinstance(value, dict)
+        or set(value) != canonical_fields | regression_fields
+    ):
+        raise DevelopmentControlError("post-release regression report fields differ")
+    try:
+        verify_content_digest(value)
+    except ValueError as error:
+        raise DevelopmentControlError(
+            "post-release regression report digest differs"
+        ) from error
+    false_fields = (
+        "countsTowardScientificVerdict",
+        "usedForCandidateSelectionOrTuning",
+        "scientificAttemptStateCreated",
+        "nistUsed",
+        "futureCorpusUsed",
+        "thresholdsApplied",
+    )
+    true_fields = (
+        "candidateCodecInvoked",
+        "realModelsUsed",
+        "realDevelopmentCorpusUsed",
+        "independentRealModelReplayComplete",
+        "workerProcessesSequential",
+        "replayModelsSequential",
+    )
+    frozen = value["frozenDevelopmentSource"]
+    post_source = frozen.get("postReleaseSource") if isinstance(frozen, dict) else None
+    inputs = value.get("inputs")
+    lab_source = inputs.get("labSource") if isinstance(inputs, dict) else None
+    if (
+        value["schemaVersion"] != POST_RELEASE_REPORT_SCHEMA
+        or value["suiteId"] != SUITE_ID
+        or value["status"]
+        != "NON_SCIENTIFIC_POST_RELEASE_REAL_MODEL_REGRESSION_PASS"
+        or not isinstance(value["executionId"], str)
+        or re.fullmatch(
+            r"post-release-regression-execution-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}",
+            value["executionId"],
+        )
+        is None
+        or value["executionClass"] != POST_RELEASE_PROFILE
+        or value["canonicalDevelopmentControlPackaging"] != "forbidden"
+        or value["scientificEvidenceUse"] != "forbidden"
+        or value["scientificClaim"] != "forbidden"
+        or value["candidateSelectionOrTuning"] != "forbidden"
+        or any(value[field] is not False for field in false_fields)
+        or any(value[field] is not True for field in true_fields)
+        or not isinstance(frozen, dict)
+        or set(frozen)
+        != {
+            "tag",
+            "tagObject",
+            "commit",
+            "tree",
+            "signatureVerified",
+            "signingPublicKeySHA256",
+            "allowedSignersSHA256",
+            "signingKeyFingerprint",
+            "postReleaseChangedPaths",
+            "postReleaseSource",
+        }
+        or frozen.get("tag") != FROZEN_DEVELOPMENT_TAG
+        or frozen.get("tagObject") != FROZEN_DEVELOPMENT_TAG_OBJECT
+        or frozen.get("commit") != FROZEN_DEVELOPMENT_COMMIT
+        or frozen.get("tree") != FROZEN_DEVELOPMENT_TREE
+        or frozen.get("signatureVerified") is not True
+        or frozen.get("signingPublicKeySHA256") != SIGNING_PUBLIC_KEY_SHA256
+        or frozen.get("allowedSignersSHA256") != ALLOWED_SIGNERS_SHA256
+        or frozen.get("signingKeyFingerprint") != SIGNING_KEY_FINGERPRINT
+        or frozen.get("postReleaseChangedPaths")
+        != sorted(POST_RELEASE_ALLOWED_CHANGES)
+        or not isinstance(post_source, dict)
+        or set(post_source)
+        != {"tag", "tagObject", "commit", "tree", "signatureVerified"}
+        or post_source.get("tag") != POST_RELEASE_SOURCE_TAG
+        or not isinstance(post_source.get("tagObject"), str)
+        or HEX_40.fullmatch(post_source["tagObject"]) is None
+        or not isinstance(post_source.get("commit"), str)
+        or HEX_40.fullmatch(post_source["commit"]) is None
+        or not isinstance(post_source.get("tree"), str)
+        or HEX_40.fullmatch(post_source["tree"]) is None
+        or post_source.get("signatureVerified") is not True
+        or not isinstance(lab_source, dict)
+        or lab_source.get("commit") != post_source.get("commit")
+        or lab_source.get("tree") != post_source.get("tree")
+    ):
+        raise DevelopmentControlError("post-release regression boundary differs")
+    try:
+        started = datetime.strptime(
+            value["startedAt"], "%Y-%m-%dT%H:%M:%SZ"
+        ).replace(tzinfo=timezone.utc)
+        completed = datetime.strptime(
+            value["completedAt"], "%Y-%m-%dT%H:%M:%SZ"
+        ).replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError) as error:
+        raise DevelopmentControlError(
+            "post-release regression timestamps are invalid"
+        ) from error
+    if completed < started:
+        raise DevelopmentControlError("post-release regression timestamps differ")
+    return value
+
+
 def _run_control(
-    arguments: argparse.Namespace, *, started: str, execution_id: str
+    arguments: argparse.Namespace,
+    *,
+    started: str,
+    execution_id: str,
+    post_release_regression: bool = False,
 ) -> dict[str, Any]:
+    if type(post_release_regression) is not bool:
+        raise DevelopmentControlError("execution profile is invalid")
+    if post_release_regression:
+        frozen_source: Mapping[str, Any] | None = verify_post_release_source()
+        arguments._verified_source = dict(frozen_source)
+    else:
+        verify_canonical_execution_source()
+        frozen_source = None
     design, receipt, dataset_raw, dataset, bindings, archival_inputs = _load_fixed_inputs(
         asset_root=arguments.asset_root,
         dataset_path=arguments.dataset,
         codec_root=arguments.codec_root,
         runtime_manifest_path=arguments.runtime_manifest,
     )
-    verify_development_lifecycle(design)
+    verify_development_lifecycle(
+        design,
+        allow_after_cutoff_for_post_release_regression=post_release_regression,
+    )
     environment = closed_environment(design["execution"])
     verify_active_python_startup()
     runtime_probe = verify_python_subprocess(sys.executable, environment)
@@ -1207,24 +1880,46 @@ def _run_control(
         "runtime": runtime_probe,
         "hostSafetyChecks": host_safety_checks,
     }
-    start_marker = _with_content_digest(
-        {
-            "schemaVersion": "corelm-crossmodel-v4-real-e2e-development-start-v1",
-            "suiteId": SUITE_ID,
-            "executionId": execution_id,
-            "status": "NON_SCIENTIFIC_DEVELOPMENT_CONTROL_STARTED",
-            "startedAt": started,
-            "countsTowardScientificVerdict": False,
-            "usedForCandidateSelectionOrTuning": False,
-            "scientificAttemptStateCreated": False,
-            "nistUsed": False,
-            "futureCorpusUsed": False,
-        }
-    )
+    start_payload: dict[str, Any] = {
+        "schemaVersion": "corelm-crossmodel-v4-real-e2e-development-start-v1",
+        "suiteId": SUITE_ID,
+        "executionId": execution_id,
+        "status": "NON_SCIENTIFIC_DEVELOPMENT_CONTROL_STARTED",
+        "startedAt": started,
+        "countsTowardScientificVerdict": False,
+        "usedForCandidateSelectionOrTuning": False,
+        "scientificAttemptStateCreated": False,
+        "nistUsed": False,
+        "futureCorpusUsed": False,
+    }
+    start_filename = "development-control-start.json"
+    if post_release_regression:
+        if not isinstance(frozen_source, Mapping):
+            raise DevelopmentControlError(
+                "post-release regression has no frozen-source verification"
+            )
+        start_filename = "post-release-regression-start.json"
+        start_payload.update(
+            {
+                "schemaVersion": (
+                    "corelm-crossmodel-v4-real-e2e-post-release-regression-start-v1"
+                ),
+                "status": "NON_SCIENTIFIC_POST_RELEASE_REAL_MODEL_REGRESSION_STARTED",
+                "executionClass": POST_RELEASE_PROFILE,
+                "canonicalDevelopmentControlPackaging": "forbidden",
+                "scientificEvidenceUse": "forbidden",
+            }
+        )
+    start_marker = _with_content_digest(start_payload)
     write_new_bytes(
-        output_root / "development-control-start.json",
+        output_root / start_filename,
         canonical_json_bytes(start_marker) + b"\n",
     )
+    if post_release_regression:
+        write_new_bytes(
+            output_root / "inputs" / "frozen-development-source.json",
+            canonical_json_bytes(dict(frozen_source)) + b"\n",
+        )
     for filename, raw in sorted(archival_inputs.items()):
         write_new_bytes(output_root / "inputs" / filename, raw)
     write_new_bytes(
@@ -1377,57 +2072,77 @@ def _run_control(
             now=datetime.strptime(completed, "%Y-%m-%dT%H:%M:%SZ").replace(
                 tzinfo=timezone.utc
             ),
+            allow_after_cutoff_for_post_release_regression=(
+                post_release_regression
+            ),
         )
         inventory = _artifact_inventory(output_root)
-        report = _with_content_digest(
-            {
-                "schemaVersion": REPORT_SCHEMA,
-                "suiteId": SUITE_ID,
-                "executionId": execution_id,
-                "runId": plan["runId"],
-                "status": "NON_SCIENTIFIC_REAL_DATA_E2E_CONTROL_PASS",
-                "countsTowardScientificVerdict": False,
-                "usedForCandidateSelectionOrTuning": False,
-                "scientificAttemptStateCreated": False,
-                "nistUsed": False,
-                "futureCorpusUsed": False,
-                "thresholdsApplied": False,
-                "candidateCodecInvoked": True,
-                "realModelsUsed": True,
-                "realDevelopmentCorpusUsed": True,
-                "independentRealModelReplayComplete": True,
-                "startedAt": started,
-                "completedAt": completed,
-                "controlConfigurationSHA256": plan["controlConfigurationSHA256"],
-                "plan": _digest_bytes(
-                    (output_root / "development-plan.json").read_bytes()
-                ),
-                "inputs": bindings,
-                "runtime": runtime_probe,
-                "hostSafetyChecks": host_safety_checks,
-                "networkIsolationBackend": sandbox_backend,
-                "workerProcessesSequential": True,
-                "replayModelsSequential": True,
-                "supervision": supervision,
-                "independentReplay": replay_summary,
-                "artifactInventory": inventory,
-                "artifactSetSHA256": sha256_bytes(canonical_json_bytes(inventory)),
-                "scientificClaim": "forbidden",
-                "candidateSelectionOrTuning": "forbidden",
-            }
-        )
-        try:
-            validate_development_control_report(
-                report,
-                completed_no_later_than=DEVELOPMENT_COMPLETE_NO_LATER_THAN,
+        report_payload: dict[str, Any] = {
+            "schemaVersion": REPORT_SCHEMA,
+            "suiteId": SUITE_ID,
+            "executionId": execution_id,
+            "runId": plan["runId"],
+            "status": "NON_SCIENTIFIC_REAL_DATA_E2E_CONTROL_PASS",
+            "countsTowardScientificVerdict": False,
+            "usedForCandidateSelectionOrTuning": False,
+            "scientificAttemptStateCreated": False,
+            "nistUsed": False,
+            "futureCorpusUsed": False,
+            "thresholdsApplied": False,
+            "candidateCodecInvoked": True,
+            "realModelsUsed": True,
+            "realDevelopmentCorpusUsed": True,
+            "independentRealModelReplayComplete": True,
+            "startedAt": started,
+            "completedAt": completed,
+            "controlConfigurationSHA256": plan["controlConfigurationSHA256"],
+            "plan": _digest_bytes(
+                (output_root / "development-plan.json").read_bytes()
+            ),
+            "inputs": bindings,
+            "runtime": runtime_probe,
+            "hostSafetyChecks": host_safety_checks,
+            "networkIsolationBackend": sandbox_backend,
+            "workerProcessesSequential": True,
+            "replayModelsSequential": True,
+            "supervision": supervision,
+            "independentReplay": replay_summary,
+            "artifactInventory": inventory,
+            "artifactSetSHA256": sha256_bytes(canonical_json_bytes(inventory)),
+            "scientificClaim": "forbidden",
+            "candidateSelectionOrTuning": "forbidden",
+        }
+        report_filename = "development-control-report.json"
+        if post_release_regression:
+            report_filename = "post-release-regression-report.json"
+            report_payload.update(
+                {
+                    "schemaVersion": POST_RELEASE_REPORT_SCHEMA,
+                    "status": (
+                        "NON_SCIENTIFIC_POST_RELEASE_REAL_MODEL_REGRESSION_PASS"
+                    ),
+                    "executionClass": POST_RELEASE_PROFILE,
+                    "canonicalDevelopmentControlPackaging": "forbidden",
+                    "scientificEvidenceUse": "forbidden",
+                    "frozenDevelopmentSource": dict(frozen_source or {}),
+                }
             )
-        except FreezeManifestError as error:
-            raise DevelopmentControlError(
-                "development PASS report failed its canonical verifier"
-            ) from error
+        report = _with_content_digest(report_payload)
+        if post_release_regression:
+            validate_post_release_regression_report(report)
+        else:
+            try:
+                validate_development_control_report(
+                    report,
+                    completed_no_later_than=DEVELOPMENT_COMPLETE_NO_LATER_THAN,
+                )
+            except FreezeManifestError as error:
+                raise DevelopmentControlError(
+                    "development PASS report failed its canonical verifier"
+                ) from error
         # This report is the final completion marker.  Partial runs have no report.
         write_new_bytes(
-            output_root / "development-control-report.json",
+            output_root / report_filename,
             canonical_json_bytes(report) + b"\n",
         )
         arguments._control_phase = "complete"
@@ -1438,9 +2153,17 @@ def _write_failure_receipt(arguments: argparse.Namespace, error: Exception) -> N
     output_root = getattr(arguments, "_claimed_output_root", None)
     if not isinstance(output_root, Path):
         return
-    start_path = output_root / "development-control-start.json"
-    pass_path = output_root / "development-control-report.json"
-    failure_path = output_root / "development-control-failure.json"
+    post_release_regression = getattr(
+        arguments, "_post_release_regression", False
+    )
+    if post_release_regression:
+        start_path = output_root / "post-release-regression-start.json"
+        pass_path = output_root / "post-release-regression-report.json"
+        failure_path = output_root / "post-release-regression-failure.json"
+    else:
+        start_path = output_root / "development-control-start.json"
+        pass_path = output_root / "development-control-report.json"
+        failure_path = output_root / "development-control-failure.json"
     if not start_path.is_file() or pass_path.exists() or failure_path.exists():
         return
     context = getattr(arguments, "_control_context", {})
@@ -1454,53 +2177,83 @@ def _write_failure_receipt(arguments: argparse.Namespace, error: Exception) -> N
         inventory = []
         inventory_complete = False
         inventory_error = type(inventory_exception).__name__
-    failure = _with_content_digest(
-        {
-            "schemaVersion": "corelm-crossmodel-v4-real-e2e-development-failure-v1",
-            "suiteId": SUITE_ID,
-            "executionId": getattr(arguments, "_execution_id", None),
-            "runId": context.get("runId"),
-            "status": "NON_SCIENTIFIC_REAL_DATA_E2E_CONTROL_FAIL",
-            "countsTowardScientificVerdict": False,
-            "usedForCandidateSelectionOrTuning": False,
-            "scientificAttemptStateCreated": False,
-            "nistUsed": False,
-            "futureCorpusUsed": False,
-            "thresholdsApplied": False,
-            "startedAt": getattr(arguments, "_control_started_at", None),
-            "completedAt": _utc_now(),
-            "failurePhase": getattr(arguments, "_control_phase", "unknown"),
-            "failureType": type(error).__name__,
-            "failureReason": str(error)[:4096],
-            "controlConfigurationSHA256": context.get(
-                "controlConfigurationSHA256"
-            ),
-            "inputBindings": context.get("inputBindings"),
-            "runtime": context.get("runtime"),
-            "hostSafetyChecks": context.get("hostSafetyChecks"),
-            "artifactInventoryComplete": inventory_complete,
-            "artifactInventoryError": inventory_error,
-            "artifactInventory": inventory,
-            "artifactSetSHA256": sha256_bytes(canonical_json_bytes(inventory)),
-            "scientificClaim": "forbidden",
-            "candidateSelectionOrTuning": "forbidden",
-        }
-    )
+    failure_payload: dict[str, Any] = {
+        "schemaVersion": "corelm-crossmodel-v4-real-e2e-development-failure-v1",
+        "suiteId": SUITE_ID,
+        "executionId": getattr(arguments, "_execution_id", None),
+        "runId": context.get("runId"),
+        "status": "NON_SCIENTIFIC_REAL_DATA_E2E_CONTROL_FAIL",
+        "countsTowardScientificVerdict": False,
+        "usedForCandidateSelectionOrTuning": False,
+        "scientificAttemptStateCreated": False,
+        "nistUsed": False,
+        "futureCorpusUsed": False,
+        "thresholdsApplied": False,
+        "startedAt": getattr(arguments, "_control_started_at", None),
+        "completedAt": _utc_now(),
+        "failurePhase": getattr(arguments, "_control_phase", "unknown"),
+        "failureType": type(error).__name__,
+        "failureReason": str(error)[:4096],
+        "controlConfigurationSHA256": context.get(
+            "controlConfigurationSHA256"
+        ),
+        "inputBindings": context.get("inputBindings"),
+        "runtime": context.get("runtime"),
+        "hostSafetyChecks": context.get("hostSafetyChecks"),
+        "artifactInventoryComplete": inventory_complete,
+        "artifactInventoryError": inventory_error,
+        "artifactInventory": inventory,
+        "artifactSetSHA256": sha256_bytes(canonical_json_bytes(inventory)),
+        "scientificClaim": "forbidden",
+        "candidateSelectionOrTuning": "forbidden",
+    }
+    if post_release_regression:
+        frozen_source = getattr(arguments, "_verified_source", None)
+        failure_payload.update(
+            {
+                "schemaVersion": (
+                    "corelm-crossmodel-v4-real-e2e-post-release-regression-failure-v1"
+                ),
+                "status": "NON_SCIENTIFIC_POST_RELEASE_REAL_MODEL_REGRESSION_FAIL",
+                "executionClass": POST_RELEASE_PROFILE,
+                "canonicalDevelopmentControlPackaging": "forbidden",
+                "scientificEvidenceUse": "forbidden",
+                "frozenDevelopmentSource": (
+                    frozen_source if isinstance(frozen_source, dict) else None
+                ),
+            }
+        )
+    failure = _with_content_digest(failure_payload)
     write_new_bytes(failure_path, canonical_json_bytes(failure) + b"\n")
 
 
-def run_control(arguments: argparse.Namespace) -> dict[str, Any]:
+def run_control(
+    arguments: argparse.Namespace, *, post_release_regression: bool = False
+) -> dict[str, Any]:
+    if type(post_release_regression) is not bool:
+        raise DevelopmentControlError("execution profile is invalid")
     started = _utc_now()
+    prefix = (
+        "post-release-regression-execution-"
+        if post_release_regression
+        else "development-execution-"
+    )
     execution_id = (
-        "development-execution-"
+        prefix
         + started.replace("-", "").replace(":", "")
         + "-"
         + secrets.token_hex(8)
     )
     arguments._execution_id = execution_id
     arguments._control_started_at = started
+    arguments._post_release_regression = post_release_regression
     try:
-        return _run_control(arguments, started=started, execution_id=execution_id)
+        return _run_control(
+            arguments,
+            started=started,
+            execution_id=execution_id,
+            post_release_regression=post_release_regression,
+        )
     except Exception as error:
         try:
             _write_failure_receipt(arguments, error)
@@ -1509,8 +2262,16 @@ def run_control(arguments: argparse.Namespace) -> dict[str, Any]:
         raise
 
 
-def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
+def parse_arguments(
+    argv: list[str] | None = None, *, post_release_regression: bool = False
+) -> argparse.Namespace:
+    description = __doc__
+    if post_release_regression:
+        description = (
+            "Run the fixed real-data V4 workload only as a non-scientific "
+            "post-release development regression."
+        )
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--asset-root", type=Path, required=True)
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--codec-root", type=Path, required=True)
@@ -1519,9 +2280,12 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main() -> int:
+def main(*, post_release_regression: bool = False) -> int:
     try:
-        report = run_control(parse_arguments())
+        report = run_control(
+            parse_arguments(post_release_regression=post_release_regression),
+            post_release_regression=post_release_regression,
+        )
     except (
         OSError,
         ValueError,
@@ -1530,7 +2294,12 @@ def main() -> int:
         DevelopmentReplayError,
         DevelopmentRuntimeError,
     ) as error:
-        print(f"REAL E2E DEVELOPMENT CONTROL FAIL: {error}", file=sys.stderr)
+        failure_label = (
+            "POST-RELEASE REAL-MODEL REGRESSION FAIL"
+            if post_release_regression
+            else "REAL E2E DEVELOPMENT CONTROL FAIL"
+        )
+        print(f"{failure_label}: {error}", file=sys.stderr)
         return 1
     print(
         json.dumps(
