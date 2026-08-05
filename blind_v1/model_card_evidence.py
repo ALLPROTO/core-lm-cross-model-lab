@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 import re
 import stat
 from pathlib import Path, PurePosixPath
@@ -289,20 +290,69 @@ def verify_model_card_evidence_tree(
 
 def _read_regular(path: Path, *, maximum_bytes: int) -> bytes:
     try:
-        metadata = path.lstat()
+        descriptor = os.open(
+            path,
+            os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW,
+        )
     except OSError as error:
         raise ModelCardEvidenceError(f"model-card evidence is unreadable: {path}") from error
-    if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
-        raise ModelCardEvidenceError(f"model-card evidence is not a unique regular file: {path}")
-    if metadata.st_size <= 0 or metadata.st_size > maximum_bytes:
-        raise ModelCardEvidenceError(f"model-card evidence size differs: {path}")
     try:
-        raw = path.read_bytes()
-    except OSError as error:
-        raise ModelCardEvidenceError(f"model-card evidence read failed: {path}") from error
-    if len(raw) != metadata.st_size or path.lstat() != metadata:
+        try:
+            before = os.fstat(descriptor)
+            if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+                raise ModelCardEvidenceError(
+                    f"model-card evidence is not a unique regular file: {path}"
+                )
+            if before.st_size <= 0 or before.st_size > maximum_bytes:
+                raise ModelCardEvidenceError(f"model-card evidence size differs: {path}")
+
+            raw = bytearray()
+            while len(raw) <= maximum_bytes:
+                try:
+                    chunk = os.read(
+                        descriptor,
+                        min(1024 * 1024, maximum_bytes + 1 - len(raw)),
+                    )
+                except InterruptedError:
+                    continue
+                if not chunk:
+                    break
+                raw.extend(chunk)
+
+            after = os.fstat(descriptor)
+        except OSError as error:
+            raise ModelCardEvidenceError(
+                f"model-card evidence read failed: {path}"
+            ) from error
+    finally:
+        os.close(descriptor)
+
+    stable_before = (
+        before.st_dev,
+        before.st_ino,
+        before.st_mode,
+        before.st_uid,
+        before.st_gid,
+        before.st_size,
+        before.st_mtime_ns,
+    )
+    stable_after = (
+        after.st_dev,
+        after.st_ino,
+        after.st_mode,
+        after.st_uid,
+        after.st_gid,
+        after.st_size,
+        after.st_mtime_ns,
+    )
+    if (
+        len(raw) != before.st_size
+        or not stat.S_ISREG(after.st_mode)
+        or after.st_nlink != 1
+        or stable_after != stable_before
+    ):
         raise ModelCardEvidenceError(f"model-card evidence changed while read: {path}")
-    return raw
+    return bytes(raw)
 
 
 def expected_design_binding(summary: Mapping[str, Any]) -> dict[str, Any]:
