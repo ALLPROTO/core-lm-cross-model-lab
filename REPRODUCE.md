@@ -173,6 +173,111 @@ the public trust files already authenticated by the signed lab tag (and may
 later use their byte-identical copies from the immutable evidence bundle).
 The signed lab release already binds the same codec commit and tree.
 
+## Verify the published post-release evidence
+
+The complete post-release publication chain is:
+
+1. immutable
+   [`source identity`](https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-regression-v1);
+2. immutable signed
+   [`metadata correction`](https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-identity-correction-v1),
+   which replaces only the wrong codec tag name in the first receipt; and
+3. immutable
+   [`macOS real-model evidence`](https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1).
+
+The evidence release is anchored by a separate signed annotated tag. It points
+to the unchanged post-release source tree:
+
+```sh
+set -eu
+cd ../lab
+git fetch --force origin \
+  refs/tags/corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1:\
+refs/tags/corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1
+git -c gpg.format=ssh \
+  -c gpg.ssh.program=/usr/bin/ssh-keygen \
+  -c gpg.ssh.allowedSignersFile="$PWD/v4/signing/allowed_signers" \
+  verify-tag corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1
+test "$(git rev-parse corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1)" = \
+  a0f0dad22c1d08be2d7739a4ef175ae54c9e7bfc
+test "$(git rev-list -n 1 corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1)" = \
+  76ee0b0960db8396af0cbf1d3d84c79cffb0a784
+test "$(git rev-parse \
+  'corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1^{tree}')" = \
+  afd7466884dc4d2c49fd70d76b256c00e3f7158b
+```
+
+Download and verify all 17 author-supplied assets. The successful archive is
+exactly 501,046,366 bytes (about 477.835 MiB); model weights are intentionally
+not included:
+
+```sh
+set -eu
+EVIDENCE_TAG=corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1
+EVIDENCE_BASE="https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/download/$EVIDENCE_TAG"
+LAB_ROOT=$(CDPATH= cd -- . && pwd -P)
+test -d "$LAB_ROOT/.git"
+EVIDENCE_ROOT="$LAB_ROOT/../corelm-v4-macos-evidence"
+test ! -e "$EVIDENCE_ROOT"
+mkdir -m 700 "$EVIDENCE_ROOT"
+EVIDENCE_ROOT=$(CDPATH= cd -- "$EVIDENCE_ROOT" && pwd -P)
+cd "$EVIDENCE_ROOT"
+for FILE in \
+  README.md \
+  SHA256SUMS \
+  allowed_signers \
+  corelm-crossmodel-v4-signing.pub \
+  evidence-release-receipt.json \
+  evidence-release-receipt.json.sig \
+  first-host-memory-failure-evidence.tar.gz \
+  metrics.json \
+  post-release-source-identity-correction.json \
+  post-release-source-identity-correction.json.sig \
+  post-release-source-identity.json \
+  post-release-source-identity.json.sig \
+  semantic-verifier-report.json \
+  source-identity-chain.tar.gz \
+  source-identity-correction-server-receipt.json \
+  source-identity-original-server-receipt.json \
+  successful-real-model-regression-evidence.tar.gz
+do
+  curl --fail --location --retry 3 --output "$FILE" "$EVIDENCE_BASE/$FILE"
+done
+if command -v sha256sum >/dev/null 2>&1; then
+  test "$(sha256sum SHA256SUMS | awk '{print $1}')" = \
+    734a950f3c2dc04fb863fe6143afd6a55492f9cad9576fd9f2a5ca0e7e28af82
+  sha256sum -c SHA256SUMS
+else
+  test "$(shasum -a 256 SHA256SUMS | awk '{print $1}')" = \
+    734a950f3c2dc04fb863fe6143afd6a55492f9cad9576fd9f2a5ca0e7e28af82
+  shasum -a 256 -c SHA256SUMS
+fi
+ssh-keygen -Y verify \
+  -f allowed_signers \
+  -I ivantyschenko777@gmail.com \
+  -n file \
+  -s evidence-release-receipt.json.sig \
+  < evidence-release-receipt.json
+gzip -t first-host-memory-failure-evidence.tar.gz
+gzip -t successful-real-model-regression-evidence.tar.gz
+gzip -t source-identity-chain.tar.gz
+```
+
+GitHub release ID `365490155` is immutable and its platform attestation binds
+the annotated tag object and all 17 asset SHA-256 values. The final raw GitHub
+API response cannot be embedded in the same immutable release without creating
+a recursive dependency; its author-signed copy is reserved for the next
+design/Zenodo evidence bundle.
+
+The bundle preserves a host-memory failure before first model inference and a
+successful retry over GPT-Neo 125M, SmolLM2 360M, and Tiny-Starcoder-Py on the
+real UD English PUD r2.18 test bytes. The successful report contains 96 pages,
+12,288 predictions, and 2,048 VTL5 containers. Its status is
+`NON_SCIENTIFIC_POST_RELEASE_REAL_MODEL_REGRESSION_PASS`, with
+`thresholdsApplied=false`, `countsTowardScientificVerdict=false`, no NIST, and
+no future corpus. “Independent replay” means a separate deterministic verifier
+execution, not an independent human reviewer.
+
 ## Linux x86-64: portable controls, not the macOS E2E
 
 Use exactly CPython 3.12.10. The bootstrap accepts no other patch version and
@@ -314,13 +419,12 @@ The runner requires the signed post-release source tag
 detached `HEAD`. A moving `main`, an unsigned branch, and a locally edited
 checkout all fail closed.
 
-Release operators must create that tag only on the exact reviewed, green
-post-release commit. Its annotated tag-object ID, target commit, and tree must
-then be repeated in an immutable public receipt/release or Zenodo record; the
-signature alone does not provide an independent out-of-band pin. If those
-remote tag and receipt identities are not public, the commands below are only
-a prepared procedure, not a claim that an external reproducer can complete the
-regression.
+The source tag was created on the exact reviewed, green post-release commit.
+Its annotated tag-object ID, target commit, and tree are repeated in the
+immutable source-identity release and signed correction linked above. The
+separate evidence release repeats the same source binding and adds the complete
+macOS receipts. These public records close the earlier out-of-band source pin;
+they do not turn the regression into independent or scientific evidence.
 
 ```sh
 set -eu
