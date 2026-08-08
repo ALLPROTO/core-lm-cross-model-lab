@@ -65,6 +65,7 @@ from blind_v1.github_release_attestation import (
 from blind_v1.release_attestation_crypto import (
     PinnedCosignReleaseAttestationVerifier,
 )
+from blind_v1.protocol import require_scientific_schedule_open
 
 
 GITHUB_API_HOST = "api.github.com"
@@ -1298,6 +1299,60 @@ def collect_release_receipt(
     cannot make those bytes pass the ordinary on-time release verifier.
     """
 
+    require_scientific_schedule_open(operation="collect Blind V1 release receipt")
+    return _historical_collect_release_receipt(
+        repository=repository,
+        kind=kind,
+        tag=tag,
+        commit=commit,
+        tree=tree,
+        deadline=deadline,
+        signature_type=signature_type,
+        key_fingerprint=key_fingerprint,
+        public_key_path=public_key_path,
+        repository_root=repository_root,
+        release_id=release_id,
+        asset_root=asset_root,
+        asset_bindings=asset_bindings,
+        token=token,
+        git_runner=git_runner,
+        transport=transport,
+        release_attestation_verifier=release_attestation_verifier,
+        github_cli_path=github_cli_path,
+        cryptographic_attestation_verifier=cryptographic_attestation_verifier,
+        cosign_path=cosign_path,
+        now=now,
+        late_closeout_observation=late_closeout_observation,
+    )
+
+
+def _historical_collect_release_receipt(
+    *,
+    repository: str,
+    kind: str,
+    tag: str,
+    commit: str,
+    tree: str,
+    deadline: str,
+    signature_type: str,
+    key_fingerprint: str,
+    public_key_path: Path,
+    repository_root: Path,
+    release_id: int,
+    asset_root: Path,
+    asset_bindings: Sequence[str],
+    token: str | None = None,
+    git_runner: GitRunner | None = None,
+    transport: GitHubTransport | None = None,
+    release_attestation_verifier: ReleaseAttestationVerifier | None = None,
+    github_cli_path: Path | None = None,
+    cryptographic_attestation_verifier: Any | None = None,
+    cosign_path: Path | None = None,
+    now: Callable[[], str] = _utc_now,
+    late_closeout_observation: bool = False,
+) -> bytes:
+    """Retain the former receipt shape for offline structural fixtures."""
+
     if type(late_closeout_observation) is not bool:
         raise ReleaseReceiptCollectionError(
             "late closeout observation selector must be boolean"
@@ -1505,11 +1560,27 @@ def collect_release_receipt_to_path(
 ) -> str:
     """Preflight no-overwrite, collect, verify, and durably create output."""
 
+    require_scientific_schedule_open(operation="publish Blind V1 release receipt")
+    return _historical_collect_release_receipt_to_path(
+        output=output,
+        signature_failure_output=signature_failure_output,
+        **arguments,
+    )
+
+
+def _historical_collect_release_receipt_to_path(
+    *,
+    output: Path,
+    signature_failure_output: Path | None = None,
+    **arguments: Any,
+) -> str:
+    """Publish a legacy receipt only for isolated structural fixtures."""
+
     _assert_output_absent(output)
     if signature_failure_output is not None:
         _assert_output_absent(signature_failure_output)
     try:
-        raw = collect_release_receipt(**arguments)
+        raw = _historical_collect_release_receipt(**arguments)
     except SignatureVerificationError as error:
         if signature_failure_output is not None:
             diagnostic = {
@@ -1539,7 +1610,7 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--signature-type", choices=("SSH",), required=True)
     parser.add_argument("--key-fingerprint", required=True)
     parser.add_argument("--public-key", type=Path, required=True)
-    parser.add_argument("--repo-path", type=Path, default=Path.cwd())
+    parser.add_argument("--repo-path", type=Path, default=Path("."))
     parser.add_argument("--release-id", type=int, required=True)
     parser.add_argument("--assets-dir", type=Path, required=True)
     parser.add_argument(
@@ -1586,6 +1657,9 @@ def _argument_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _argument_parser().parse_args(argv)
     try:
+        require_scientific_schedule_open(
+            operation="run Blind V1 release-receipt collector"
+        )
         token = load_token_from_environment(args.token_env)
         digest = collect_release_receipt_to_path(
             output=args.output,

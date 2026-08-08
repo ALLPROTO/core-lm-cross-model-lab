@@ -39,6 +39,7 @@ from blind_v1.release_receipt import (
     verify_late_release_receipt_for_closeout,
     verify_release_receipt,
 )
+from blind_v1.protocol import require_scientific_schedule_open
 
 
 SCHEMA_VERSION = "corelm-blind-crossmodel-v1-experiment-closeout-v1"
@@ -465,7 +466,7 @@ def validate_empty_result_root_audit_report(
     return report
 
 
-def collect_empty_result_root_observation(
+def _historical_collect_empty_result_root_observation(
     *,
     result_root: Path,
     host_environment_raw: bytes,
@@ -581,6 +582,15 @@ def collect_empty_result_root_observation(
     return observation_raw, audit_report_raw
 
 
+def collect_empty_result_root_observation(
+    *args: Any, **kwargs: Any
+) -> tuple[bytes, bytes]:
+    """Reject retired V1 observation creation before clock or filesystem use."""
+
+    require_scientific_schedule_open(operation="collect-empty-result-root")
+    return _historical_collect_empty_result_root_observation(*args, **kwargs)
+
+
 def validate_empty_result_root_observation(raw: bytes) -> dict[str, Any]:
     """Validate a supplied historical empty-root audit without widening its scope."""
 
@@ -688,7 +698,7 @@ def _base_document(
     }
 
 
-def create_no_attempt_expired(
+def _historical_create_no_attempt_expired(
     *,
     publication_bindings: PublicationBindings,
     empty_result_root_observation_raw: bytes,
@@ -748,6 +758,13 @@ def create_no_attempt_expired(
         empty_result_root_observation_raw=empty_result_root_observation_raw,
     )
     return raw
+
+
+def create_no_attempt_expired(*args: Any, **kwargs: Any) -> bytes:
+    """Reject creation of new V1 no-attempt closeout bytes."""
+
+    require_scientific_schedule_open(operation="create-no-attempt-closeout")
+    return _historical_create_no_attempt_expired(*args, **kwargs)
 
 
 def _load_original_evidence_receipt(raw: bytes) -> dict[str, Any]:
@@ -915,7 +932,7 @@ def _late_basis(
     }
 
 
-def create_late_publication_invalid(
+def _historical_create_late_publication_invalid(
     *,
     publication_bindings: PublicationBindings,
     evidence_release_receipt_raw: bytes,
@@ -982,6 +999,13 @@ def create_late_publication_invalid(
         cryptographic_attestation_verifier=cryptographic_attestation_verifier,
     )
     return raw
+
+
+def create_late_publication_invalid(*args: Any, **kwargs: Any) -> bytes:
+    """Reject creation of new V1 late-publication closeout bytes."""
+
+    require_scientific_schedule_open(operation="create-late-publication-closeout")
+    return _historical_create_late_publication_invalid(*args, **kwargs)
 
 
 def _validate_common_closeout(

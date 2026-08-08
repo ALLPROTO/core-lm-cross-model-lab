@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/design.schema.json",
   "title": "Core LM blind multi-model blind-v1 design registration",
+  "$comment": "TERMINAL SUITE: PUBLIC_DESIGN_FROZEN is retained only as the counterfactual pre-checkpoint document shape for offline structural audit. Schema validity is never freeze, publication, or execution authorization; scheduleCloseout permanently forbids those operations for this suite ID.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -10,6 +11,7 @@
     "suiteId",
     "readyToFreeze",
     "countsTowardScientificVerdict",
+    "scheduleCloseout",
     "claim",
     "scientificBoundary",
     "priorObservations",
@@ -58,6 +60,9 @@
     },
     "countsTowardScientificVerdict": {
       "type": "boolean"
+    },
+    "scheduleCloseout": {
+      "$ref": "#/$defs/scheduleCloseout"
     },
     "claim": {
       "type": "string",
@@ -164,8 +169,15 @@
     "freezeBlockers": {
       "type": "array",
       "items": {
-        "type": "string",
-        "minLength": 1
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^historical unmet gate at checkpoint; not actionable for blind-v1: .+"
+          },
+          {
+            "const": "terminal schedule closeout: the 2026-08-08T12:00:00Z checkpoint elapsed without the required exact-commit gate; this suite must never be frozen, published as a preregistration, or scientifically executed, and only a new suite ID with a fully rescheduled timeline may continue the experiment"
+          }
+        ]
       },
       "uniqueItems": true
     }
@@ -183,6 +195,7 @@
         ]
       },
       "then": {
+        "$comment": "Historical counterfactual shape only; the terminal scheduleCloseout remains false for freeze, publication, and scientific execution.",
         "properties": {
           "schemaVersion": {
             "const": "corelm-blind-crossmodel-v1-design-draft-v1"
@@ -288,7 +301,12 @@
             }
           },
           "freezeBlockers": {
-            "minItems": 1
+            "minItems": 2,
+            "contains": {
+              "const": "terminal schedule closeout: the 2026-08-08T12:00:00Z checkpoint elapsed without the required exact-commit gate; this suite must never be frozen, published as a preregistration, or scientifically executed, and only a new suite ID with a fully rescheduled timeline may continue the experiment"
+            },
+            "minContains": 1,
+            "maxContains": 1
           }
         }
       }
@@ -431,6 +449,34 @@
     "utcSecond": {
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "scheduleCloseout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "decisionCheckpoint",
+        "requiredStateSatisfiedAtCheckpoint",
+        "freezeAllowed",
+        "publicationAllowed",
+        "scientificExecutionAllowed",
+        "successorSuiteIdRequired",
+        "successorTimelinePolicy",
+        "historicalStructuralValidationOnly"
+      ],
+      "properties": {
+        "status": {"const": "CHECKPOINT_MISSED_TERMINAL_DRAFT"},
+        "decisionCheckpoint": {"const": "2026-08-08T12:00:00Z"},
+        "requiredStateSatisfiedAtCheckpoint": {"const": false},
+        "freezeAllowed": {"const": false},
+        "publicationAllowed": {"const": false},
+        "scientificExecutionAllowed": {"const": false},
+        "successorSuiteIdRequired": {"const": true},
+        "successorTimelinePolicy": {
+          "const": "NEW_SUITE_ID_AND_FULL_RESCHEDULE_ONLY"
+        },
+        "historicalStructuralValidationOnly": {"const": true}
+      }
     },
     "developmentControls": {
       "type": "object",
@@ -898,6 +944,8 @@
         "minimumLeadTimesMustBePreserved": {"const": true},
         "moveTogether": {
           "const": [
+            "reschedulePolicy.decisionCheckpoint",
+            "developmentControls.realDataE2EFreezeGate.completeNoLaterThan",
             "designRelease.publishNoLaterThan",
             "futureCorpus.creationInterval",
             "futureCorpus.firstCrawlNotBefore",
@@ -1133,7 +1181,7 @@
           "const": "ALLPROTO"
         },
         "authorDeclaration": {
-          "const": "I am the author and experiment operator. I verified this exact implementation commit, its canonical schemas, zero-skip Linux and macOS arm64 CI, evidence packaging, and real-data development control. No independent human review was performed. This self-attestation is not peer review, operator blindness, independent replication, or independent validation."
+          "const": "This declaration becomes effective only in a valid immutable design release. At that freeze, I am the author and experiment operator and attest that I verified the exact frozen implementation commit, its canonical schemas, zero-skip Linux and macOS arm64 CI, evidence packaging, and real-data development control. No independent human review was performed. This self-attestation is not peer review, operator blindness, independent replication, or independent validation."
         },
         "independentHumanReviewRequired": {
           "const": false

@@ -25,7 +25,7 @@ class FrozenNISTTrustBundleBuilderTests(unittest.TestCase):
         self.output = self.root / "frozen-nist-trust"
 
     def test_builds_self_contained_status_only_bundle_without_overwrite(self) -> None:
-        report = subject.build_frozen_nist_trust_bundle(output_root=self.output)
+        report = subject._historical_build_frozen_nist_trust_bundle(output_root=self.output)
         candidate = load_json_strict(subject.TRACKED_CANDIDATE_MANIFEST)
         frozen_path = self.output / "manifest.json"
         frozen = load_json_strict(frozen_path)
@@ -70,7 +70,7 @@ class FrozenNISTTrustBundleBuilderTests(unittest.TestCase):
         )
         self.assertEqual(tuple(producer.records), tuple(independent.records))
         with self.assertRaises(FileExistsError):
-            subject.build_frozen_nist_trust_bundle(output_root=self.output)
+            subject._historical_build_frozen_nist_trust_bundle(output_root=self.output)
 
     def test_structural_diff_rejects_every_non_status_mutation(self) -> None:
         candidate = load_json_strict(subject.TRACKED_CANDIDATE_MANIFEST)
@@ -92,7 +92,7 @@ class FrozenNISTTrustBundleBuilderTests(unittest.TestCase):
                 subject.FrozenNISTTrustBuildError,
                 "tracked NIST trust input",
             ):
-                subject.build_frozen_nist_trust_bundle(output_root=self.output)
+                subject._historical_build_frozen_nist_trust_bundle(output_root=self.output)
 
     def test_write_failure_leaves_no_final_or_staging_output(self) -> None:
         original_write = subject.write_new_bytes
@@ -107,7 +107,7 @@ class FrozenNISTTrustBundleBuilderTests(unittest.TestCase):
 
         with mock.patch.object(subject, "write_new_bytes", side_effect=fail_second):
             with self.assertRaisesRegex(OSError, "injected staging failure"):
-                subject.build_frozen_nist_trust_bundle(output_root=self.output)
+                subject._historical_build_frozen_nist_trust_bundle(output_root=self.output)
         self.assertFalse(self.output.exists())
         self.assertEqual(
             list(self.root.glob(".corelm-nist-trust-staging-*")), []
@@ -128,7 +128,7 @@ class FrozenNISTTrustBundleBuilderTests(unittest.TestCase):
             side_effect=race,
         ):
             with self.assertRaises(FileExistsError):
-                subject.build_frozen_nist_trust_bundle(output_root=self.output)
+                subject._historical_build_frozen_nist_trust_bundle(output_root=self.output)
         self.assertEqual((self.output / "sentinel").read_bytes(), sentinel_raw)
         self.assertFalse((self.output / "manifest.json").exists())
         self.assertEqual(
@@ -151,7 +151,7 @@ class FrozenNISTTrustBundleBuilderTests(unittest.TestCase):
         with self.assertRaisesRegex(
             subject.FrozenNISTTrustBuildError, "outside the tracked project"
         ):
-            subject.build_frozen_nist_trust_bundle(output_root=destination)
+            subject._historical_build_frozen_nist_trust_bundle(output_root=destination)
         self.assertFalse(destination.exists())
 
     @staticmethod

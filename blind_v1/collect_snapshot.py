@@ -48,7 +48,10 @@ from blind_v1.mediawiki_snapshot import (  # noqa: E402
     verify_corpus_snapshot,
 )
 from blind_v1.preflight import verify_file_beneath  # noqa: E402
-from blind_v1.protocol import sha256_bytes  # noqa: E402
+from blind_v1.protocol import (  # noqa: E402
+    require_scientific_schedule_open,
+    sha256_bytes,
+)
 
 
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
@@ -469,6 +472,42 @@ def run_collector_phase(
 ) -> dict[str, Any]:
     """Run one durable crawl/finalize phase; partial failed stages are not resumed."""
 
+    require_scientific_schedule_open(operation="run Blind V1 snapshot collector phase")
+    return _historical_run_collector_phase(
+        phase=phase,
+        manifest_path=manifest_path,
+        manifest_sha256=manifest_sha256,
+        asset_root=asset_root,
+        ca_bundle=ca_bundle,
+        ca_bundle_sha256=ca_bundle_sha256,
+        output_root=output_root,
+        clock=clock,
+        tokenizer_factory=tokenizer_factory,
+        https_client_factory=https_client_factory,
+        collect_crawl_stage_fn=collect_crawl_stage_fn,
+        finalize_snapshot_fn=finalize_snapshot_fn,
+        verify_snapshot_fn=verify_snapshot_fn,
+    )
+
+
+def _historical_run_collector_phase(
+    *,
+    phase: str,
+    manifest_path: Path,
+    manifest_sha256: str,
+    asset_root: Path,
+    ca_bundle: Path,
+    ca_bundle_sha256: str,
+    output_root: Path,
+    clock: Callable[[], datetime] = lambda: datetime.now(timezone.utc),
+    tokenizer_factory: TokenizerFactory = default_tokenizer_factory,
+    https_client_factory: HTTPSClientFactory = PinnedHTTPSClient,
+    collect_crawl_stage_fn: CollectCrawlStage = collect_crawl_stage,
+    finalize_snapshot_fn: FinalizeSnapshot = finalize_snapshot,
+    verify_snapshot_fn: VerifySnapshot = verify_corpus_snapshot,
+) -> dict[str, Any]:
+    """Retain the phased collector logic for offline structural fixtures."""
+
     if phase not in {"crawl-1", "crawl-2", "finalize"}:
         raise CollectorCLIError("collector phase is not registered")
     root = (
@@ -557,6 +596,9 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
+        require_scientific_schedule_open(
+            operation="run Blind V1 snapshot collector CLI"
+        )
         common = {
             "manifest_path": arguments.asset_manifest,
             "manifest_sha256": arguments.asset_manifest_sha256,

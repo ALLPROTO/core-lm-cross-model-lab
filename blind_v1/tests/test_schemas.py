@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import unittest
 from pathlib import Path
 from typing import Any
@@ -18,12 +19,45 @@ from blind_v1.github_gate_receipt import (
 from blind_v1.protocol import (
     EXPECTED_CONTINUOUS_INTEGRATION,
     EXPECTED_DEVELOPMENT_CONTROLS,
+    HISTORICAL_UNMET_GATE_PREFIX,
+    HISTORICAL_UNMET_GATES,
+    SCHEDULE_CLOSEOUT,
+    SCHEDULE_CLOSEOUT_STATUS,
+    TERMINAL_SCHEDULE_BLOCKER,
     load_json_strict,
+    require_scientific_schedule_open,
 )
 
 
 BLIND_V1_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_ROOT = BLIND_V1_ROOT / "schemas"
+TERMINAL_SPECIFICATION_DOCUMENTS = (
+    "../README.md",
+    "../AGENTS.md",
+    "../LICENSES/README.md",
+    "../LICENSES/ASSET_LICENSES.md",
+    "../NOTICE.md",
+    "ARCHIVAL.md",
+    "CLOSEOUT.md",
+    "COLLECTOR_AND_BEACON_API.md",
+    "EVIDENCE_RELEASE.md",
+    "FREEZE_READINESS.md",
+    "RELEASE_RECEIPTS.md",
+    "REPRODUCIBILITY.md",
+    "manifests/README.md",
+    "results/README.md",
+    "signing/README.md",
+    "trust/README.md",
+    "trust/nist/spec/README.md",
+)
+TERMINAL_SPECIFICATION_BANNER = """> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+"""
 SCHEMA_NAMES = {
     "attempt-reservation.schema.json",
     "attempt.schema.json",
@@ -348,6 +382,14 @@ class SchemaIntegrityTests(unittest.TestCase):
         self.assertEqual(ci["authorName"], AUTHOR_NAME)
         self.assertEqual(ci["authorORCID"], AUTHOR_ORCID)
         self.assertEqual(ci["authorGitHubLogin"], AUTHOR_GITHUB_LOGIN)
+        self.assertIn(
+            "becomes effective only in a valid immutable design release",
+            ci["authorDeclaration"],
+        )
+        self.assertIn(
+            "attest that I verified the exact frozen implementation commit",
+            ci["authorDeclaration"],
+        )
         self.assertIs(ci["independentHumanReviewRequired"], False)
         self.assertIs(ci["independentHumanReviewPerformed"], False)
         self.assertIn("No independent human review was performed", ci["authorDeclaration"])
@@ -357,9 +399,234 @@ class SchemaIntegrityTests(unittest.TestCase):
             ["x86_64", "arm64"],
         )
 
+    def test_normative_workflow_prose_matches_registered_identity(self) -> None:
+        pattern = re.compile(
+            r"\.github/workflows/blind-v1-development-controls\.yml`: "
+            r"(?:exactly )?([0-9][0-9,]*) bytes with\s+SHA-256\s+"
+            r"`([0-9a-f]{64})`"
+        )
+        expected_bytes = EXPECTED_CONTINUOUS_INTEGRATION["workflowFileBytes"]
+        expected_sha256 = EXPECTED_CONTINUOUS_INTEGRATION["workflowFileSHA256"]
+        for document_name in ("PROTOCOL.md", "GITHUB_GATE_RECEIPTS.md"):
+            source = (BLIND_V1_ROOT / document_name).read_text(encoding="utf-8")
+            matches = pattern.findall(source)
+            self.assertEqual(len(matches), 1, document_name)
+            observed_bytes, observed_sha256 = matches[0]
+            self.assertEqual(
+                int(observed_bytes.replace(",", "")),
+                expected_bytes,
+                document_name,
+            )
+            self.assertEqual(observed_sha256, expected_sha256, document_name)
+
+    def test_draft_docs_do_not_claim_completed_freeze_or_preregistration(self) -> None:
+        readme = (BLIND_V1_ROOT / "README.md").read_text(encoding="utf-8")
+        protocol = (BLIND_V1_ROOT / "PROTOCOL.md").read_text(encoding="utf-8")
+        github_receipts = (BLIND_V1_ROOT / "GITHUB_GATE_RECEIPTS.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("not frozen, not preregistered, and not run", readme)
+        self.assertIn(
+            "not frozen, not published, not preregistered, and not run",
+            protocol,
+        )
+        for document in (readme, protocol):
+            self.assertIn("2026-08-08T12:00:00Z", document)
+            self.assertIn("permanently non-freezable", document)
+            self.assertIn("new suite ID", document)
+            self.assertIn("counterfactual", document)
+        self.assertIn("CHECKPOINT_MISSED_TERMINAL_DRAFT", github_receipts)
+        self.assertIn("counterfactual", github_receipts)
+        self.assertIn("do not run for V1", github_receipts)
+        for misleading_claim in (
+            "The exact pool is frozen",
+            "The author's frozen prior-observation disclosure",
+            "The frozen author disclosure states",
+            "The implementation gate is itself preregistered",
+            "The future immutable design release will freeze",
+            "This document becomes a preregistration",
+            "Upon a valid design freeze, the implementation gate will",
+        ):
+            self.assertNotIn(misleading_claim, readme)
+            self.assertNotIn(misleading_claim, protocol)
+        self._assert_missed_checkpoint_is_a_machine_terminal_closeout()
+        self._assert_terminal_gate_rejects_every_scientific_operation()
+
+    def test_retired_standalone_docs_are_fail_closed(self) -> None:
+        forbidden_active_phrases = (
+            "## Release procedure",
+            "Before the design archive can be frozen,",
+            "This procedure is only for the two public",
+            "The preregistered closeout publication is",
+            "## No local attempt reservation or marker before the hard deadline",
+            "## Evidence release first published late",
+            "Run the phases in this order:",
+            "## Deterministic snapshot registration",
+            "This release is produced under `AUTHOR_SELF_VERIFICATION`",
+            "# Blind cross-model v1 freeze-readiness gate",
+            "## P0 before the design release",
+            "## P0 exact-commit CI and platform boundary",
+            "## P0 after design publication and before the pulse",
+            "## P0 one-shot execution",
+            "Until every applicable box has immutable evidence",
+            "# Canonical signed GitHub release receipts for blind-v1",
+            "This document covers development controls",
+            "Generated receipts are created under",
+            "# Blind cross-model v1 result boundary\n",
+            "Before this result root may exist",
+            "The one-shot runner derives the only allowed scientific result root",
+            "# Release signing identity\n",
+            "All six blind-v1 annotated release tags",
+            "Recommended repository-local Git configuration",
+            "# Candidate trust material — not yet freeze-ready\n",
+            "A scientific or freeze path must receive",
+            "## Blind V1 prospective suite — active draft",
+            "The active prospective contour is `blind_v1/`",
+            "The prospective `blind_v1/` experiment is a separate execution contour",
+            "Freezing this source does not authorize fetching the future target pulse",
+            "used by the active Blind V1 development controls",
+            "Before the immutable design release, the author must",
+            "active `blind_v1/trust/` draft",
+            "freeze still requires exact manifest/root commitments",
+            "The immutable freeze should preserve",
+            "Blind V1 downloads the three excluded",
+            "The Blind V1 future Wikipedia snapshot",
+        )
+        self.assertEqual(len(TERMINAL_SPECIFICATION_DOCUMENTS), 17)
+        for document_name in TERMINAL_SPECIFICATION_DOCUMENTS:
+            with self.subTest(document=document_name):
+                source = (BLIND_V1_ROOT / document_name).read_text(
+                    encoding="utf-8"
+                )
+                self.assertEqual(source.count(TERMINAL_SPECIFICATION_BANNER), 1)
+                self.assertTrue(
+                    source.startswith(
+                        source.splitlines()[0]
+                        + "\n\n"
+                        + TERMINAL_SPECIFICATION_BANNER
+                    )
+                )
+                self.assertIn("retired", source[:200].lower())
+                for phrase in forbidden_active_phrases:
+                    self.assertNotIn(phrase, source)
+
+    def test_root_guidance_declares_terminal_api_and_threat_boundary(self) -> None:
+        self.assertEqual(
+            (BLIND_V1_ROOT / "__init__.py").read_text(encoding="utf-8"),
+            '"""Archived Core LM Blind V1 unrun terminal-draft audit package."""\n',
+        )
+        protocol = (BLIND_V1_ROOT / "PROTOCOL.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "non-scientific development-control or post-release regressions",
+            protocol,
+        )
+        self.assertIn("excluded development inputs", protocol)
+        self.assertIn("non-scientific output roots", protocol)
+        self.assertNotIn("The only executable V1 actions are offline tests", protocol)
+        required_statements = (
+            "Every supported public Blind V1 API or CLI state creator fails closed",
+            "`_historical_*` names are private counterfactual",
+            "outside the supported contract, and must never be called",
+            "this project does not claim a language-level sandbox",
+            "Integrity is enforced by exact source hashes, review, and exact-commit CI",
+            "`bootstrap_runtime.sh`, `create_runtime_manifest.py`, `create_sbom.py`, and",
+            "`source_archive.py create` are allowed only as development/provenance",
+            "they cannot authorize, freeze, publish, or scientifically execute",
+        )
+        for document_name in ("../README.md", "../AGENTS.md"):
+            with self.subTest(document=document_name):
+                source = (BLIND_V1_ROOT / document_name).read_text(
+                    encoding="utf-8"
+                )
+                for statement in required_statements:
+                    self.assertIn(statement, source)
+
+    def _assert_missed_checkpoint_is_a_machine_terminal_closeout(self) -> None:
+        registration = load_json_strict(
+            BLIND_V1_ROOT / "design-registration.draft.json"
+        )
+        self.assertEqual(registration["scheduleCloseout"], SCHEDULE_CLOSEOUT)
+        self.assertEqual(
+            registration["scheduleCloseout"]["status"],
+            SCHEDULE_CLOSEOUT_STATUS,
+        )
+        for field in (
+            "freezeAllowed",
+            "publicationAllowed",
+            "scientificExecutionAllowed",
+        ):
+            self.assertIs(registration["scheduleCloseout"][field], False)
+        self.assertIs(
+            registration["scheduleCloseout"]["successorSuiteIdRequired"],
+            True,
+        )
+        blockers = registration["freezeBlockers"]
+        historical_blockers = blockers[:-1]
+        self.assertEqual(len(historical_blockers), 8)
+        self.assertEqual(historical_blockers, list(HISTORICAL_UNMET_GATES))
+        for blocker in historical_blockers:
+            self.assertTrue(blocker.startswith(HISTORICAL_UNMET_GATE_PREFIX))
+            self.assertTrue(
+                blocker.removeprefix(HISTORICAL_UNMET_GATE_PREFIX).strip()
+            )
+        self.assertEqual(blockers[-1], TERMINAL_SCHEDULE_BLOCKER)
+        self.assertFalse(
+            TERMINAL_SCHEDULE_BLOCKER.startswith(HISTORICAL_UNMET_GATE_PREFIX)
+        )
+
+        schema = self.load_schemas()["design.schema.json"]
+        Draft202012Validator(schema).validate(registration)
+        self.assertIn("TERMINAL SUITE", schema["$comment"])
+        self.assertIn("counterfactual", schema["$comment"])
+        closeout_schema = schema["$defs"]["scheduleCloseout"]
+        for field, expected in SCHEDULE_CLOSEOUT.items():
+            self.assertEqual(
+                closeout_schema["properties"][field]["const"], expected
+            )
+        blocker_items = schema["properties"]["freezeBlockers"]["items"]["anyOf"]
+        self.assertEqual(
+            blocker_items[0]["pattern"],
+            "^historical unmet gate at checkpoint; not actionable for blind-v1: .+",
+        )
+        self.assertEqual(blocker_items[1]["const"], TERMINAL_SCHEDULE_BLOCKER)
+
+        move_together = registration["reschedulePolicy"]["moveTogether"]
+        self.assertEqual(
+            move_together[:2],
+            [
+                "reschedulePolicy.decisionCheckpoint",
+                "developmentControls.realDataE2EFreezeGate.completeNoLaterThan",
+            ],
+        )
+        self.assertEqual(
+            schema["$defs"]["reschedulePolicy"]["properties"]["moveTogether"][
+                "const"
+            ],
+            move_together,
+        )
+
+    def _assert_terminal_gate_rejects_every_scientific_operation(self) -> None:
+        for operation in ("freeze", "publish", "prepare", "run-one-shot"):
+            with self.subTest(operation=operation), self.assertRaisesRegex(
+                ValueError,
+                rf"{SCHEDULE_CLOSEOUT_STATUS}: {re.escape(operation)} .*new suite ID",
+            ):
+                require_scientific_schedule_open(operation=operation)
+
+        runner_source = (BLIND_V1_ROOT / "runner.py").read_text(encoding="utf-8")
+        main_source = runner_source[runner_source.index("def main() -> int:") :]
+        gate = "require_scientific_schedule_open(operation=arguments.command)"
+        self.assertIn(gate, main_source)
+        self.assertLess(main_source.index(gate), main_source.index('if arguments.command == "prepare"'))
+        verify_source = (BLIND_V1_ROOT / "verify_design.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('"status": "FAILED_SCHEDULE_DRAFT_DO_NOT_RUN"', verify_source)
+
     def test_design_lifecycle_branches_fail_closed_and_snapshot_plan_is_exact(self) -> None:
         schemas = self.load_schemas()
         design = schemas["design.schema.json"]
+        self.assertIn("offline structural audit", design["$comment"])
         branches = {
             branch["if"]["properties"]["status"]["const"]: branch["then"][
                 "properties"
@@ -381,7 +648,11 @@ class SchemaIntegrityTests(unittest.TestCase):
             self.assertEqual(
                 draft["labSource"]["properties"][field]["type"], "null"
             )
-        self.assertEqual(draft["freezeBlockers"]["minItems"], 1)
+        self.assertEqual(draft["freezeBlockers"]["minItems"], 2)
+        self.assertEqual(
+            draft["freezeBlockers"]["contains"]["const"],
+            TERMINAL_SCHEDULE_BLOCKER,
+        )
 
         frozen = branches["PUBLIC_DESIGN_FROZEN"]
         self.assertEqual(

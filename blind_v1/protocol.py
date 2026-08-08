@@ -17,6 +17,53 @@ from typing import Any, Iterable
 SUITE_ID = "corelm-blind-crossmodel-v1"
 DOMAIN = b"corelm-blind-crossmodel-v1/select\0"
 HEX_64 = re.compile(r"[0-9a-fA-F]{128}\Z")
+SCHEDULE_CLOSEOUT_STATUS = "CHECKPOINT_MISSED_TERMINAL_DRAFT"
+SCHEDULE_CLOSEOUT = {
+    "status": SCHEDULE_CLOSEOUT_STATUS,
+    "decisionCheckpoint": "2026-08-08T12:00:00Z",
+    "requiredStateSatisfiedAtCheckpoint": False,
+    "freezeAllowed": False,
+    "publicationAllowed": False,
+    "scientificExecutionAllowed": False,
+    "successorSuiteIdRequired": True,
+    "successorTimelinePolicy": "NEW_SUITE_ID_AND_FULL_RESCHEDULE_ONLY",
+    "historicalStructuralValidationOnly": True,
+}
+HISTORICAL_UNMET_GATE_PREFIX = (
+    "historical unmet gate at checkpoint; not actionable for blind-v1: "
+)
+HISTORICAL_UNMET_GATE_FACTS = (
+    "independently verify and pin the tracked NIST Beacon signing certificate "
+    "chain, root, wire profile, and rotation/revocation policy for "
+    "2026-08-21T18:00:00.000Z; the tracked leaf is time-valid at the target but "
+    "the exact trust commitments are not yet frozen",
+    "author-verify the archived UD English PUD CC BY-SA 3.0 license, README, "
+    "attribution, and source-derived evidence handling on the exact "
+    "implementation",
+    "complete and archive the untuned real UD English PUD "
+    "producer-to-VTL5-to-independent-replay development control on the exact "
+    "implementation and locked runtime",
+    "bind the repeated full-asset rehash, clean runtime manifest, CycloneDX "
+    "SBOM, and exact implementation commit/tree into release artifacts",
+    "record the signed author self-verification and obtain a zero-skip Linux "
+    "plus macOS arm64 CI receipt on that exact commit",
+    "publish the development-control release and archive exact-key "
+    "annotated-tag verification with the already registered signing key",
+    "implement and zero-skip verify the signed public execution-reservation "
+    "release and its server-timestamped receipt before the target pulse",
+    "publish the immutable design release and canonical GitHub CI receipt "
+    "whose verified RFC3161 attestedAt is strictly before the registered "
+    "deadline",
+)
+HISTORICAL_UNMET_GATES = tuple(
+    HISTORICAL_UNMET_GATE_PREFIX + fact for fact in HISTORICAL_UNMET_GATE_FACTS
+)
+TERMINAL_SCHEDULE_BLOCKER = (
+    "terminal schedule closeout: the 2026-08-08T12:00:00Z checkpoint elapsed "
+    "without the required exact-commit gate; this suite must never be frozen, "
+    "published as a preregistration, or scientifically executed, and only a new "
+    "suite ID with a fully rescheduled timeline may continue the experiment"
+)
 CANDIDATE_RULE = {
     "backend": "voidtoken-v5",
     "groupSize": 128,
@@ -32,6 +79,7 @@ EXPECTED_TOP_LEVEL_FIELDS = {
     "suiteId",
     "readyToFreeze",
     "countsTowardScientificVerdict",
+    "scheduleCloseout",
     "claim",
     "scientificBoundary",
     "priorObservations",
@@ -203,9 +251,11 @@ EXPECTED_CONTINUOUS_INTEGRATION = {
     "authorORCID": "https://orcid.org/0009-0000-7935-6090",
     "authorGitHubLogin": "ALLPROTO",
     "authorDeclaration": (
-        "I am the author and experiment operator. I verified this exact "
-        "implementation commit, its canonical schemas, zero-skip Linux and macOS "
-        "arm64 CI, evidence packaging, and real-data development control. No "
+        "This declaration becomes effective only in a valid immutable design "
+        "release. At that freeze, I am the author and experiment operator and "
+        "attest that I verified the exact frozen implementation commit, its "
+        "canonical schemas, zero-skip Linux and macOS arm64 CI, evidence "
+        "packaging, and real-data development control. No "
         "independent human review was performed. This self-attestation is not "
         "peer review, operator blindness, independent replication, or independent "
         "validation."
@@ -701,13 +751,15 @@ def validate_design_registration(registration: Any) -> list[str]:
     status = registration.get("status")
     if status != "DRAFT_NOT_PREREGISTERED":
         raise ValueError(
-            "freeze-candidate validation is fail-closed until all concrete "
-            "artifact and execution gates are implemented"
+            "terminal schedule closeout is fail-closed: blind-v1 must remain "
+            "DRAFT_NOT_PREREGISTERED and cannot become a freeze candidate"
         )
     if registration.get("suiteId") != SUITE_ID:
         raise ValueError("unexpected suiteId")
     if registration.get("countsTowardScientificVerdict") is not False:
         raise ValueError("unpublished design must not count toward a scientific verdict")
+    if registration.get("scheduleCloseout") != SCHEDULE_CLOSEOUT:
+        raise ValueError("terminal schedule closeout differs")
     expected_claim = (
         "One codec candidate fixed before the confirmatory pool and future corpus "
         "are scored meets every registered cell and model gate on three NIST-selected "
@@ -908,6 +960,8 @@ def validate_design_registration(registration: Any) -> list[str]:
         "newSuiteIdRequired": True,
         "minimumLeadTimesMustBePreserved": True,
         "moveTogether": [
+            "reschedulePolicy.decisionCheckpoint",
+            "developmentControls.realDataE2EFreezeGate.completeNoLaterThan",
             "designRelease.publishNoLaterThan",
             "futureCorpus.creationInterval",
             "futureCorpus.firstCrawlNotBefore",
@@ -1345,16 +1399,30 @@ def validate_design_registration(registration: Any) -> list[str]:
     ready = registration.get("readyToFreeze")
     if ready is not False or not blockers:
         raise ValueError("draft must fail closed with explicit blockers")
+    historical_blockers = blockers[:-1]
+    if historical_blockers != list(HISTORICAL_UNMET_GATES):
+        raise ValueError(
+            "pre-terminal blockers differ from the exact historical unmet "
+            "checkpoint facts or are not explicitly non-actionable for blind-v1"
+        )
+    if blockers[-1] != TERMINAL_SCHEDULE_BLOCKER:
+        raise ValueError("terminal schedule blocker is absent")
     return blockers
 
 
 def validate_frozen_design_registration(registration: Any) -> list[str]:
-    """Validate the frozen lifecycle plus every lifecycle-independent field.
+    """Structurally audit the unexecuted historical frozen-document shape.
 
-    The prospective and frozen documents intentionally share one normative
-    design body.  We first fail closed on every frozen-only binding, then
-    normalize only those lifecycle fields into their draft forms and reuse the
-    exhaustive draft-body validator.  No scientific parameter is normalized.
+    This function is not freeze, publication, or execution authorization.  The
+    V1 schedule closeout is terminal.  Keeping this parser permits offline audit
+    of the counterfactual document shape that the pre-checkpoint protocol had
+    specified; every operational entrypoint must call
+    :func:`require_scientific_schedule_open`, which always rejects V1.
+
+    The historical draft and frozen shapes share one normative design body. We
+    first check every historical frozen-only binding, then normalize only those
+    lifecycle fields into their draft forms and reuse the exhaustive draft-body
+    validator. No scientific parameter is normalized.
     """
 
     if not isinstance(registration, dict):
@@ -1543,7 +1611,10 @@ def validate_frozen_design_registration(registration: Any) -> list[str]:
     normalized["schemaVersion"] = "corelm-blind-crossmodel-v1-design-draft-v1"
     normalized["status"] = "DRAFT_NOT_PREREGISTERED"
     normalized["readyToFreeze"] = False
-    normalized["freezeBlockers"] = ["frozen-lifecycle-validation-sentinel"]
+    normalized["freezeBlockers"] = [
+        *HISTORICAL_UNMET_GATES,
+        TERMINAL_SCHEDULE_BLOCKER,
+    ]
     normalized["labSource"].update(
         status="UNBOUND_DRAFT",
         commit=None,
@@ -1583,7 +1654,7 @@ def validate_frozen_design_registration(registration: Any) -> list[str]:
 
 
 def validate_design_registration_lifecycle(registration: Any) -> list[str]:
-    """Dispatch to the only two permitted design lifecycle states."""
+    """Perform structural audit only; never authorize freeze or execution."""
 
     if not isinstance(registration, dict):
         raise ValueError("design registration must be an object")
@@ -1599,6 +1670,36 @@ def validate_design_registration_lifecycle(registration: Any) -> list[str]:
     ):
         return validate_frozen_design_registration(registration)
     raise ValueError("design schemaVersion/status lifecycle pair differs")
+
+
+def require_scientific_schedule_open(*, operation: str) -> None:
+    """Reject every V1 freeze, publication, reservation, and execution path.
+
+    The historical structural validators above intentionally remain usable by
+    offline auditors.  They cannot override this terminal authorization gate.
+    A successor experiment must have a new suite identity and its own protocol
+    module rather than changing or bypassing this function.
+    """
+
+    if not isinstance(operation, str) or not operation:
+        raise ValueError("schedule-gated operation must be a non-empty string")
+    registration = load_json_strict(
+        Path(__file__).resolve().parent / "design-registration.draft.json"
+    )
+    validate_design_registration(registration)
+    closeout = registration["scheduleCloseout"]
+    if (
+        closeout["status"] != SCHEDULE_CLOSEOUT_STATUS
+        or closeout["freezeAllowed"] is not False
+        or closeout["publicationAllowed"] is not False
+        or closeout["scientificExecutionAllowed"] is not False
+        or closeout["successorSuiteIdRequired"] is not True
+    ):
+        raise ValueError("terminal schedule closeout is not fail-closed")
+    raise ValueError(
+        f"{SCHEDULE_CLOSEOUT_STATUS}: {operation} is permanently forbidden for "
+        f"{SUITE_ID}; create a new suite ID and fully reschedule the timeline"
+    )
 
 
 def validate_model_asset_manifest(

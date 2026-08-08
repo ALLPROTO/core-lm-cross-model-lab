@@ -1,5 +1,13 @@
 # Core LM cross-model lab
 
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+
 [![Linux cross-model regression](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/linux-cross-model.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/linux-cross-model.yml)
 [![Blind V1 development controls](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/blind-v1-development-controls.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/blind-v1-development-controls.yml)
 [![Repository secret scan](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/repository-secret-scan.yml/badge.svg)](https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/workflows/repository-secret-scan.yml)
@@ -11,31 +19,43 @@ mocked, or beacon input is accepted by that legacy runner. The separate
 archived v4 development contour retains a read-only fail-closed beacon runner
 and protocol, but its scientific path is no longer active.
 
-## Blind V1 prospective suite — active draft
+## Blind V1 — retired, unrun terminal draft
 
-[`blind_v1/`](blind_v1/README.md) is the new, separate prospective,
-beacon-selected exact-revision and future-record holdout study. The author
-declares that this project has not behaviorally run its six exact confirmatory
-revisions. It also has a future Wikipedia corpus interval, a candidate offline
-NIST trust chain, a public pre-pulse execution reservation, and one future
-NIST-selected three-model one-shot. The macOS arm64 scientific runtime is
-primary; Linux x86-64 and macOS arm64 CI are clean-clone development gates.
+[`blind_v1/`](blind_v1/README.md) preserves the historical design for the
+unrun `corelm-blind-crossmodel-v1` suite. Its decision checkpoint elapsed
+before the mandatory P0 inputs, exact-commit CI receipt, and immutable design
+release existed. The resulting status is permanently
+`CHECKPOINT_MISSED_TERMINAL_DRAFT`: `freezeAllowed=false`,
+`publicationAllowed=false`, `scientificExecutionAllowed=false`, and
+`countsTowardScientificVerdict=false`.
 
-Current status is deliberately
-`DRAFT_NOT_PREREGISTERED`, `readyToFreeze=false`, and
-`countsTowardScientificVerdict=false`. No confirmatory model forward pass,
-future-corpus selection, target-pulse request, or scientific attempt has run.
-Only a future terminal `PASS` from the frozen one-shot could support the narrow
-registered claim. The complete schedule, limitations, zero-retry state
-machine, evidence obligations, and freeze blockers are in
-[`blind_v1/PROTOCOL.md`](blind_v1/PROTOCOL.md) and
-[`blind_v1/FREEZE_READINESS.md`](blind_v1/FREEZE_READINESS.md).
+No confirmatory model forward pass, future-corpus selection, target-pulse
+request, reservation, or scientific attempt occurred. The retained schedule,
+state machine, collector, release, and evidence procedures describe only the
+counterfactual experiment that could have run before the missed checkpoint;
+they are not a current runbook. Blind V1 must never be frozen, published as a
+preregistration, or scientifically executed. Only offline structural
+verification and explicitly non-scientific development or post-release
+regressions remain permissible. Any scientific successor requires a new suite
+ID and a fully rescheduled corpus, snapshot, NIST, attempt, evidence, and
+closeout timeline.
+
+Every supported public Blind V1 API or CLI state creator fails closed on the
+terminal lifecycle state. `_historical_*` names are private counterfactual
+fixture mechanics, outside the supported contract, and must never be called
+for scientific execution or publication. Same-process Python can always call
+or modify source; this project does not claim a language-level sandbox.
+Integrity is enforced by exact source hashes, review, and exact-commit CI.
+`bootstrap_runtime.sh`, `create_runtime_manifest.py`, `create_sbom.py`, and
+`source_archive.py create` are allowed only as development/provenance
+transforms; they cannot authorize, freeze, publish, or scientifically execute
+Blind V1.
 
 ## Legacy four-model public-validation regression
 
 The following four model cells belong only to the legacy root regression; they
-are not members of the Blind V1 confirmatory pool or its three-model future
-selection. The cells are independent:
+were not members of the retired Blind V1 confirmatory pool or its historically
+proposed three-model selection. The cells are independent:
 
 | Key | Model | Revision | Role |
 |---|---|---|---|
@@ -97,12 +117,13 @@ blindness, or independent replication is claimed.
 
 V4 did not reach a scientific freeze: its tracked NIST signing leaf expires
 before the proposed pulse. The contour is therefore retained only as a
-non-scientific development archive. Any future blind/generalization experiment
-must use a new suite identity and timeline, replacement trust pinned before its
-pulse, and new dependent commitments. V4 candidate inference on a future
+non-scientific development archive. Blind V1 was the separately identified
+successor draft, but it also missed its own checkpoint and is now retired and
+unrun; it did not repair, continue, or retroactively validate V4. Any later
+blind/generalization experiment must use another new suite identity, a fully
+rescheduled timeline, replacement trust pinned before its pulse, and new
+dependent commitments. V4 and Blind V1 candidate inference on a future
 corpus, one-shot selection, and scientific attempt state remain forbidden.
-Blind V1 is that separately identified successor; it does not repair, continue,
-or retroactively validate V4.
 
 The signed V4 development-control tag and its three-asset immutable release are
 now public. They remain non-scientific and do not close the NIST blocker. For

@@ -17,7 +17,9 @@ import jsonschema
 
 from blind_v1 import freeze_manifest
 from blind_v1 import package_design_release as subject
-from blind_v1.collect_github_gate_receipt import collect_github_gate_receipt_to_path
+from blind_v1.collect_github_gate_receipt import (
+    _historical_collect_github_gate_receipt_to_path as collect_github_gate_receipt_to_path,
+)
 from blind_v1.create_sbom import build_sbom
 from blind_v1.protocol import load_json_strict
 from blind_v1.release_attestation_crypto import expected_known_answer_result
@@ -381,7 +383,7 @@ class PackageDesignReleaseTests(unittest.TestCase):
             now=lambda: "2026-08-08T10:05:30Z",
         )
 
-        manifest = freeze_manifest.build_freeze_manifest(
+        manifest = freeze_manifest._historical_build_freeze_manifest(
             runtime_manifest_path=fixture.runtime_path,
             asset_receipt_path=fixture.asset_path,
             ca_bundle_path=fixture.ca_path,
@@ -488,7 +490,7 @@ class PackageDesignReleaseTests(unittest.TestCase):
         )
 
     def _package(self, name: str) -> subject.DesignReleaseVerification:
-        return subject.package_design_release(
+        return subject._historical_package_design_release(
             frozen_design_path=self.design_path,
             development_control_report_path=self.development_report_path,
             development_control_archive_receipt_path=(
@@ -693,7 +695,7 @@ class PackageDesignReleaseTests(unittest.TestCase):
         symlink = self.root / "key-link.pub"
         symlink.symlink_to(self.key_path)
         with self.assertRaisesRegex(subject.DesignReleaseError, "non-symlink"):
-            subject.package_design_release(
+            subject._historical_package_design_release(
                 frozen_design_path=self.design_path,
                 development_control_report_path=self.development_report_path,
                 development_control_archive_receipt_path=(

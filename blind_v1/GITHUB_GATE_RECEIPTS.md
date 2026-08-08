@@ -1,12 +1,21 @@
 # Archived GitHub exact-commit CI gate receipts
 
+Lifecycle: **historical/counterfactual only**. The
+`2026-08-08T12:00:00Z` decision checkpoint was missed, so
+`corelm-blind-crossmodel-v1` is permanently
+`CHECKPOINT_MISSED_TERMINAL_DRAFT`. A GitHub receipt collected now cannot
+qualify, freeze, publish, or authorize this suite. Any successor must use a new
+suite ID and fully reschedule the decision checkpoint, real-data E2E deadline,
+corpus, NIST, execution, evidence, and closeout windows.
+
 The blind-v1 GitHub gate is **CI-only**. It is not a human-review gate and it does
 not claim peer review, independent human validation, operator blindness, or
 independent replication. The repository owner is the author, experiment
 operator, and release operator. This governance mode is
 `AUTHOR_SELF_VERIFICATION`.
 
-`collect_github_gate_receipt.py` replaces operator-entered CI claims with
+Before closeout, `collect_github_gate_receipt.py` would have replaced
+operator-entered CI claims with
 canonical responses collected directly from GitHub over hostname-checked TLS.
 `github_gate_receipt.py` replays those exact archived bytes offline. GitHub does
 not sign REST response bodies or headers, and the receipt does not preserve an
@@ -54,11 +63,15 @@ The receipt explicitly records `artifactBytesArchived: false`. The raw Linux
 and macOS Actions ZIP bytes remain separate mandatory design-release assets.
 
 The design, schema, collector, tests, and this document bind the exact tracked
-`.github/workflows/blind-v1-development-controls.yml`: 13,962 bytes with SHA-256
+`.github/workflows/blind-v1-development-controls.yml`: 14,012 bytes with SHA-256
 `6c0b54bc4c318a2b55069852e07ae3355686ffb49a72c3ca4542396cf5375e87`.
 No prose value or operator-entered override may repair a mismatch.
 
-## Collection
+## Archived counterfactual collection procedure — do not run for V1
+
+The following command is retained to audit the old interface only. Running it
+now cannot discharge a V1 blocker and must not be represented as V1 freeze or
+publication evidence.
 
 Use a read-only token only if anonymous API limits are insufficient. The flag
 names an environment variable; never put its value in arguments:
@@ -77,9 +90,9 @@ python3 -I -B blind_v1/collect_github_gate_receipt.py \
   --output /absolute/path/to/github-ci-gate-receipt.json
 ```
 
-The normative blind-v1 CLI must not accept a reviewer-related argument. If the
-tracked implementation still requires one, blind-v1 is not freeze-ready and the CLI,
-schema, verifier, fixtures, and tests must be corrected on a new exact commit.
+The historical blind-v1 CLI was not permitted to accept a reviewer-related
+argument. Any correction now belongs only to a new suite ID and fully
+rescheduled protocol; it cannot make blind-v1 freeze-ready.
 
 The collector connects directly to `api.github.com:443` with system CA trust,
 hostname checking, TLS 1.2+, and HTTP/1.1. It never consults proxy environment
@@ -127,9 +140,10 @@ fresh real-model replay are implementation-level checks executed within the
 same author-controlled project; the word “independent” in those component names
 must not be interpreted as human or organizational independence.
 
-## Freeze-manifest integration
+## Archived counterfactual freeze-manifest integration
 
-The freeze manifest must commit the CI receipt file SHA-256 and its exact
+Had V1 frozen before its checkpoint, the freeze manifest would have committed
+the CI receipt file SHA-256 and its exact
 `evidenceBoundary`, then derive the PR, implementation commit, workflow run,
 job, platform, and artifact identities only from the structurally verified
 receipt. Parallel CLI-entered status, conclusion, job inventory, platform

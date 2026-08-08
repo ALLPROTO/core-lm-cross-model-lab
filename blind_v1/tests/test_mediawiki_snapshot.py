@@ -151,13 +151,13 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         self,
         transport: subject.Transport,
     ) -> None:
-        subject.collect_crawl_stage(
+        subject._historical_collect_crawl_stage(
             root=self.root,
             crawl_index=0,
             transport=transport,
             clock=lambda: datetime(2026, 8, 18, 6, 0, 2, tzinfo=timezone.utc),
         )
-        subject.collect_crawl_stage(
+        subject._historical_collect_crawl_stage(
             root=self.root,
             crawl_index=1,
             transport=transport,
@@ -254,7 +254,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
                     key: StatelessFixtureTokenizer()
                     for key in subject.MODEL_KEYS
                 }
-                item = subject.fetch_and_inventory_revision(
+                item = subject._historical_fetch_and_inventory_revision(
                     project=project,
                     change=public_change(value),
                     root=case_root,
@@ -314,7 +314,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
                 }
             return response(uri, value)
 
-        crawl = subject.collect_recentchanges_crawl(
+        crawl = subject._historical_collect_recentchanges_crawl(
             project="en.wikipedia.org",
             crawl_index=1,
             root=self.root,
@@ -340,7 +340,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             )
 
         with self.assertRaisesRegex(subject.SnapshotError, "Date precedes"):
-            subject.collect_recentchanges_crawl(
+            subject._historical_collect_recentchanges_crawl(
                 project="en.wikipedia.org",
                 crawl_index=0,
                 root=self.root / "old-date",
@@ -364,7 +364,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             return response(uri, value)
 
         with self.assertRaisesRegex(subject.SnapshotError, "duplicate revision"):
-            subject.collect_recentchanges_crawl(
+            subject._historical_collect_recentchanges_crawl(
                 project="en.wikipedia.org",
                 crawl_index=1,
                 root=duplicate_root,
@@ -384,7 +384,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             )
 
         with self.assertRaisesRegex(subject.SnapshotError, "cycle"):
-            subject.collect_recentchanges_crawl(
+            subject._historical_collect_recentchanges_crawl(
                 project="en.wikipedia.org",
                 crawl_index=1,
                 root=cycle_root,
@@ -408,7 +408,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         }
         transport = SmartTransport(records)
         tokenizers = {key: FixtureTokenizer() for key in subject.MODEL_KEYS}
-        manifest = subject.collect_snapshot(
+        manifest = subject._historical_collect_snapshot(
             root=self.root,
             transport=transport,
             tokenizers=tokenizers,
@@ -447,7 +447,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             project: [change(project_index, 0)]
             for project_index, project in enumerate(subject.PROJECTS)
         }
-        manifest = subject.collect_snapshot(
+        manifest = subject._historical_collect_snapshot(
             root=self.root,
             transport=SmartTransport(records),
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -494,7 +494,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
                 return response(uri, value)
 
         transport = MovedTransport(records)
-        manifest = subject.collect_snapshot(
+        manifest = subject._historical_collect_snapshot(
             root=self.root,
             transport=transport,
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -553,7 +553,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
                     revision["userhidden"] = True
                 return response(uri, value)
 
-        manifest = subject.collect_snapshot(
+        manifest = subject._historical_collect_snapshot(
             root=self.root,
             transport=MovedHiddenTransport(records),
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -596,7 +596,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         (pending / "response-body.bin").write_bytes(archived.body)
 
         transport = SmartTransport(records)
-        subject.finalize_snapshot(
+        subject._historical_finalize_snapshot(
             root=self.root,
             transport=transport,
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -634,7 +634,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             raise AssertionError("network must not run over a partial bundle")
 
         with self.assertRaisesRegex(subject.SnapshotError, "pending response bundle is incomplete"):
-            subject.finalize_snapshot(
+            subject._historical_finalize_snapshot(
                 root=self.root,
                 transport=forbidden_transport,
                 tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -663,7 +663,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             return first(uri)
 
         with self.assertRaisesRegex(RuntimeError, "injected"):
-            subject.finalize_snapshot(
+            subject._historical_finalize_snapshot(
                 root=self.root,
                 transport=fail_after_three,
                 tokenizers=tokenizers,
@@ -676,7 +676,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         self.assertEqual(len(committed), 3)
 
         resumed = SmartTransport(records)
-        manifest = subject.finalize_snapshot(
+        manifest = subject._historical_finalize_snapshot(
             root=self.root,
             transport=resumed,
             tokenizers=tokenizers,
@@ -691,7 +691,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         def forbidden_transport(_uri: str) -> subject.ArchivedHTTPResponse:
             raise AssertionError("complete corpus replay must not use the network")
 
-        replayed = subject.finalize_snapshot(
+        replayed = subject._historical_finalize_snapshot(
             root=self.root,
             transport=forbidden_transport,
             tokenizers=tokenizers,
@@ -701,7 +701,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         manifest_path = self.root / "corpus-manifest.json"
         pending_manifest = self.root / ".corpus-manifest.json.pending"
         os.link(manifest_path, pending_manifest)
-        replayed_after_manifest_crash = subject.finalize_snapshot(
+        replayed_after_manifest_crash = subject._historical_finalize_snapshot(
             root=self.root,
             transport=forbidden_transport,
             tokenizers=tokenizers,
@@ -714,7 +714,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             project: [change(project_index, 0)]
             for project_index, project in enumerate(subject.PROJECTS)
         }
-        manifest = subject.collect_snapshot(
+        manifest = subject._historical_collect_snapshot(
             root=self.root,
             transport=SmartTransport(records),
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -748,7 +748,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
 
         with mock.patch.object(subject, "_write_or_reuse_exact", fail_first_record):
             with self.assertRaisesRegex(RuntimeError, "record publication"):
-                subject.finalize_snapshot(
+                subject._historical_finalize_snapshot(
                     root=self.root,
                     transport=transport,
                     tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -756,7 +756,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         first_revid = int(records["de.wikipedia.org"][0]["revid"])
         calls_before = len(transport.uris)
         resumed = SmartTransport(records)
-        subject.finalize_snapshot(
+        subject._historical_finalize_snapshot(
             root=self.root,
             transport=resumed,
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -776,7 +776,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         )
         (bundle / "unexpected.bin").write_bytes(b"not evidence")
         with self.assertRaisesRegex(subject.SnapshotError, "inventory differs"):
-            subject.finalize_snapshot(
+            subject._historical_finalize_snapshot(
                 root=self.root,
                 transport=lambda uri: (_ for _ in ()).throw(
                     AssertionError(f"unexpected network call: {uri}")
@@ -793,7 +793,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
         first_day = lambda: datetime(
             2026, 8, 18, 6, 0, 2, tzinfo=timezone.utc
         )
-        subject.collect_crawl_stage(
+        subject._historical_collect_crawl_stage(
             root=self.root,
             crawl_index=0,
             transport=transport,
@@ -805,19 +805,19 @@ class MediaWikiSnapshotTests(unittest.TestCase):
             records["de.wikipedia.org"][0]["revid"],
         )
         with self.assertRaisesRegex(subject.SnapshotError, "before"):
-            subject.collect_crawl_stage(
+            subject._historical_collect_crawl_stage(
                 root=self.root,
                 crawl_index=1,
                 transport=transport,
                 clock=first_day,
             )
-        subject.collect_crawl_stage(
+        subject._historical_collect_crawl_stage(
             root=self.root,
             crawl_index=1,
             transport=transport,
             clock=self.clock,
         )
-        manifest = subject.finalize_snapshot(
+        manifest = subject._historical_finalize_snapshot(
             root=self.root,
             transport=transport,
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},
@@ -865,7 +865,7 @@ class MediaWikiSnapshotTests(unittest.TestCase):
                     value = revision_response(by_revision[revid])
             return response(uri, value)
 
-        manifest = subject.collect_snapshot(
+        manifest = subject._historical_collect_snapshot(
             root=self.root,
             transport=transport,
             tokenizers={key: FixtureTokenizer() for key in subject.MODEL_KEYS},

@@ -9,7 +9,9 @@ from pathlib import Path
 from unittest import mock
 
 import blind_v1.reproducibility as reproducibility_module
-from blind_v1.create_asset_receipt import build_asset_receipt
+from blind_v1.create_asset_receipt import (
+    _historical_build_asset_receipt as build_asset_receipt,
+)
 from blind_v1.create_sbom import build_sbom
 from blind_v1.reproducibility import (
     RUNTIME_ENVIRONMENT_KEYS,

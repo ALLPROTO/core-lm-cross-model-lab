@@ -1,26 +1,36 @@
-# Public experiment closeout
+# Public experiment closeout (retired Blind V1 specification)
 
-Closeout is author-self-verified. It preserves a terminal absence/late-release
-classification but does not claim independent human review, peer review,
-operator blindness, or independent replication. The separate verifier is an
-implementation control within the same author-controlled project.
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
 
-This procedure is only for the two public, non-verdict classifications
+The closeout design below was author-self-verified. It would have preserved a
+terminal absence/late-release classification but would not have claimed
+independent human review, peer review, operator blindness, or independent
+replication. The separate verifier was designed as an implementation control
+within the same author-controlled project.
+
+The retired counterfactual procedure was only for the two public, non-verdict classifications
 `NO_ATTEMPT_EXPIRED` and `LATE_PUBLICATION_INVALID`. Neither is an attempt
 terminal state, neither permits a retry, and neither can be presented as a
 PASS or FAIL_GATES result.
 
-The preregistered closeout publication is an immutable GitHub release under the
-signed annotated tag `corelm-blind-crossmodel-v1-closeout`, published
-strictly before `2026-08-30T18:00:00Z`. Its exact four semantic roles are:
+Had V1 reached a valid preregistration, its closeout publication would have
+been an immutable GitHub release under the signed annotated tag
+`corelm-blind-crossmodel-v1-closeout`, published strictly before
+`2026-08-30T18:00:00Z`. Its exact four semantic roles would have been:
 
 1. `closeout-statement` — canonical `experiment-closeout.json`;
 2. `closeout-basis` — canonical bundle of the exact basis and required support;
 3. `closeout-verifier-report` — deterministic offline verification report;
 4. `sha256-manifest` — manifest of the preceding three files.
 
-`package_closeout_release.py` creates and reopens this inventory. The normal
-`collect_release_receipt.py --kind closeout` path then binds it to the signed
+`package_closeout_release.py` would have created and reopened this inventory.
+The normal `collect_release_receipt.py --kind closeout` path would then have bound it to the signed
 tag, exact commit/tree, immutable release, verified GitHub immutable-release
 attestation, and signing identity. The resulting closeout release receipt is archived separately because
 a release cannot contain a receipt that observes itself.
@@ -39,14 +49,14 @@ verifier, and includes it in the closeout verifier report. For
 binds the closeout to the public execution obligation without claiming that a
 local attempt reservation or marker was ever created.
 
-## No local attempt reservation or marker before the hard deadline
+## Historical no-local-attempt branch (unavailable; do not execute)
 
-This branch requires the already verified pre-pulse public
+This abandoned branch would have required the already verified pre-pulse public
 `execution-reservation.json` release and canonical receipt. That public intent
 record is not local attempt state. The branch is forbidden if any local
 `attempt-reservation.json`, marker, pending transition, or other result-root
 byte exists: local reservation-only state is `CONSUMED_INCOMPLETE`, not
-`NO_ATTEMPT_EXPIRED`. First create the canonical empty-result-root observation after
+`NO_ATTEMPT_EXPIRED`. It would first have created the canonical empty-result-root observation after
 `2026-08-22T18:00:00Z`. Its claim is deliberately limited to the named result
 root on the named host at the observation time. It must not claim global
 absence. The collector refuses a symlink or nonempty directory, audits the same
@@ -61,8 +71,9 @@ python3 -I -B blind_v1/collect_empty_result_root.py \
   --output-directory /new/path/empty-root-audit
 ```
 
-Create `NO_ATTEMPT_EXPIRED` with `create_no_attempt_expired(...)`, then package
-it with the exact observation, original environment bytes, and emitted audit
+It would then have created `NO_ATTEMPT_EXPIRED` with
+`create_no_attempt_expired(...)` and packaged it with the exact observation,
+original environment bytes, and emitted audit
 report. Those three documents plus the exact audit implementation bytes are
 embedded in canonical `closeout-basis.json`; hash-only references are
 insufficient:
@@ -93,11 +104,11 @@ the independently rederived `attemptId` in those exact reservation bytes; the
 execution-reservation SHA-256 remains an additional byte-level binding rather
 than the only visible identity link.
 
-## Evidence release first published late
+## Historical late-publication branch (unavailable; do not execute)
 
-Do not edit the deadline and do not call the late release valid. Download the
-exact four evidence assets and collect its receipt once with the explicit
-inverse temporal predicate:
+The historical rule forbade editing the deadline or calling a late release
+valid. It would have downloaded the exact four evidence assets and collected
+their receipt once with the explicit inverse temporal predicate:
 
 ```sh
 python3 -I -B blind_v1/collect_release_receipt.py \
@@ -126,7 +137,8 @@ python3 -I -B blind_v1/collect_release_receipt.py \
 That switch is evidence-only and requires the verified GitHub immutable-release
 RFC3161 `attestedAt` to be at or after the registered evidence deadline. API
 `published_at` remains an archived observation. The ordinary `verify_release_receipt`
-continues to reject the same exact bytes. Use those bytes as the closeout
+continues to reject the same exact bytes. The retired procedure would have used
+those bytes as the closeout
 `--basis`; the packager embeds the unchanged receipt and its exact external
 asset inventory in canonical `closeout-basis.json`. Packaging additionally
 requires the exact evidence asset directory and the frozen design `labSource`
@@ -163,8 +175,9 @@ python3 -I -B blind_v1/package_closeout_release.py package \
   --output-directory /new/path/closeout-release
 ```
 
-Finally publish the four closeout assets, make that release immutable, and
-collect its ordinary `--kind closeout` receipt before the closeout deadline.
+The final counterfactual step would have published the four closeout assets,
+made that release immutable, and collected its ordinary `--kind closeout`
+receipt before the closeout deadline.
 The receipt collector's `--commit` and `--tree` arguments must be the frozen
 design `labSource` values. Then perform the composed independent check:
 

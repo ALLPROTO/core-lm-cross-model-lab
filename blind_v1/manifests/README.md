@@ -1,7 +1,15 @@
-# Generated provenance manifests
+# Generated provenance manifests (retired Blind V1 specification)
 
-Generated receipts are created under the ignored `blind_v1/.working/`
-directory:
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+
+The abandoned design would have created generated receipts under the ignored
+`blind_v1/.working/` directory:
 
 - `asset-receipt.json` — exact local rehash of the six-revision confirmatory
   pool; it performs no model import or inference and becomes a frozen external
@@ -38,8 +46,9 @@ artifact and is bound through that artifact and the GitHub gate; it is not a
 second primary numerical runtime. Generated dirty-worktree development
 manifests are never accepted.
 
-No generated file becomes normative merely by existing. The eventual author-verified
-freeze manifest must bind exact receipt bytes and hashes, and the subsequently
-frozen design must bind the exact freeze-manifest file SHA-256. The separately
-implemented software verifier must reconstruct both stages before one-shot
-execution; this is not independent human validation.
+No generated file becomes normative merely by existing. Under the abandoned
+design, an author-verified freeze manifest would have bound exact receipt bytes
+and hashes, and the subsequently frozen design would have bound the exact
+freeze-manifest file SHA-256. The separately implemented software verifier
+would have reconstructed both stages before one-shot execution; this would not
+have constituted independent human validation.

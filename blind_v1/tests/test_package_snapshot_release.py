@@ -18,7 +18,7 @@ from blind_v1.package_snapshot_release import (
     ASSET_ROLES,
     SnapshotReleaseError,
     canonical_json_bytes,
-    package_snapshot_release,
+    _historical_package_snapshot_release as package_snapshot_release,
     sha256_bytes,
     verify_snapshot_release,
 )

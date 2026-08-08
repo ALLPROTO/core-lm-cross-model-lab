@@ -43,7 +43,10 @@ from blind_v1.nist_beacon import (  # noqa: E402
     TRUST_FROZEN_STATUS,
     load_offline_trust_bundle,
 )
-from blind_v1.protocol import load_json_strict_bytes  # noqa: E402
+from blind_v1.protocol import (  # noqa: E402
+    load_json_strict_bytes,
+    require_scientific_schedule_open,
+)
 from blind_v1.reproducibility import (  # noqa: E402
     _assert_safe_output_parent,
     _fsync_directory,
@@ -343,6 +346,15 @@ def _publish_directory_exclusive(staging: Path, destination: Path) -> None:
 def build_frozen_nist_trust_bundle(*, output_root: Path) -> dict[str, Any]:
     """Validate and promote the exact tracked candidate into a new bundle root."""
 
+    require_scientific_schedule_open(operation="build frozen NIST trust bundle")
+    return _historical_build_frozen_nist_trust_bundle(output_root=output_root)
+
+
+def _historical_build_frozen_nist_trust_bundle(
+    *, output_root: Path
+) -> dict[str, Any]:
+    """Retain the frozen-bundle structure for offline historical fixtures."""
+
     candidate_path = TRACKED_CANDIDATE_MANIFEST
     candidate_raw = _read_regular(candidate_path, maximum_bytes=MAX_MANIFEST_BYTES)
     candidate_sha256 = sha256_bytes(candidate_raw)
@@ -487,6 +499,9 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
+        require_scientific_schedule_open(
+            operation="run frozen Blind V1 NIST trust-bundle builder"
+        )
         report = build_frozen_nist_trust_bundle(output_root=arguments.output_root)
     except (OSError, ValueError) as error:
         print(f"FROZEN NIST TRUST BUILD FAIL: {error}", file=sys.stderr)

@@ -199,7 +199,7 @@ class FetchAssetsTests(unittest.TestCase):
         with mock.patch.object(
             subject, "DevelopmentDatasetSpecification", return_value=specification
         ):
-            record = subject.fetch_development_dataset(
+            record = subject._historical_fetch_development_dataset(
                 self.destination, transport=transport
             )
         destination = (
@@ -217,7 +217,7 @@ class FetchAssetsTests(unittest.TestCase):
         with mock.patch.object(
             subject, "DevelopmentDatasetSpecification", return_value=specification
         ):
-            repeated = subject.fetch_development_dataset(
+            repeated = subject._historical_fetch_development_dataset(
                 self.destination, transport=NoCallTransport()
             )
         self.assertEqual(repeated.status, "verified-existing")
@@ -240,7 +240,7 @@ class FetchAssetsTests(unittest.TestCase):
             ),
             self.assertRaisesRegex(subject.AssetFetchError, "not allowlisted"),
         ):
-            subject.fetch_development_dataset(
+            subject._historical_fetch_development_dataset(
                 self.destination,
                 transport=transport,
             )
@@ -249,7 +249,7 @@ class FetchAssetsTests(unittest.TestCase):
         files = {"config.json": b'{"model_type":"fixture"}\n'}
         self.write_manifest(files)
         transport = self.transport_for(files)
-        records = subject.fetch_assets(
+        records = subject._historical_fetch_assets(
             self.manifest, self.destination, transport=transport
         )
         destination = self.destination / "fixture-model" / "config.json"
@@ -273,7 +273,7 @@ class FetchAssetsTests(unittest.TestCase):
         small_transport = FakeTransport(
             {urls["config.json"]: files["config.json"]}
         )
-        records = subject.fetch_assets(
+        records = subject._historical_fetch_assets(
             self.manifest,
             self.destination,
             small_files_only=True,
@@ -287,7 +287,7 @@ class FetchAssetsTests(unittest.TestCase):
         full_transport = FakeTransport(
             {urls["model.safetensors"]: files["model.safetensors"]}
         )
-        records = subject.fetch_assets(
+        records = subject._historical_fetch_assets(
             self.manifest, self.destination, transport=full_transport
         )
         self.assertEqual(
@@ -306,7 +306,7 @@ class FetchAssetsTests(unittest.TestCase):
         destination.parent.mkdir(parents=True)
         destination.write_bytes(files["config.json"])
         transport = NoCallTransport()
-        records = subject.fetch_assets(
+        records = subject._historical_fetch_assets(
             self.manifest, self.destination, transport=transport
         )
         self.assertFalse(transport.called)
@@ -322,7 +322,7 @@ class FetchAssetsTests(unittest.TestCase):
         with self.assertRaisesRegex(
             subject.AssetFetchError, "will not be overwritten"
         ):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, self.destination, transport=transport
             )
         self.assertEqual(destination.read_bytes(), b"different")
@@ -340,7 +340,7 @@ class FetchAssetsTests(unittest.TestCase):
         with self.assertRaisesRegex(
             subject.AssetFetchError, "will not be overwritten"
         ):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, self.destination, transport=transport
             )
         self.assertEqual(destination.read_bytes(), b"racing mismatch")
@@ -354,7 +354,7 @@ class FetchAssetsTests(unittest.TestCase):
         partial.write_bytes(b"foreign partial")
         transport = NoCallTransport()
         with self.assertRaisesRegex(subject.AssetFetchError, "partial path"):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, self.destination, transport=transport
             )
         self.assertEqual(partial.read_bytes(), b"foreign partial")
@@ -369,7 +369,7 @@ class FetchAssetsTests(unittest.TestCase):
             {specifications[0].url: oversized}, include_length=False
         )
         with self.assertRaisesRegex(subject.AssetFetchError, "exceeds"):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, self.destination, transport=transport
             )
         self.assertEqual(sum(transport.responses[0].read_requests), len(committed) + 1)
@@ -385,7 +385,7 @@ class FetchAssetsTests(unittest.TestCase):
             {specifications[0].url: same_length_wrong_hash}
         )
         with self.assertRaisesRegex(subject.AssetFetchError, "SHA-256"):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, self.destination, transport=transport
             )
         destination = self.destination / "fixture-model" / "config.json"
@@ -403,7 +403,7 @@ class FetchAssetsTests(unittest.TestCase):
                 destination = self.destination / final_url.split(":", 1)[0]
                 transport = self.transport_for(files, final_url=final_url)
                 with self.assertRaises(subject.AssetFetchError):
-                    subject.fetch_assets(
+                    subject._historical_fetch_assets(
                         self.manifest, destination, transport=transport
                     )
 
@@ -444,7 +444,7 @@ class FetchAssetsTests(unittest.TestCase):
         linked_root = self.root / "linked-root"
         linked_root.symlink_to(real_root, target_is_directory=True)
         with self.assertRaisesRegex(subject.AssetFetchError, "symlink"):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, linked_root, transport=transport
             )
 
@@ -454,7 +454,7 @@ class FetchAssetsTests(unittest.TestCase):
         real_nested.mkdir()
         (model_root / "nested").symlink_to(real_nested, target_is_directory=True)
         with self.assertRaisesRegex(subject.AssetFetchError, "symlink"):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, self.destination, transport=transport
             )
         (model_root / "nested").unlink()
@@ -465,7 +465,7 @@ class FetchAssetsTests(unittest.TestCase):
         other.write_bytes(b"other")
         (nested / "config.json").symlink_to(other)
         with self.assertRaisesRegex(subject.AssetFetchError, "symlink"):
-            subject.fetch_assets(
+            subject._historical_fetch_assets(
                 self.manifest, self.destination, transport=transport
             )
 

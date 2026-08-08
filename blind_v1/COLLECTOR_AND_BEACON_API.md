@@ -1,12 +1,21 @@
-# Collector and NIST verifier API
+# Collector and NIST verifier API (retired Blind V1 specification)
+
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
 
 This blind-v1 contract is author-self-verified. It claims no independent human
 review, peer review, operator blindness, or independent replication. The
 separate replay/verifier paths below are technical separation within the same
 author-controlled project.
 
-This document is the supervisor contract for the blind-v1 corpus collector and
-NIST Beacon verifier. These components collect and verify bytes; they do not
+This document preserves the abandoned supervisor contract for the blind-v1
+corpus collector and NIST Beacon verifier. These components were designed to
+collect and verify bytes; they do not
 load model weights, run the codec, compute logits, or create a scientific
 verdict.
 
@@ -27,7 +36,7 @@ bundle bytes, its lowercase SHA-256, and only the three registered project
 hosts. The client loads trust anchors from those verified owned bytes and does
 not add ambient system roots or consult proxy settings.
 
-Run the phases in this order:
+The historical counterfactual phase order was:
 
 1. On or after `2026-08-18T06:00:00Z`, call
    `collect_crawl_stage(root=..., crawl_index=0, transport=..., clock=...)` with
@@ -80,7 +89,7 @@ That lookup verifies the safe relative path, byte count, SHA-256, serialized
 record identity, and title/content/input digests. It must not be replaced with
 an independently constructed filesystem path.
 
-## Deterministic snapshot registration
+## Historical deterministic snapshot registration (do not execute)
 
 Only after the tokenizer-recomputed verification in MediaWiki phase 4 reports
 `readyForFreeze=true`, build the pre-publication registration from existing

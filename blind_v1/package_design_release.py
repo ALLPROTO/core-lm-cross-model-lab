@@ -50,6 +50,7 @@ from blind_v1.github_gate_receipt import (  # noqa: E402
 )
 from blind_v1.protocol import (  # noqa: E402
     load_json_strict_bytes,
+    require_scientific_schedule_open,
     validate_frozen_design_registration,
     validate_model_asset_manifest,
 )
@@ -1617,6 +1618,44 @@ def package_design_release(
 ) -> DesignReleaseVerification:
     """Validate all inputs, durably create twelve assets, then re-verify them."""
 
+    require_scientific_schedule_open(operation="package Blind V1 design release")
+    return _historical_package_design_release(
+        frozen_design_path=frozen_design_path,
+        development_control_report_path=development_control_report_path,
+        development_control_archive_receipt_path=(
+            development_control_archive_receipt_path
+        ),
+        freeze_manifest_path=freeze_manifest_path,
+        github_gate_receipt_path=github_gate_receipt_path,
+        linux_ci_artifact_path=linux_ci_artifact_path,
+        macos_arm64_ci_artifact_path=macos_arm64_ci_artifact_path,
+        asset_source_manifest_path=asset_source_manifest_path,
+        full_asset_receipt_path=full_asset_receipt_path,
+        runtime_manifest_path=runtime_manifest_path,
+        sbom_path=sbom_path,
+        signing_public_key_path=signing_public_key_path,
+        output_root=output_root,
+    )
+
+
+def _historical_package_design_release(
+    *,
+    frozen_design_path: Path,
+    development_control_report_path: Path,
+    development_control_archive_receipt_path: Path,
+    freeze_manifest_path: Path,
+    github_gate_receipt_path: Path,
+    linux_ci_artifact_path: Path,
+    macos_arm64_ci_artifact_path: Path,
+    asset_source_manifest_path: Path,
+    full_asset_receipt_path: Path,
+    runtime_manifest_path: Path,
+    sbom_path: Path,
+    signing_public_key_path: Path,
+    output_root: Path,
+) -> DesignReleaseVerification:
+    """Retain the former package shape for offline structural fixtures."""
+
     if tuple(REQUIRED_ASSET_ROLES.get("design", ())) != ASSET_ROLES:
         raise DesignReleaseError(
             "release_receipt design roles differ from this packager contract"
@@ -1725,6 +1764,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
         if arguments.command == "package":
+            require_scientific_schedule_open(
+                operation="package Blind V1 design release from CLI"
+            )
             report = package_design_release(
                 frozen_design_path=arguments.frozen_design,
                 development_control_report_path=arguments.development_control_report,

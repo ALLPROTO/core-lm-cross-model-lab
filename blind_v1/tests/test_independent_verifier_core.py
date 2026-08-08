@@ -33,7 +33,9 @@ from blind_v1.independent_verifier_core import (
 )
 from blind_v1.mediawiki_snapshot import ArchivedHTTPResponse
 from blind_v1.github_gate_receipt import verify_github_gate_receipt
-from blind_v1.state_machine import create_attempt_marker
+from blind_v1.state_machine import (
+    _historical_create_attempt_marker as create_attempt_marker,
+)
 from blind_v1.tests import test_github_gate_receipt as gate_fixture
 from blind_v1.tests.test_evidence import (
     ATTEMPT,

@@ -2,13 +2,23 @@
 
 Status: **development draft — not frozen, not preregistered, and not run**.
 
-`blind_v1/` is the proposed confirmatory contour for
+Lifecycle outcome: the `2026-08-08T12:00:00Z` decision checkpoint elapsed
+while mandatory P0 inputs, the exact-commit CI receipt, and the immutable
+design release were still absent. Under the registered reschedule policy,
+`corelm-blind-crossmodel-v1` is permanently non-freezable and must not be
+published as a preregistration. Any successor must use a new suite ID and move
+the complete dependent corpus, snapshot, NIST, attempt, evidence, and closeout
+timeline together. The draft remains public only as an auditable development
+record; no model, corpus, NIST, reservation, or scientific attempt was opened.
+
+`blind_v1/` is the archived, unexecuted confirmatory design contour for
 `corelm-blind-crossmodel-v1`. It is separate from the public-validation
 regressions and the V2–V4 development contours. Nothing in this directory is a
-scientific result until an exact design is published in a signed immutable
-release, the pre-pulse execution intent is publicly reserved and timestamped,
-the one permitted local attempt reaches a terminal state, and the complete
-evidence release verifies.
+scientific result, and no later action can turn this suite identity into one.
+The procedure below is retained only as the counterfactual record of what would
+have been required had every gate completed before the checkpoint. It is not a
+runbook and does not authorize freeze, publication, corpus collection, asset
+materialization, NIST access, reservation, or execution.
 
 The project uses `AUTHOR_SELF_VERIFICATION`. Ivan Tyshchenko is the author,
 experiment operator, and release operator. The separate verifier and fresh
@@ -17,9 +27,9 @@ author-controlled artifact. They are not independent human review, peer
 review, operator blindness, independent validation, or independent
 replication.
 
-## Exact claim under test
+## Archived claim that was never tested
 
-The fixed VoidToken candidate is tested on:
+The draft would have tested the fixed VoidToken candidate on:
 
 - three exact model revisions selected without replacement by a future NIST
   pulse from a frozen six-revision confirmatory pool;
@@ -29,7 +39,8 @@ The fixed VoidToken candidate is tested on:
 - the frozen macOS arm64 CPU runtime and the registered complete-container,
   delta-NLL, top-1, and structural-replay gates.
 
-A `PASS` supports only this exact selected sample: three revisions, thirty-two
+A hypothetical valid `PASS` would have supported only this exact selected
+sample: three revisions, thirty-two
 pages, the frozen corpus snapshot, candidate, runtime, codec, baseline, and
 metrics. The descriptive Student-t and Wilson quantities are fixed gates; they
 are not population confidence claims because pages are not guaranteed IID and
@@ -43,11 +54,11 @@ art.
 
 ## Confirmatory model pool
 
-The exact pool is frozen by repository, revision, every required asset size,
-and SHA-256. NIST selects exactly three entries without replacement; all three
-selected entries are mandatory and run in the selected order. A load error,
-unsupported cache shape, resource failure, or missing asset is
-`FAIL_EXECUTION`, never grounds for substituting another pool member.
+The archived draft fixed the intended pool by repository, revision, every
+required asset size, and SHA-256. A timely immutable design release would have
+frozen those bytes before NIST selected exactly three entries without
+replacement. That release never existed, so these are historical proposed
+bindings only and must not be used for a V1 selection or run.
 
 | Key | Exact repository revision | Architecture |
 |---|---|---|
@@ -58,7 +69,7 @@ unsupported cache shape, resource failure, or missing asset is
 | `gpt2-124m` | `openai-community/gpt2@607a30d783dfa663caf39e06633721c8d4cfcd7e` | GPT-2 MHA |
 | `distilgpt2-82m` | `distilbert/distilgpt2@2290a62682d06624634c1f46a6ad5be0f47f38aa` | GPT-2 MHA |
 
-The author's frozen prior-observation disclosure states that none of these
+The current draft's prior-observation disclosure states that none of these
 exact revisions has previously undergone a model forward pass, candidate
 scoring, or candidate comparison in this project. Public artifacts make that
 declaration auditable but cannot prove the absence of an undisclosed run. The
@@ -74,11 +85,12 @@ negative Pythia-410M observation, is disclosed in
 [`prior-observations.json`](prior-observations.json). Therefore this is an
 exact-revision holdout, not an architecture-blind experiment.
 
-## Development controls do not screen the pool
+## Archived development-control design
 
-The real-data pre-freeze E2E uses only previously observed pilot revisions that
-are excluded from the confirmatory pool: GPT-Neo-125M, SmolLM2-360M, and Tiny
-StarCoder. It runs the producer, VTL5 codec, and independent real-model replay
+The proposed real-data pre-freeze E2E would have used only previously observed
+pilot revisions excluded from the confirmatory pool: GPT-Neo-125M,
+SmolLM2-360M, and Tiny StarCoder. It would have run the producer, VTL5 codec,
+and independent real-model replay
 on the pinned UD English PUD r2.18 bytes. Its outputs are non-scientific
 readiness diagnostics and must state:
 
@@ -99,21 +111,29 @@ Synthetic, generated, toy, and mocked inputs remain confined to isolated unit,
 parser, security, and protocol-control tests. Their outputs cannot enter a
 scientific or development real-model result directory.
 
-## Irreversible experiment sequence
+## Archived counterfactual experiment sequence — non-executable
 
-1. Publish the signed immutable design and its canonical receipt before the
+The following seven steps record the procedure that would have applied only
+after a valid pre-checkpoint freeze. Because that prerequisite failed, every
+step is permanently unauthorized for `corelm-blind-crossmodel-v1`.
+
+1. The operator would have published the signed immutable design and its
+   canonical receipt before the
    design deadline.
-2. Collect the prospective corpus exactly as registered, publish the signed
-   immutable snapshot, and seal the private content-addressed execution input.
-3. Complete all deterministic design, snapshot, asset, and reservation-package
-   preflight checks without model inference.
-4. Build the three canonical public execution-reservation assets, including
-   `execution-reservation.json`, and publish them under the preregistered signed
+2. The operator would have collected the prospective corpus exactly as
+   registered, published the signed immutable snapshot, and sealed the private
+   content-addressed execution input.
+3. The operator would have completed all deterministic design, snapshot,
+   asset, and reservation-package preflight checks without model inference.
+4. The operator would have built the three canonical public
+   execution-reservation assets, including `execution-reservation.json`, and
+   published them under the preregistered signed
    immutable tag `corelm-blind-crossmodel-v1-execution-reservation`. Its
    verified RFC3161 `attestedAt` must be within the registered publication
    window and strictly earlier than the target NIST pulse. This is a public
    execution-and-publication commitment, not local scientific attempt state.
-5. At or after the registered target timestamp, reopen the exact public
+5. At or after the registered target timestamp, the supervisor would have
+   reopened the exact public
    execution-reservation release and receipt and repeat the immediate
    fail-closed host/runtime/private-snapshot gates. Then durably create the
    local `attempt-reservation.json` and `attempt-marker.json`. Only after both
@@ -123,10 +143,11 @@ scientific or development real-model result directory.
    post-marker workers. The marker and live NIST start observation must be in
    `[2026-08-21T18:00:00Z, 2026-08-21T18:15:00Z)`; completion must be strictly
    before `2026-08-22T18:00:00Z`.
-6. Run all three selected models, consolidate evidence, and require the fresh
-   independent real-model replay before a gate verdict can be written.
-7. Publish every terminal class and all surviving bytes. Every later execution
-   is separately identified regression or replication evidence.
+6. It would have run all three selected models, consolidated evidence, and
+   required the fresh independent real-model replay before a gate verdict
+   could be written.
+7. The operator would have published every terminal class and all surviving
+   bytes. No such V1 execution or publication is now permitted.
 
 The outer-runner anonymous-pipe handoff binds the live parent/child,
 process-group, canonical paths, deadline, poll interval, nonce, and no-retry
@@ -180,48 +201,34 @@ but the confirmatory experiment is unsuccessful and cannot be rerun under the
 same identity. They must not be omitted, converted into a neutral unpublished
 event, or replaced by a later green regression.
 
-## Platform boundary
+## Archived platform boundary
 
-The primary numerical experiment and its bit-exact fresh replay run only on the
-frozen macOS arm64 CPU runtime. Linux x86-64 and macOS arm64 CI must both pass
+The proposed primary numerical experiment and its bit-exact fresh replay would
+have run only on a frozen macOS arm64 CPU runtime. Linux x86-64 and macOS arm64
+CI would both have had to pass
 on the exact implementation commit with zero skips, but those CI jobs establish
 source, build, schema, packaging, and verifier portability—not a second
 scientific attempt and not cross-platform bit identity.
 
-A Linux user can rebuild the locked Linux runtime, verify source and release
-identities, replay selection and artifact structure, and run registered
-CI/portability controls that perform no confirmatory inference. The registered
-real-model pilot E2E and primary numerical one-shot are macOS arm64 only. A
-Linux real-model run is forbidden before the primary terminal outcome; a later
-run requires a separately preregistered replication or regression identity and
-cannot rescue or modify that outcome.
+The Linux and macOS provisions remain historical audit material. They do not
+authorize rebuilding V1 scientific inputs or running V1 inference. A successor
+must publish its own suite identity, platform contract, preregistration, and
+fully rescheduled timeline.
 
-## Development commands
+## Permitted offline historical-audit commands
 
 From an exact clean checkout and locked Python 3.12.10 runtime:
 
 ```sh
 /path/to/locked/python -I -B blind_v1/run_zero_skip_tests.py
 /path/to/locked/python -I -B blind_v1/verify_design.py
-/path/to/locked/python -I -B blind_v1/preflight.py \
-  --codec-root /path/to/exact/core-lm-benchmark
 ```
 
-Materializing assets performs no inference and creates no attempt state:
-
-```sh
-python3 blind_v1/fetch_assets.py \
-  --manifest blind_v1/model-assets.draft.json \
-  --destination blind_v1/.assets \
-  --small-files-only \
-  --include-development-dataset
-```
-
-Do not run the scientific runner from a draft checkout.
-`verify_design.py --require-freezable` and
-`preflight.py --require-execution-ready` must remain
-fail-closed until every immutable input, receipt, trust binding, public
-execution-reservation control, and exact-commit gate exists.
+These commands inspect tracked bytes and fixtures only. Do not materialize V1
+assets, collect its corpus, access its target NIST pulse, package a V1 freeze,
+prepare a V1 private snapshot, or invoke either runner command.
+`verify_design.py --require-freezable` must fail permanently with
+`CHECKPOINT_MISSED_TERMINAL_DRAFT`; old blockers are not a completion queue.
 
 ## Documentation map
 
@@ -238,6 +245,8 @@ execution-reservation control, and exact-commit gate exists.
 - [`ARCHIVAL.md`](ARCHIVAL.md): DOI, Zenodo, ORCID, SBOM, citation, and rights
   archive.
 
-Until all P0 gates have immutable evidence, the only valid lifecycle state is
-`DRAFT_NOT_PREREGISTERED`, `readyToFreeze=false`, and
+The only valid lifecycle state is permanently
+`CHECKPOINT_MISSED_TERMINAL_DRAFT` with `DRAFT_NOT_PREREGISTERED`,
+`readyToFreeze=false`, `freezeAllowed=false`, `publicationAllowed=false`,
+`scientificExecutionAllowed=false`, `successorSuiteIdRequired=true`, and
 `countsTowardScientificVerdict=false`.

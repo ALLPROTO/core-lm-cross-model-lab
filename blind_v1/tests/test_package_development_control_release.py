@@ -114,7 +114,7 @@ class DevelopmentControlReleasePackageTests(unittest.TestCase):
         self.addCleanup(verifier.stop)
 
     def package(self) -> dict[str, object]:
-        return subject.package_development_control_release(
+        return subject._historical_package_development_control_release(
             report_path=self.report_path,
             artifact_root=self.artifact_root,
             runtime_manifest_path=self.runtime_path,

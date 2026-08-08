@@ -41,7 +41,10 @@ PROJECT_ROOT = BLIND_V1_ROOT.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from blind_v1.protocol import validate_snapshot_registration
+from blind_v1.protocol import (
+    require_scientific_schedule_open,
+    validate_snapshot_registration,
+)
 
 
 SUITE_ID = "corelm-blind-crossmodel-v1"
@@ -1059,6 +1062,24 @@ def package_snapshot_release(
 ) -> SnapshotReleaseVerification:
     """Create five immutable assets in a new output directory and verify them."""
 
+    require_scientific_schedule_open(operation="package Blind V1 snapshot release")
+    return _historical_package_snapshot_release(
+        corpus_root=corpus_root,
+        snapshot_registration_path=snapshot_registration_path,
+        design_publication_receipt_path=design_publication_receipt_path,
+        output_root=output_root,
+    )
+
+
+def _historical_package_snapshot_release(
+    *,
+    corpus_root: Path,
+    snapshot_registration_path: Path,
+    design_publication_receipt_path: Path,
+    output_root: Path,
+) -> SnapshotReleaseVerification:
+    """Retain the former snapshot package shape for offline fixtures."""
+
     snapshot_raw = _read_regular_path(
         snapshot_registration_path,
         label="snapshot registration",
@@ -1390,6 +1411,9 @@ def main(argv: list[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
     try:
         if arguments.command == "package":
+            require_scientific_schedule_open(
+                operation="package Blind V1 snapshot release from CLI"
+            )
             result = package_snapshot_release(
                 corpus_root=arguments.corpus_root,
                 snapshot_registration_path=arguments.snapshot_registration,
@@ -1407,7 +1431,7 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 asset_root=arguments.asset_root,
             )
-    except SnapshotReleaseError as error:
+    except (SnapshotReleaseError, ValueError) as error:
         print(f"snapshot release error: {error}", file=sys.stderr)
         return 2
     sys.stdout.buffer.write(canonical_json_bytes(result.as_dict()) + b"\n")

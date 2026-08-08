@@ -29,6 +29,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from blind_v1.reproducibility import canonical_json_bytes, write_new_bytes
+from blind_v1.protocol import require_scientific_schedule_open
 from blind_v1.release_attestation_crypto import (
     PinnedCosignReleaseAttestationVerifier,
 )
@@ -41,7 +42,7 @@ from blind_v1.zenodo_archive import (
     ZENODO_HOST,
     HTTPSCapture,
     ZenodoArchiveError,
-    build_zenodo_receipt,
+    _historical_build_zenodo_receipt,
     verify_zenodo_receipt,
 )
 
@@ -293,7 +294,7 @@ class DirectZenodoTransport:
         return HTTPSCapture(status, raw_headers, body, self.now())
 
 
-def collect_zenodo_receipt_to_path(
+def _historical_collect_zenodo_receipt_to_path(
     *,
     manifest_path: Path,
     deposit_root: Path,
@@ -351,7 +352,7 @@ def collect_zenodo_receipt_to_path(
             verifier_arguments["release_receipt_verifier"] = (
                 release_receipt_verifier
             )
-        receipt = build_zenodo_receipt(
+        receipt = _historical_build_zenodo_receipt(
             manifest_path=manifest_path,
             deposit_root=deposit_root,
             deposition_id=deposition_id,
@@ -381,6 +382,17 @@ def collect_zenodo_receipt_to_path(
     return receipt
 
 
+def collect_zenodo_receipt_to_path(
+    *args: object, **kwargs: object
+) -> dict[str, object]:
+    """Reject retired V1 collection before token, clock, network, or file use."""
+
+    require_scientific_schedule_open(operation="collect-zenodo-receipt")
+    return _historical_collect_zenodo_receipt_to_path(  # type: ignore[arg-type]
+        *args, **kwargs
+    )
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
@@ -402,6 +414,7 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     try:
+        require_scientific_schedule_open(operation="collect-zenodo-receipt-cli")
         token = load_token_from_environment(arguments.token_env)
         receipt = collect_zenodo_receipt_to_path(
             manifest_path=arguments.manifest,

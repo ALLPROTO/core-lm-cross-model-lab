@@ -222,7 +222,7 @@ def _build_lightweight_plan(
         "_link_model_assets",
         return_value=(models, inventory),
     ):
-        return control.build_plan(
+        return control._historical_build_plan(
             design={"execution": _execution()},
             receipt={},
             asset_root=private_root / "unused-assets",
@@ -1040,7 +1040,7 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
                     side_effect=AssertionError("unit test must not load a model"),
                 ) as model_loader,
             ):
-                report = control.run_control(arguments)
+                report = control._historical_run_control(arguments)
 
             self.assertEqual(report["schemaVersion"], control.REPORT_SCHEMA)
             self.assertEqual(
@@ -1148,7 +1148,7 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
                     "host safety gate failed",
                 ),
             ):
-                control.run_control(arguments)
+                control._historical_run_control(arguments)
 
             self.assertFalse(output.exists())
             self.assertFalse(hasattr(arguments, "_claimed_output_root"))
@@ -1226,7 +1226,7 @@ class RealE2EDevelopmentBoundaryTests(unittest.TestCase):
                 ),
             ):
                 with self.assertRaises(control.DevelopmentControlError):
-                    control.run_control(arguments)
+                    control._historical_run_control(arguments)
 
             failure_path = output / "development-control-failure.json"
             self.assertTrue(failure_path.is_file())

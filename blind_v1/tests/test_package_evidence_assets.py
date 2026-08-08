@@ -149,7 +149,7 @@ class EvidenceAssetPackageTests(unittest.TestCase):
 
     def _package(self, name: str) -> Path:
         output = self.root / name
-        result = subject.package_evidence_assets(
+        result = subject._historical_package_evidence_assets(
             evidence_root=self.evidence,
             verifier_report=self.report,
             output_directory=output,
@@ -210,7 +210,7 @@ class EvidenceAssetPackageTests(unittest.TestCase):
         os.chmod(self.report, 0o444)
         output = self.root / "must-not-exist"
         with self.assertRaisesRegex(subject.EvidenceAssetError, "does not bind"):
-            subject.package_evidence_assets(
+            subject._historical_package_evidence_assets(
                 evidence_root=self.evidence,
                 verifier_report=self.report,
                 output_directory=output,
@@ -259,7 +259,7 @@ class EvidenceAssetPackageTests(unittest.TestCase):
                 if case == "writable":
                     os.chmod(target, 0o644)
                 with self.assertRaises(subject.EvidenceAssetError):
-                    subject.package_evidence_assets(
+                    subject._historical_package_evidence_assets(
                         evidence_root=evidence,
                         verifier_report=report,
                         output_directory=Path(temporary.name) / "output",
@@ -315,7 +315,7 @@ class EvidenceAssetPackageTests(unittest.TestCase):
         sentinel = output / "sentinel"
         sentinel.write_bytes(b"keep")
         with self.assertRaisesRegex(subject.EvidenceAssetError, "already exists"):
-            subject.package_evidence_assets(
+            subject._historical_package_evidence_assets(
                 evidence_root=self.evidence,
                 verifier_report=self.report,
                 output_directory=output,

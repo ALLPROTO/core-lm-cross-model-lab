@@ -14,8 +14,8 @@ import blind_v1.tests.test_release_receipt as release_fixture
 from blind_v1.build_snapshot_registration import (
     SnapshotRegistrationBuildError,
     _load_verified_tokenizers,
-    build_snapshot_registration,
-    build_snapshot_registration_to_path,
+    _historical_build_snapshot_registration as build_snapshot_registration,
+    _historical_build_snapshot_registration_to_path as build_snapshot_registration_to_path,
     parse_arguments,
 )
 from blind_v1.github_release_attestation import build_attestation_record

@@ -1,7 +1,15 @@
-# Blind cross-model v1 author-self-verified clean-clone reproducibility
+# Blind cross-model v1 retired clean-clone reproducibility specification
 
-This document covers development controls, static confirmatory-asset
-preparation, and provenance preparation only. It does not authorize the
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+
+This document preserves the abandoned V1 development-control, static
+confirmatory-asset, and provenance-preparation design only. It does not authorize the
 scientific one-shot, collect the future corpus, fetch a NIST pulse, create an
 attempt marker, or run inference on any of the six confirmatory revisions.
 

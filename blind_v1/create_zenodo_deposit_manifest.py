@@ -13,7 +13,7 @@ PROJECT_ROOT = BLIND_V1_ROOT.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from blind_v1.protocol import load_json_strict
+from blind_v1.protocol import load_json_strict, require_scientific_schedule_open
 from blind_v1.release_attestation_crypto import (
     PinnedCosignReleaseAttestationVerifier,
 )
@@ -42,6 +42,7 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     try:
+        require_scientific_schedule_open(operation="create-zenodo-deposit-manifest-cli")
         plan = load_json_strict(arguments.plan)
         manifest = build_deposit_manifest_to_path(
             arguments.deposit_root,

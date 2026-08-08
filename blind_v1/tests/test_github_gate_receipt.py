@@ -19,8 +19,8 @@ from blind_v1.collect_github_gate_receipt import (
     DirectGitHubGateTransport,
     GitHubGateCollectionError,
     HTTPSCapture,
-    collect_github_gate_receipt,
-    collect_github_gate_receipt_to_path,
+    _historical_collect_github_gate_receipt as collect_github_gate_receipt,
+    _historical_collect_github_gate_receipt_to_path as collect_github_gate_receipt_to_path,
     load_token_from_environment,
 )
 from blind_v1.github_gate_receipt import (

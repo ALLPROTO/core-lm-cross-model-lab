@@ -8,7 +8,9 @@ from pathlib import Path
 
 from blind_v1 import build_frozen_design as subject
 from blind_v1 import freeze_manifest
-from blind_v1.collect_github_gate_receipt import collect_github_gate_receipt_to_path
+from blind_v1.collect_github_gate_receipt import (
+    _historical_collect_github_gate_receipt_to_path as collect_github_gate_receipt_to_path,
+)
 from blind_v1.protocol import load_json_strict
 from blind_v1.reproducibility import canonical_json_bytes, sha256_bytes, with_content_digest
 from blind_v1.tests import test_freeze_manifest as freeze_fixture
@@ -70,7 +72,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
             ),
             now=lambda: "2026-08-08T10:05:30Z",
         )
-        manifest = freeze_manifest.build_freeze_manifest(
+        manifest = freeze_manifest._historical_build_freeze_manifest(
             runtime_manifest_path=helper.runtime_path,
             asset_receipt_path=helper.asset_path,
             ca_bundle_path=helper.ca_path,
@@ -151,7 +153,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
         return arguments
 
     def test_builds_canonical_validated_external_asset_without_overwrite(self) -> None:
-        report = subject.build_frozen_design(**self._arguments())
+        report = subject._historical_build_frozen_design(**self._arguments())
         raw = self.output.read_bytes()
         value = load_json_strict(self.output)
         self.assertEqual(raw, canonical_json_bytes(value) + b"\n")
@@ -208,7 +210,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
         self.assertIs(trust_discharge["producerVerified"], True)
         self.assertIs(trust_discharge["independentVerified"], True)
         with self.assertRaises(FileExistsError):
-            subject.build_frozen_design(**self._arguments())
+            subject._historical_build_frozen_design(**self._arguments())
 
     def test_wrong_commit_tree_and_manifest_hash_fail_closed(self) -> None:
         cases = (
@@ -219,14 +221,14 @@ class FrozenDesignBuilderTests(unittest.TestCase):
         for override in cases:
             with self.subTest(override=override):
                 with self.assertRaises(subject.FrozenDesignBuildError):
-                    subject.build_frozen_design(**self._arguments(**override))
+                    subject._historical_build_frozen_design(**self._arguments(**override))
                 self.assertFalse(self.output.exists())
 
     def test_dirty_tracked_draft_is_rejected(self) -> None:
         draft_path = self.lab_root / subject.DRAFT_RELATIVE_PATH
         draft_path.write_bytes(self.draft_raw + b" ")
         with self.assertRaisesRegex(subject.FrozenDesignBuildError, "not clean"):
-            subject.build_frozen_design(**self._arguments())
+            subject._historical_build_frozen_design(**self._arguments())
         self.assertFalse(self.output.exists())
 
     def test_late_manifest_is_rejected_before_output(self) -> None:
@@ -237,7 +239,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
         late_path = self.helper.root / "late-freeze-manifest.json"
         late_path.write_bytes(late_raw)
         with self.assertRaisesRegex(freeze_manifest.FreezeManifestError, "deadline"):
-            subject.build_frozen_design(
+            subject._historical_build_frozen_design(
                 **self._arguments(
                     freeze_manifest_path=late_path,
                     expected_freeze_manifest_sha256=sha256_bytes(late_raw),
@@ -248,7 +250,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
     def test_non_lifecycle_mutation_is_rejected(self) -> None:
         draft = load_json_strict(subject.BLIND_V1_ROOT / "design-registration.draft.json")
         manifest = load_json_strict(self.helper.manifest_path)
-        frozen = subject.construct_frozen_design(
+        frozen = subject._historical_construct_frozen_design(
             draft,
             manifest,
             self.manifest_raw,
@@ -276,7 +278,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
             subject.FrozenDesignBuildError,
             "machine-verifiable discharge evidence",
         ):
-            subject.construct_frozen_design(
+            subject._historical_construct_frozen_design(
                 draft,
                 manifest,
                 self.manifest_raw,
@@ -288,7 +290,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
         with self.assertRaisesRegex(
             subject.FrozenDesignBuildError, "NIST trust blocker"
         ):
-            subject.construct_frozen_design(
+            subject._historical_construct_frozen_design(
                 no_blocker,
                 load_json_strict(self.helper.manifest_path),
                 self.manifest_raw,
@@ -308,7 +310,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
         )
         self.helper.ca_path.write_bytes(b"different CA\n")
         with self.assertRaisesRegex(freeze_manifest.FreezeManifestError, "CA bundle"):
-            subject.build_frozen_design(**self._arguments())
+            subject._historical_build_frozen_design(**self._arguments())
         self.assertFalse(self.output.exists())
 
         self.helper.ca_path.write_bytes(b"unit-contract CA bytes\n")
@@ -319,7 +321,7 @@ class FrozenDesignBuilderTests(unittest.TestCase):
         with self.assertRaisesRegex(
             subject.FrozenDesignBuildError, "release identity differs"
         ):
-            subject.build_frozen_design(
+            subject._historical_build_frozen_design(
                 **self._arguments(signing_public_key_path=wrong_key)
             )
 

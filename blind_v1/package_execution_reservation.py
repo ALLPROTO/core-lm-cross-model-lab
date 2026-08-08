@@ -28,6 +28,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from blind_v1.protocol import (  # noqa: E402
     canonical_json_bytes,
     load_json_strict_bytes,
+    require_scientific_schedule_open,
     validate_design_registration_lifecycle,
     validate_snapshot_registration,
 )
@@ -207,6 +208,24 @@ def build_execution_reservation(
     snapshot_receipt_raw: bytes,
     reserved_at: str,
 ) -> dict[str, Any]:
+    require_scientific_schedule_open(operation="build Blind V1 execution reservation")
+    return _historical_build_execution_reservation(
+        design_raw=design_raw,
+        snapshot_raw=snapshot_raw,
+        snapshot_receipt_raw=snapshot_receipt_raw,
+        reserved_at=reserved_at,
+    )
+
+
+def _historical_build_execution_reservation(
+    *,
+    design_raw: bytes,
+    snapshot_raw: bytes,
+    snapshot_receipt_raw: bytes,
+    reserved_at: str,
+) -> dict[str, Any]:
+    """Retain the former reservation shape for offline structural fixtures."""
+
     design = _canonical_document(design_raw, label="frozen design")
     snapshot = _canonical_document(snapshot_raw, label="snapshot registration")
     snapshot_receipt = _canonical_document(
@@ -401,12 +420,34 @@ def package_execution_reservation(
     output_directory: Path,
     reserved_at: str,
 ) -> dict[str, Any]:
+    require_scientific_schedule_open(
+        operation="package Blind V1 execution reservation"
+    )
+    return _historical_package_execution_reservation(
+        design_path=design_path,
+        snapshot_path=snapshot_path,
+        snapshot_receipt_path=snapshot_receipt_path,
+        output_directory=output_directory,
+        reserved_at=reserved_at,
+    )
+
+
+def _historical_package_execution_reservation(
+    *,
+    design_path: Path,
+    snapshot_path: Path,
+    snapshot_receipt_path: Path,
+    output_directory: Path,
+    reserved_at: str,
+) -> dict[str, Any]:
+    """Retain the former reservation package for offline structural fixtures."""
+
     design_raw = _read_regular(design_path, label="frozen design")
     snapshot_raw = _read_regular(snapshot_path, label="snapshot registration")
     snapshot_receipt_raw = _read_regular(
         snapshot_receipt_path, label="snapshot publication receipt"
     )
-    reservation = build_execution_reservation(
+    reservation = _historical_build_execution_reservation(
         design_raw=design_raw,
         snapshot_raw=snapshot_raw,
         snapshot_receipt_raw=snapshot_receipt_raw,
@@ -458,8 +499,11 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def main() -> int:
-    arguments = parse_arguments()
     try:
+        arguments = parse_arguments()
+        require_scientific_schedule_open(
+            operation="run Blind V1 execution-reservation packager"
+        )
         result = package_execution_reservation(
             design_path=arguments.design,
             snapshot_path=arguments.snapshot,
@@ -467,7 +511,7 @@ def main() -> int:
             output_directory=arguments.output_directory,
             reserved_at=arguments.reserved_at,
         )
-    except (ExecutionReservationError, OSError, KeyError, TypeError) as error:
+    except (ExecutionReservationError, OSError, ValueError, KeyError, TypeError) as error:
         print(f"EXECUTION RESERVATION FAIL: {error}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=2, sort_keys=True))

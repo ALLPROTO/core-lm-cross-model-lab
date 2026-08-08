@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 from blind_v1.collect_github_gate_receipt import (
     HTTPSCapture as GateCapture,
-    collect_github_gate_receipt_to_path,
+    _historical_collect_github_gate_receipt_to_path as collect_github_gate_receipt_to_path,
 )
 from blind_v1.github_gate_receipt import (
     API_ROLES as GATE_API_ROLES,
@@ -51,9 +51,9 @@ from blind_v1.zenodo_archive import (
     MANIFEST_FILE_NAME,
     HTTPSCapture,
     ZenodoArchiveError,
-    build_deposit_manifest,
-    build_deposit_manifest_to_path,
-    build_zenodo_receipt,
+    _historical_build_deposit_manifest as build_deposit_manifest,
+    _historical_build_deposit_manifest_to_path as build_deposit_manifest_to_path,
+    _historical_build_zenodo_receipt as build_zenodo_receipt,
     _annotated_tag_oid,
     _github_release_summary,
     _github_gate_summary,

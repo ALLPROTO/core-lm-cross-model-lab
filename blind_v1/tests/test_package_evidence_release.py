@@ -15,7 +15,7 @@ from blind_v1.package_evidence_release import (
     EvidenceReleaseError,
     HARD_DEADLINE,
     canonical_json_bytes,
-    package_release,
+    _historical_package_release as package_release,
     sha256_bytes,
     verify_release,
 )

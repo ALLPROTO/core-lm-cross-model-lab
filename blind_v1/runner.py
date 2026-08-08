@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""Fail-closed supervisor for the registered blind-v1 one-shot.
+"""Archived blind-v1 supervisor implementation with a terminal lifecycle gate.
 
-This program has two deliberately separate phases:
+The missed 2026-08-08 decision checkpoint permanently closed this suite ID.
+The historical preparation and one-shot implementation remains inspectable for
+offline audit, but :func:`main` rejects both commands before it opens any
+model, corpus, NIST, release, or private-snapshot input.
+
+Before closeout, this program specified two deliberately separate phases:
 
 ``prepare``
     Verify the public design/snapshot, complete corpus, runtime, model assets,
@@ -116,6 +121,7 @@ from blind_v1.protocol import (  # noqa: E402
     canonical_json_bytes,
     load_json_strict,
     load_json_strict_bytes,
+    require_scientific_schedule_open,
     resolve_selection,
     sha256_bytes,
     validate_model_asset_manifest,
@@ -357,7 +363,7 @@ def _validate_schema(instance: Any, filename: str) -> None:
 
 
 def validate_frozen_design(design: Any) -> None:
-    """Validate lifecycle bindings while reusing the exact tracked draft body."""
+    """Audit the counterfactual frozen shape; never authorize V1 execution."""
 
     if not isinstance(design, dict):
         raise RunnerError("frozen design must be a JSON object")
@@ -437,7 +443,8 @@ def validate_frozen_design(design: Any) -> None:
 
     # Every scientific choice must equal the tracked, author-verified draft. Only the
     # lifecycle fields and immutable artifact bindings may change. The signing
-    # identity is already preregistered in the tracked draft.
+    # identity is already precommitted in the tracked draft and becomes part of
+    # the preregistration only after a valid immutable design freeze.
     normalized = copy.deepcopy(design)
     normalized["schemaVersion"] = reference["schemaVersion"]
     normalized["status"] = reference["status"]
@@ -1261,7 +1268,7 @@ def _trust_commitment_paths(trust_manifest: Mapping[str, Any]) -> list[str]:
     return sorted(result)
 
 
-def prepare_private_snapshot(
+def _historical_prepare_private_snapshot(
     *,
     design_path: Path,
     snapshot_registration_path: Path,
@@ -1293,7 +1300,7 @@ def prepare_private_snapshot(
     lab_root: Path,
     destination: Path,
 ) -> dict[str, Any]:
-    """Materialize all future readable bytes without consuming the one-shot."""
+    """Historical implementation retained for structural fixture construction."""
 
     cosign_variant = COSIGN_BINARY_VARIANTS.get(
         (platform.system(), platform.machine())
@@ -1910,6 +1917,13 @@ def prepare_private_snapshot(
         raise
 
 
+def prepare_private_snapshot(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 snapshot creation before inspecting caller inputs."""
+
+    require_scientific_schedule_open(operation="prepare-private-snapshot")
+    return _historical_prepare_private_snapshot(*args, **kwargs)
+
+
 def _private_file(root: Path, relative_text: str) -> Path:
     relative = _safe_relative(relative_text)
     current = root
@@ -2107,10 +2121,10 @@ def install_trusted_supervisor_socket_denial() -> None:
     socket.create_connection = DeniedSocket  # type: ignore[assignment]
 
 
-def fetch_exact_pulse_with_total_timeout(
+def _historical_fetch_exact_pulse_with_total_timeout(
     client: Any, *, timeout_seconds: int
 ) -> ArchivedHTTPResponse:
-    """Bound DNS, connect, TLS and body reads with one process-wide timer."""
+    """Historical pulse helper retained for offline structural fixtures."""
 
     if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 60:
         raise RunnerError("pulse total timeout is outside the frozen bound")
@@ -2130,6 +2144,17 @@ def fetch_exact_pulse_with_total_timeout(
         signal.signal(signal.SIGALRM, previous_handler)
         if previous_timer[0] > 0:
             signal.setitimer(signal.ITIMER_REAL, *previous_timer)
+
+
+def fetch_exact_pulse_with_total_timeout(
+    client: Any, *, timeout_seconds: int
+) -> ArchivedHTTPResponse:
+    """Reject retired V1 NIST access before touching the client or timer."""
+
+    require_scientific_schedule_open(operation="fetch-exact-nist-pulse")
+    return _historical_fetch_exact_pulse_with_total_timeout(
+        client, timeout_seconds=timeout_seconds
+    )
 
 
 def _entry_map(manifest: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
@@ -2899,7 +2924,7 @@ def _spawn_authorized_private_execution(
             os.close(authorization_writer)
 
 
-def execute_private_one_shot(
+def _historical_execute_private_one_shot(
     private_root: Path,
     result_root: Path,
     *,
@@ -3503,9 +3528,28 @@ def execute_private_one_shot(
         raise
 
 
+def execute_private_one_shot(
+    private_root: Path,
+    result_root: Path,
+    *,
+    outer_authorization: Mapping[str, Any],
+) -> str:
+    """Reject retired V1 execution before reading authorization or paths."""
+
+    require_scientific_schedule_open(operation="execute-private-one-shot")
+    return _historical_execute_private_one_shot(
+        private_root,
+        result_root,
+        outer_authorization=outer_authorization,
+    )
+
+
 def reexec_private_one_shot(
     *, private_root: Path, result_root: Path
 ) -> int:
+    """Reject the retired outer one-shot supervisor before opening any path."""
+
+    require_scientific_schedule_open(operation="reexec-private-one-shot")
     canonical_result_root = private_root.parent / f"{private_root.name}.one-shot-result"
     observed_result_root = Path(os.path.abspath(os.fspath(result_root)))
     expected_result_root = Path(os.path.abspath(os.fspath(canonical_result_root)))
@@ -3659,6 +3703,9 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     try:
+        # This terminal gate intentionally precedes every artifact, corpus,
+        # model, private-state, release, and NIST access in either command.
+        require_scientific_schedule_open(operation=arguments.command)
         if arguments.command == "prepare":
             summary = prepare_private_snapshot(
                 design_path=arguments.design,

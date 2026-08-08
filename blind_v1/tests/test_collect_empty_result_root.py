@@ -8,7 +8,7 @@ from unittest.mock import patch
 from blind_v1.collect_empty_result_root import (
     AUDIT_REPORT_NAME,
     OBSERVATION_NAME,
-    collect_to_directory,
+    _historical_collect_to_directory as collect_to_directory,
 )
 from blind_v1.experiment_closeout import (
     ExperimentCloseoutError,

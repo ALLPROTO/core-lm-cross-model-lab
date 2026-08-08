@@ -1,1 +1,1 @@
-"""Prospective Core LM blind multi-model blind_v1 protocol package."""
+"""Archived Core LM Blind V1 unrun terminal-draft audit package."""

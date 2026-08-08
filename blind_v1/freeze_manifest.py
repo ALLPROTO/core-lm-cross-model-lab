@@ -87,6 +87,7 @@ from blind_v1.protocol import (  # noqa: E402
     NIST_CANDIDATE_TRUST_BUNDLE_SHA256,
     NIST_FROZEN_TRUST_BUNDLE_SHA256,
     load_json_strict_bytes,
+    require_scientific_schedule_open,
     validate_frozen_design_registration,
 )
 from blind_v1.reproducibility import (  # noqa: E402
@@ -3330,6 +3331,68 @@ def build_freeze_manifest(
 ) -> dict[str, Any]:
     """Build the stage-one manifest only from independently re-opened artifacts."""
 
+    require_scientific_schedule_open(operation="build Blind V1 freeze manifest")
+    return _historical_build_freeze_manifest(
+        runtime_manifest_path=runtime_manifest_path,
+        asset_receipt_path=asset_receipt_path,
+        ca_bundle_path=ca_bundle_path,
+        trust_manifest_path=trust_manifest_path,
+        lab_repository=lab_repository,
+        lab_commit=lab_commit,
+        lab_tree=lab_tree,
+        codec_repository=codec_repository,
+        codec_commit=codec_commit,
+        codec_tree=codec_tree,
+        github_gate_receipt_path=github_gate_receipt_path,
+        development_control_report_path=development_control_report_path,
+        development_control_artifact_root=development_control_artifact_root,
+        development_control_archive_receipt_path=(
+            development_control_archive_receipt_path
+        ),
+        development_control_archive_asset_root=(
+            development_control_archive_asset_root
+        ),
+        created_at=created_at,
+        ca_verifier=ca_verifier,
+        trust_verifier=trust_verifier,
+        development_control_verifier=development_control_verifier,
+        development_archive_verifier=development_archive_verifier,
+        cryptographic_attestation_verifier=cryptographic_attestation_verifier,
+    )
+
+
+def _historical_build_freeze_manifest(
+    *,
+    runtime_manifest_path: Path,
+    asset_receipt_path: Path,
+    ca_bundle_path: Path,
+    trust_manifest_path: Path,
+    lab_repository: str,
+    lab_commit: str,
+    lab_tree: str,
+    codec_repository: str,
+    codec_commit: str,
+    codec_tree: str,
+    github_gate_receipt_path: Path,
+    development_control_report_path: Path,
+    development_control_artifact_root: Path,
+    development_control_archive_receipt_path: Path,
+    development_control_archive_asset_root: Path,
+    created_at: str,
+    ca_verifier: CAVerifier = default_ca_verifier,
+    trust_verifier: TrustVerifier = default_trust_verifier,
+    development_control_verifier: DevelopmentControlVerifier = (
+        verify_development_control_report
+    ),
+    development_archive_verifier: DevelopmentArchiveVerifier = (
+        verify_development_control_archive
+    ),
+    cryptographic_attestation_verifier: (
+        ReleaseAttestationCryptographicVerifier | None
+    ) = None,
+) -> dict[str, Any]:
+    """Retain the former freeze shape for offline structural fixtures."""
+
     implementation = {
         "repository": lab_repository,
         "commit": lab_commit,
@@ -3661,6 +3724,10 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
+        if arguments.command == "create":
+            require_scientific_schedule_open(
+                operation="create Blind V1 freeze manifest from CLI"
+            )
         cryptographic_attestation_verifier = (
             PinnedCosignReleaseAttestationVerifier(arguments.cosign)
             if arguments.command in {"create", "verify", "verify-development-archive"}

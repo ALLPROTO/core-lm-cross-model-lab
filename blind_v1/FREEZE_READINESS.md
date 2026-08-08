@@ -1,17 +1,31 @@
-# Blind cross-model v1 freeze-readiness gate
+# Blind cross-model v1 retired freeze-readiness record
 
-This checklist is subordinate to [`PROTOCOL.md`](PROTOCOL.md). It cannot
-change a registered identity, date, model, corpus rule, metric, platform, or
-failure class. A checked box is evidence only when the cited immutable bytes
-and receipts exist; prose assertions and locally edited status fields do not
-satisfy a gate.
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+
+The `2026-08-08T12:00:00Z` decision checkpoint was missed before all required
+evidence existed. The rescheduling rule therefore fired permanently: none of
+the boxes below can now be checked for V1, and no later artifact can make V1
+freeze-ready. They remain visible only as the abandoned design's audit record.
+
+This historical checklist is subordinate to [`PROTOCOL.md`](PROTOCOL.md). It
+cannot change the terminal status or repair a registered identity, date, model,
+corpus rule, metric, platform, or failure class. A checked box would only have
+been evidence if the cited immutable bytes and receipts had existed before the
+checkpoint; prose assertions and locally edited status fields never satisfy a
+gate.
 
 The suite uses `AUTHOR_SELF_VERIFICATION`. The repository owner is the author,
 experiment operator, and release operator. No independent human review, peer
 review, operator blindness, independent validation, or independent replication
 is required or claimed. These are immutable design fields.
 
-## P0 before the design release
+## Historical P0 before the design release (closed unmet)
 
 - [ ] One exact clean lab commit/tree contains the complete normative protocol,
   schemas, prior-observation record, collector, selector, NIST verifier,
@@ -74,7 +88,7 @@ is required or claimed. These are immutable design fields.
   administration; the pulse and deterministic selection can be derived
   outside the registered runner, and local code cannot prove otherwise.
 
-## P0 exact-commit CI and platform boundary
+## Historical P0 exact-commit CI and platform boundary (closed unmet)
 
 - [ ] Linux x86-64 and macOS arm64 clean-clone jobs execute the exact registered
   workflow bytes on the exact implementation commit and both finish success
@@ -97,7 +111,7 @@ is required or claimed. These are immutable design fields.
   agent, second author-controlled account, self-review, or CI result is labeled
   independent human review or peer review.
 
-## P0 after design publication and before the pulse
+## Historical P0 after design publication and before the pulse (unreachable)
 
 - [ ] The prospective page interval begins only after the verified design
   publication time. Both registered MediaWiki crawls and finalization preserve
@@ -138,7 +152,7 @@ is required or claimed. These are immutable design fields.
   blindness, or evidence that local execution has begun. It permits no second
   public reservation under the same suite identity.
 
-## P0 one-shot execution
+## Historical P0 one-shot execution (must not run)
 
 - [ ] No forward pass or candidate scoring on any confirmatory-pool revision
   occurs before the target pulse. This includes unselected pool members and
@@ -178,7 +192,7 @@ is required or claimed. These are immutable design fields.
   every loss bit pattern and top-1 ID, and byte-matches the producer result
   before `PASS` or `FAIL_GATES` can be written.
 
-## Terminal semantics and evidence
+## Historical terminal semantics and evidence (counterfactual)
 
 - [ ] `PASS` requires all six selected model×corpus cells, all three selected
   model aggregates, every structural gate, and the complete independent replay.
@@ -209,10 +223,11 @@ is required or claimed. These are immutable design fields.
   registered publication deadline. A late release is
   `LATE_PUBLICATION_INVALID`, never a retroactive PASS.
 
-## Whole-window rescheduling rule
+## Fired whole-window rescheduling rule
 
-If any pre-publication P0 gate is unproven at the decision checkpoint, do not
-freeze the draft. A replacement receives a new suite ID, exact implementation
+Because pre-publication P0 gates were unproven at the decision checkpoint, V1
+was retired and the draft is permanently non-freezable. A replacement requires
+a new suite ID, exact implementation
 commit/tree, model-pool commitment, design release, and complete future
 timeline. Move together:
 
@@ -232,6 +247,7 @@ protocol.
 `NOTICE.md` remain required for archival publication, but they cannot replace
 any scientific-evidence gate above.
 
-Until every applicable box has immutable evidence, the only valid lifecycle
-state is `DRAFT_NOT_PREREGISTERED`, `readyToFreeze=false`, and
-`countsTowardScientificVerdict=false`.
+The final V1 lifecycle state is `CHECKPOINT_MISSED_TERMINAL_DRAFT`, with
+`readyToFreeze=false`, `countsTowardScientificVerdict=false`, and freeze,
+publication, and scientific execution all forbidden. This state is permanent;
+the historical checklist cannot be completed retroactively.

@@ -56,6 +56,7 @@ from blind_v1.release_receipt import (
 from blind_v1.release_attestation_crypto import (
     PinnedCosignReleaseAttestationVerifier,
 )
+from blind_v1.protocol import require_scientific_schedule_open
 
 
 REPORT_SCHEMA = "corelm-blind-crossmodel-v1-closeout-verifier-report-v1"
@@ -601,7 +602,7 @@ def _manifest(
     )
 
 
-def package_closeout_release(
+def _historical_package_closeout_release(
     *,
     closeout_path: Path,
     basis_path: Path,
@@ -699,6 +700,17 @@ def package_closeout_release(
         expected_key_fingerprint=expected_key_fingerprint,
         expected_public_key_sha256=expected_public_key_sha256,
         cryptographic_attestation_verifier=cryptographic_attestation_verifier,
+    )
+
+
+def package_closeout_release(
+    *args: object, **kwargs: object
+) -> VerifiedCloseoutPackage:
+    """Reject retired V1 closeout packaging before input or output access."""
+
+    require_scientific_schedule_open(operation="package-closeout-release")
+    return _historical_package_closeout_release(  # type: ignore[arg-type]
+        *args, **kwargs
     )
 
 
@@ -1060,6 +1072,12 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if args.command == "package":
+            # Verification commands intentionally remain available for
+            # already-existing bytes.  Only the creator branch is terminal.
+            require_scientific_schedule_open(
+                operation="package-closeout-release-cli"
+            )
         cryptographic_verifier = PinnedCosignReleaseAttestationVerifier(args.cosign)
         bindings = _bindings_from_args(
             args,

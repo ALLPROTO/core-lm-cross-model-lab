@@ -18,8 +18,9 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from blind_v1.experiment_closeout import (
     ExperimentCloseoutError,
-    collect_empty_result_root_observation,
+    _historical_collect_empty_result_root_observation,
 )
+from blind_v1.protocol import require_scientific_schedule_open
 
 
 OBSERVATION_NAME = "empty-result-root-observation.json"
@@ -83,7 +84,7 @@ def _write_exclusive(directory: Path, name: str, raw: bytes) -> None:
         os.close(descriptor)
 
 
-def collect_to_directory(
+def _historical_collect_to_directory(
     *,
     result_root: Path,
     host_environment_path: Path,
@@ -93,7 +94,7 @@ def collect_to_directory(
     if output_directory.exists() or output_directory.is_symlink():
         raise ExperimentCloseoutError("audit output already exists")
     host_environment_raw = _safe_read(host_environment_path)
-    observation_raw, report_raw = collect_empty_result_root_observation(
+    observation_raw, report_raw = _historical_collect_empty_result_root_observation(
         result_root=result_root,
         host_environment_raw=host_environment_raw,
         auditor_identity=auditor_identity,
@@ -111,6 +112,13 @@ def collect_to_directory(
     finally:
         os.close(descriptor)
     return output_directory / OBSERVATION_NAME, output_directory / AUDIT_REPORT_NAME
+
+
+def collect_to_directory(*args: object, **kwargs: object) -> tuple[Path, Path]:
+    """Reject retired V1 collection before clock, input, or output access."""
+
+    require_scientific_schedule_open(operation="collect-empty-result-root-files")
+    return _historical_collect_to_directory(*args, **kwargs)  # type: ignore[arg-type]
 
 
 def _parser() -> argparse.ArgumentParser:

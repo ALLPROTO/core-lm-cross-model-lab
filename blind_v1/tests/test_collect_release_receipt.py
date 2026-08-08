@@ -17,7 +17,7 @@ from blind_v1.collect_release_receipt import (
     HTTPSCapture,
     ReleaseReceiptCollectionError,
     SignatureVerificationError,
-    collect_release_receipt_to_path,
+    _historical_collect_release_receipt_to_path as collect_release_receipt_to_path,
     load_token_from_environment,
 )
 from blind_v1.release_receipt import (

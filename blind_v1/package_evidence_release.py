@@ -30,6 +30,14 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Iterator
 
 
+BLIND_V1_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = BLIND_V1_ROOT.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from blind_v1.protocol import require_scientific_schedule_open  # noqa: E402
+
+
 SCHEMA_VERSION = "corelm-blind-crossmodel-v1-evidence-release-manifest-v1"
 VERIFICATION_SCHEMA = (
     "corelm-blind-crossmodel-v1-evidence-release-verification-v1"
@@ -1814,7 +1822,7 @@ def _publish_stage_exclusive(stage: Path, output: Path) -> None:
     _fsync_directory(output)
 
 
-def package_release(
+def _historical_package_release(
     *,
     attempt_root: Path,
     corpus_root: Path,
@@ -1987,6 +1995,13 @@ def package_release(
         # directory is also retained; it cannot verify unless the top manifest
         # was linked last and every preceding member is present and exact.
         raise
+
+
+def package_release(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 evidence creation before inspecting any source path."""
+
+    require_scientific_schedule_open(operation="package-evidence-release")
+    return _historical_package_release(*args, **kwargs)
 
 
 def _write_report(path: Path, report: dict[str, Any], *, release_root: Path) -> None:

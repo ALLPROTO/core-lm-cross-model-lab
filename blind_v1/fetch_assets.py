@@ -27,6 +27,13 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Iterable, Mapping
 
+BLIND_V1_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = BLIND_V1_ROOT.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from blind_v1.protocol import require_scientific_schedule_open  # noqa: E402
+
 
 MANIFEST_SCHEMA = "corelm-blind-crossmodel-v1-model-assets-draft-v1"
 DEVELOPMENT_MANIFEST_SCHEMA = (
@@ -601,6 +608,24 @@ def fetch_asset(
     transport: Transport,
     allowed_hosts: frozenset[str] = DEFAULT_REDIRECT_HOSTS,
 ) -> FetchRecord:
+    require_scientific_schedule_open(operation="fetch one Blind V1 asset")
+    return _historical_fetch_asset(
+        specification,
+        destination_root,
+        transport=transport,
+        allowed_hosts=allowed_hosts,
+    )
+
+
+def _historical_fetch_asset(
+    specification: AssetSpecification | DevelopmentDatasetSpecification,
+    destination_root: Path,
+    *,
+    transport: Transport,
+    allowed_hosts: frozenset[str] = DEFAULT_REDIRECT_HOSTS,
+) -> FetchRecord:
+    """Retain exact fetch mechanics for isolated historical fixtures."""
+
     root = _ensure_directory_no_symlink(destination_root)
     model_directory = _ensure_directory_no_symlink(root / specification.model_key)
     relative = PurePosixPath(specification.filename)
@@ -702,6 +727,28 @@ def fetch_assets(
     transport: Transport | None = None,
     allowed_hosts: frozenset[str] = DEFAULT_REDIRECT_HOSTS,
 ) -> list[FetchRecord]:
+    require_scientific_schedule_open(operation="fetch Blind V1 model assets")
+    return _historical_fetch_assets(
+        manifest_path,
+        destination_root,
+        selected_models=selected_models,
+        small_files_only=small_files_only,
+        transport=transport,
+        allowed_hosts=allowed_hosts,
+    )
+
+
+def _historical_fetch_assets(
+    manifest_path: Path,
+    destination_root: Path,
+    *,
+    selected_models: set[str] | None = None,
+    small_files_only: bool = False,
+    transport: Transport | None = None,
+    allowed_hosts: frozenset[str] = DEFAULT_REDIRECT_HOSTS,
+) -> list[FetchRecord]:
+    """Retain exact multi-asset mechanics for isolated historical fixtures."""
+
     specifications = load_manifest(manifest_path)
     known_models = {item.model_key for item in specifications}
     if selected_models is not None:
@@ -723,7 +770,7 @@ def fetch_assets(
     records: list[FetchRecord] = []
     for specification in chosen:
         records.append(
-            fetch_asset(
+            _historical_fetch_asset(
                 specification,
                 destination_root,
                 transport=active_transport,
@@ -740,8 +787,23 @@ def fetch_development_dataset(
 ) -> FetchRecord:
     """Fetch or reverify the exact official UD English PUD r2.18 bytes."""
 
+    require_scientific_schedule_open(
+        operation="fetch Blind V1 development-control corpus"
+    )
+    return _historical_fetch_development_dataset(
+        destination_root, transport=transport
+    )
+
+
+def _historical_fetch_development_dataset(
+    destination_root: Path,
+    *,
+    transport: Transport | None = None,
+) -> FetchRecord:
+    """Retain the corpus-fetch mechanics for non-scientific fixture replay."""
+
     active_transport = transport or default_transport(DEVELOPMENT_DATASET_HOSTS)
-    return fetch_asset(
+    return _historical_fetch_asset(
         DevelopmentDatasetSpecification(),
         destination_root,
         transport=active_transport,
@@ -775,6 +837,7 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     try:
+        require_scientific_schedule_open(operation="run Blind V1 asset fetcher")
         if arguments.development_dataset_only and (
             arguments.models or arguments.small_files_only
         ):
@@ -796,7 +859,7 @@ def main() -> int:
             or arguments.development_dataset_only
         ):
             records.append(fetch_development_dataset(arguments.destination))
-    except AssetFetchError as error:
+    except (AssetFetchError, ValueError) as error:
         print(f"ASSET FETCH FAIL: {error}", file=sys.stderr)
         return 1
     summary = {

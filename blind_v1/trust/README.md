@@ -1,7 +1,16 @@
-# Candidate trust material — not yet freeze-ready
+# Retired Blind V1 candidate trust-material specification
 
-These public certificate bytes are normative inputs, not dynamically fetched
-trust. `transport-ca.pem` is the ISRG Root X1 downloaded from the official
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+
+These public certificate bytes were candidate inputs for the abandoned design,
+not dynamically fetched trust. `transport-ca.pem` is the ISRG Root X1
+downloaded from the official
 Let's Encrypt certificate endpoint. Its SHA-256 is
 `22b557a27055b33606b6559f37703928d3e4ad79f110b407d04986e1843543d1`.
 On 2026-08-03 it validated the live TLS chains and hostnames for the registered
@@ -11,8 +20,8 @@ certificate validation remains mandatory; this is not a leaf-certificate pin.
 `nist/manifest.json` binds the current real NIST signing chain. Its tracked
 bytes currently have SHA-256
 `cf7bf0363d0d67441e5f6704d3dcc5d0ebab137a00b90346bb2eb3aa82723706`;
-all draft design/code commitments must be regenerated to that exact value (or
-to a deliberately rebuilt manifest) before freeze. It binds the exact NIST API
+all draft design/code commitments would have needed regeneration to that exact
+value (or to a deliberately rebuilt manifest) before a valid freeze. It binds the exact NIST API
 leaf whose DER SHA-512 equals certificate ID
 `528943a555f5f8ca54423be6dfb95925a35c7b552046420e7d7cd072058a14d6536ad3a8e9754b6582f164a90b0cd86a65d659f5426a2659a947595d1c816c8c`,
 the DigiCert intermediate, and self-signed DigiCert Global Root G2. The leaf
@@ -29,19 +38,22 @@ rechecks every byte, time, issuer/subject link, and RSA signature.
 The tracked manifest is deliberately
 `CANDIDATE_OFFLINE_TRUST_BUNDLE`, not frozen. Both verifier implementations
 reject that status by default; `allow_candidate=True` exists only for local
-pre-freeze validation. A scientific or freeze path must receive a separately
-reviewed `FROZEN_OFFLINE_TRUST_BUNDLE` whose exact bytes are rebound through
+pre-freeze validation. The abandoned scientific/freeze path would have required
+a separately reviewed `FROZEN_OFFLINE_TRUST_BUNDLE` whose exact bytes were
+rebound through
 the design. Merely deleting a prose blocker or changing the status string is
 not sufficient.
 
-The deterministic permitted promotion is implemented by
+The historical deterministic promotion design is implemented by
 `../build_frozen_nist_trust_bundle.py`. It requires the exact 1,933-byte tracked
 candidate above and writes a new external self-contained directory. The only
 manifest mutation is candidate status to frozen status; the resulting manifest
 is exactly 1,930 bytes with SHA-256
 `5290ffc64ee549029fb7f71cab7b1753266a94ca622a6f2ee366873b660a178a`.
 It verifies both forms with the producer and separately implemented verifier,
-never overwrites an output, and uses no network, pulse, or model inference:
+never overwrites an output, and uses no network, pulse, or model inference. The
+following command is preserved as a counterfactual example and must not be run
+for V1:
 
 ```sh
 "$RUNTIME_ROOT/bin/python" -I -B \
@@ -86,11 +98,12 @@ Development trust sources captured on 2026-08-03:
 - `https://cacerts.digicert.com/DigiCertGlobalRootG2.crt.pem`
 - `https://csrc.nist.gov/csrc/media/Projects/interoperable-randomness-beacons/documents/certificate/beacon-2.0.xsd`
 
-If the exact current leaf is frozen and the future pulse is signed by any other
-certificate ID, the experiment fails closed. A pre-freeze rotation may be
-handled only by publishing a newly bound design before observing the target
-pulse; signing trust must never be fetched or replaced after observation. The
-machine-enforced rotation policy is `NO_ROTATION_AFTER_FREEZE`, and the
+Under the abandoned protocol, if the exact current leaf had been frozen and the
+future pulse signed by any other certificate ID, the experiment would have
+failed closed. A pre-freeze rotation would only have been handled by publishing
+a newly bound design before observing the target pulse; signing trust could not
+have been fetched or replaced after observation. The machine-enforced rotation
+policy was `NO_ROTATION_AFTER_FREEZE`, and the
 singleton `allowedCertificateIds` list must exactly equal the manifest's one
 certificate-map key.
 

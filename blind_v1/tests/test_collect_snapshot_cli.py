@@ -118,7 +118,7 @@ class CollectorCLIContractTests(unittest.TestCase):
             "verify_snapshot_fn": self.verify_ready,
         }
         arguments.update(overrides)
-        return subject.run_collector_phase(**arguments)
+        return subject._historical_run_collector_phase(**arguments)
 
     def test_contract_verifies_all_assets_and_loads_owned_tokenizer_bytes(self) -> None:
         def stage(**arguments: Any) -> dict[str, Any]:

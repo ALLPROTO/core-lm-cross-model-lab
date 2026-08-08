@@ -11,9 +11,9 @@ import blind_v1.tests.test_experiment_closeout as closeout_fixture
 from blind_v1.experiment_closeout import (
     PublicationBindings,
     canonical_json_bytes,
-    collect_empty_result_root_observation,
-    create_late_publication_invalid,
-    create_no_attempt_expired,
+    _historical_collect_empty_result_root_observation as collect_empty_result_root_observation,
+    _historical_create_late_publication_invalid as create_late_publication_invalid,
+    _historical_create_no_attempt_expired as create_no_attempt_expired,
     sha256_bytes,
 )
 from blind_v1.package_closeout_release import (
@@ -23,7 +23,7 @@ from blind_v1.package_closeout_release import (
     MANIFEST_NAME,
     REPORT_NAME,
     STATEMENT_NAME,
-    package_closeout_release,
+    _historical_package_closeout_release as package_closeout_release,
     verify_closeout_release_package,
     verify_published_closeout_release,
 )

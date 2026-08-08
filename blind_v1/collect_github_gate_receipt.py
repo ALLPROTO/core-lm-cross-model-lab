@@ -48,6 +48,7 @@ from blind_v1.github_gate_receipt import (
     verify_github_gate_receipt,
 )
 from blind_v1.release_receipt import canonical_json_bytes
+from blind_v1.protocol import require_scientific_schedule_open
 
 
 GITHUB_API_HOST = "api.github.com"
@@ -411,6 +412,34 @@ def collect_github_gate_receipt(
 ) -> bytes:
     """Collect over verified TLS, then structurally verify canonical receipt bytes."""
 
+    require_scientific_schedule_open(operation="collect Blind V1 GitHub CI gate receipt")
+    return _historical_collect_github_gate_receipt(
+        repository=repository,
+        pull_request_number=pull_request_number,
+        implementation_commit=implementation_commit,
+        workflow_run_id=workflow_run_id,
+        workflow_name=workflow_name,
+        workflow_path=workflow_path,
+        token=token,
+        transport=transport,
+        now=now,
+    )
+
+
+def _historical_collect_github_gate_receipt(
+    *,
+    repository: str,
+    pull_request_number: int,
+    implementation_commit: str,
+    workflow_run_id: int,
+    workflow_name: str,
+    workflow_path: str,
+    token: str | None = None,
+    transport: GitHubGateTransport | None = None,
+    now: Callable[[], str] = _utc_now,
+) -> bytes:
+    """Retain the former receipt shape for offline structural fixtures."""
+
     try:
         owner, _name, html_base, api_base = _repository(repository)
     except GitHubGateReceiptError as error:
@@ -536,8 +565,21 @@ def collect_github_gate_receipt(
 
 
 def collect_github_gate_receipt_to_path(*, output: Path, **arguments: Any) -> str:
+    require_scientific_schedule_open(
+        operation="publish Blind V1 GitHub CI gate receipt"
+    )
+    return _historical_collect_github_gate_receipt_to_path(
+        output=output, **arguments
+    )
+
+
+def _historical_collect_github_gate_receipt_to_path(
+    *, output: Path, **arguments: Any
+) -> str:
+    """Publish a legacy receipt only for isolated structural fixtures."""
+
     _assert_absent(output)
-    raw = collect_github_gate_receipt(**arguments)
+    raw = _historical_collect_github_gate_receipt(**arguments)
     _exclusive_write(output, raw)
     return hashlib.sha256(raw).hexdigest()
 
@@ -559,6 +601,9 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        require_scientific_schedule_open(
+            operation="run Blind V1 GitHub gate collector"
+        )
         token = load_token_from_environment(args.token_env)
         digest = collect_github_gate_receipt_to_path(
             output=args.output,

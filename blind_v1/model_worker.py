@@ -80,6 +80,7 @@ from blind_v1.protocol import (  # noqa: E402
     canonical_json_bytes,
     load_json_strict,
     load_json_strict_bytes,
+    require_scientific_schedule_open,
 )
 
 
@@ -1557,7 +1558,7 @@ def evaluate_page(
     }
 
 
-def run(
+def _historical_run(
     job_path: Path,
     snapshot_root: Path,
     codec_root: Path,
@@ -1721,6 +1722,43 @@ def run(
     return summary_path
 
 
+def run(
+    job_path: Path,
+    snapshot_root: Path,
+    codec_root: Path,
+    output_root: Path,
+    *,
+    authorization_fd: int | None = None,
+) -> Path:
+    """Permanently reject scientific V1 work before opening its job input."""
+
+    require_scientific_schedule_open(operation="run-scientific-model-worker")
+    return _historical_run(
+        job_path,
+        snapshot_root,
+        codec_root,
+        output_root,
+        authorization_fd=authorization_fd,
+    )
+
+
+def run_development(
+    job_path: Path,
+    snapshot_root: Path,
+    codec_root: Path,
+    output_root: Path,
+) -> Path:
+    """Run the separately identified non-scientific development control."""
+
+    return _historical_run(
+        job_path,
+        snapshot_root,
+        codec_root,
+        output_root,
+        authorization_fd=None,
+    )
+
+
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--job", type=Path, required=True)
@@ -1733,13 +1771,21 @@ def parse_arguments() -> argparse.Namespace:
 
 def main() -> int:
     arguments = parse_arguments()
-    summary = run(
-        arguments.job,
-        arguments.snapshot_root,
-        arguments.codec_root,
-        arguments.output_root,
-        authorization_fd=arguments.authorization_fd,
-    )
+    if arguments.authorization_fd is None:
+        summary = run_development(
+            arguments.job,
+            arguments.snapshot_root,
+            arguments.codec_root,
+            arguments.output_root,
+        )
+    else:
+        summary = run(
+            arguments.job,
+            arguments.snapshot_root,
+            arguments.codec_root,
+            arguments.output_root,
+            authorization_fd=arguments.authorization_fd,
+        )
     print(summary)
     return 0
 

@@ -17,7 +17,10 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from blind_v1.fetch_assets import DEFAULT_MANIFEST, load_manifest  # noqa: E402
 from blind_v1.preflight import verify_file_beneath  # noqa: E402
-from blind_v1.protocol import load_json_strict  # noqa: E402
+from blind_v1.protocol import (  # noqa: E402
+    load_json_strict,
+    require_scientific_schedule_open,
+)
 from blind_v1.reproducibility import (  # noqa: E402
     canonical_json_bytes,
     sha256_bytes,
@@ -28,6 +31,15 @@ from blind_v1.reproducibility import (  # noqa: E402
 
 
 def build_asset_receipt(manifest_path: Path, asset_root: Path) -> dict[str, Any]:
+    require_scientific_schedule_open(operation="build full model-asset receipt")
+    return _historical_build_asset_receipt(manifest_path, asset_root)
+
+
+def _historical_build_asset_receipt(
+    manifest_path: Path, asset_root: Path
+) -> dict[str, Any]:
+    """Build the legacy receipt shape for offline fixtures and regressions."""
+
     specifications = load_manifest(manifest_path)
     manifest = load_json_strict(manifest_path)
     models: dict[str, Any] = {}
@@ -108,6 +120,9 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     try:
+        require_scientific_schedule_open(
+            operation="run Blind V1 model-asset receipt builder"
+        )
         receipt = build_asset_receipt(arguments.manifest, arguments.asset_root)
         output_bytes = canonical_json_bytes(receipt) + b"\n"
         write_new_bytes(arguments.output, output_bytes)

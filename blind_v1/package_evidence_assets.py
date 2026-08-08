@@ -35,6 +35,14 @@ from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Mapping, Sequence
 
 
+BLIND_V1_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = BLIND_V1_ROOT.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from blind_v1.protocol import require_scientific_schedule_open  # noqa: E402
+
+
 SUITE_ID = "corelm-blind-crossmodel-v1"
 INNER_MANIFEST_SCHEMA = (
     "corelm-blind-crossmodel-v1-evidence-release-manifest-v1"
@@ -1091,7 +1099,7 @@ def verify_evidence_assets(asset_root: Path) -> dict[str, Any]:
     return result
 
 
-def package_evidence_assets(
+def _historical_package_evidence_assets(
     *,
     evidence_root: Path,
     verifier_report: Path,
@@ -1138,6 +1146,13 @@ def package_evidence_assets(
         # Never overwrite or hide a failed publication attempt.  The new output
         # remains visibly incomplete for forensic inspection.
         raise
+
+
+def package_evidence_assets(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 asset creation before reading or creating paths."""
+
+    require_scientific_schedule_open(operation="package-evidence-assets")
+    return _historical_package_evidence_assets(*args, **kwargs)
 
 
 def extract_evidence_package(

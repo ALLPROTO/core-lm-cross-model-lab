@@ -31,7 +31,7 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping, Sequence
 
-from blind_v1.protocol import load_json_strict_bytes
+from blind_v1.protocol import load_json_strict_bytes, require_scientific_schedule_open
 from blind_v1.model_card_evidence import (
     MANIFEST_ARCHIVE_PATH as MODEL_CARD_EVIDENCE_ARCHIVE_PATH,
     ModelCardEvidenceError,
@@ -2053,7 +2053,7 @@ def _validate_archival_semantics(
     return development_control_archive
 
 
-def build_deposit_manifest(
+def _historical_build_deposit_manifest(
     deposit_root: Path,
     plan: Mapping[str, Any],
     *,
@@ -2272,7 +2272,14 @@ def build_deposit_manifest(
     return manifest
 
 
-def build_deposit_manifest_to_path(
+def build_deposit_manifest(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 deposit-manifest creation before reading inputs."""
+
+    require_scientific_schedule_open(operation="build-zenodo-deposit-manifest")
+    return _historical_build_deposit_manifest(*args, **kwargs)
+
+
+def _historical_build_deposit_manifest_to_path(
     deposit_root: Path,
     plan: Mapping[str, Any],
     output_path: Path,
@@ -2290,7 +2297,7 @@ def build_deposit_manifest_to_path(
         pass
     else:
         raise ZenodoArchiveError("deposit manifest output must remain outside deposit root")
-    manifest = build_deposit_manifest(
+    manifest = _historical_build_deposit_manifest(
         root,
         plan,
         cryptographic_attestation_verifier=cryptographic_attestation_verifier,
@@ -2298,6 +2305,13 @@ def build_deposit_manifest_to_path(
     )
     write_new_bytes(output, canonical_json_bytes(manifest) + b"\n")
     return manifest
+
+
+def build_deposit_manifest_to_path(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 manifested-root creation before input or output access."""
+
+    require_scientific_schedule_open(operation="write-zenodo-deposit-manifest")
+    return _historical_build_deposit_manifest_to_path(*args, **kwargs)
 
 
 def _validate_manifest(
@@ -2883,7 +2897,7 @@ def _verify_record_identity(
     return publication_date, _normalize_rights(metadata)
 
 
-def build_zenodo_receipt(
+def _historical_build_zenodo_receipt(
     *,
     manifest_path: Path,
     deposit_root: Path,
@@ -3025,6 +3039,13 @@ def build_zenodo_receipt(
     if _inventory_root(deposit_root) != inventory:
         raise ZenodoArchiveError("deposit changed during Zenodo receipt construction")
     return receipt
+
+
+def build_zenodo_receipt(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 receipt creation before reading captured inputs."""
+
+    require_scientific_schedule_open(operation="build-zenodo-receipt")
+    return _historical_build_zenodo_receipt(*args, **kwargs)
 
 
 def verify_zenodo_receipt(
@@ -3199,10 +3220,17 @@ def verify_zenodo_receipt(
     )
 
 
-def write_zenodo_receipt_to_path(
+def _historical_write_zenodo_receipt_to_path(
     receipt: Mapping[str, Any],
     output_path: Path,
 ) -> bytes:
     raw = canonical_json_bytes(receipt) + b"\n"
     write_new_bytes(output_path, raw)
     return raw
+
+
+def write_zenodo_receipt_to_path(*args: Any, **kwargs: Any) -> bytes:
+    """Reject retired V1 receipt publication before output access."""
+
+    require_scientific_schedule_open(operation="write-zenodo-receipt")
+    return _historical_write_zenodo_receipt_to_path(*args, **kwargs)

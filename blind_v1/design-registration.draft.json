@@ -4,6 +4,17 @@
   "suiteId": "corelm-blind-crossmodel-v1",
   "readyToFreeze": false,
   "countsTowardScientificVerdict": false,
+  "scheduleCloseout": {
+    "status": "CHECKPOINT_MISSED_TERMINAL_DRAFT",
+    "decisionCheckpoint": "2026-08-08T12:00:00Z",
+    "requiredStateSatisfiedAtCheckpoint": false,
+    "freezeAllowed": false,
+    "publicationAllowed": false,
+    "scientificExecutionAllowed": false,
+    "successorSuiteIdRequired": true,
+    "successorTimelinePolicy": "NEW_SUITE_ID_AND_FULL_RESCHEDULE_ONLY",
+    "historicalStructuralValidationOnly": true
+  },
   "claim": "One codec candidate fixed before the confirmatory pool and future corpus are scored meets every registered cell and model gate on three NIST-selected exact model revisions and two NIST-selected samples of sixteen eligible future Wikipedia creation revisions.",
   "scientificBoundary": "A PASS applies only to the three exact revisions selected from the six-revision confirmatory pool, the thirty-two selected creation revisions, future-corpus snapshot, selection pulse, candidate, runtime, codec, and fixed metrics. The exact pool revisions have not been run by this project before the one-shot, but broad GPT-2, GPT-NeoX/Pythia, and Llama architecture families have prior observations disclosed in prior-observations.json. This is not an architecture-blind or population claim about all LLMs, either complete language-edition corpus, all Wikipedia, all text, latency, throughput, weight compression, or state of the art. It is author-operated and author-self-verified; no independent human review, peer review, operator blindness, independent replication, or independent validation is claimed. The target pulse can be fetched and the deterministic selection can be derived outside the registered runner; local state cannot prove that no hidden run occurred. The registered crawl not-before times permit multiple technically valid corpus roots, and local code cannot prove that the author did not shop among snapshots; the signed snapshot release fixes the chosen bytes before the pulse but is not an externally witnessed first-crawl proof. The anonymous-pipe private-child handoff establishes only live parent/child, new-process-group, canonical-path, deadline, poll, nonce, and no-retry bindings. It does not authenticate the parent implementation or prove watchdog behavior; a custom parent controlled by the same user can construct a conforming handoff.",
   "priorObservations": {
@@ -225,6 +236,8 @@
     "newSuiteIdRequired": true,
     "minimumLeadTimesMustBePreserved": true,
     "moveTogether": [
+      "reschedulePolicy.decisionCheckpoint",
+      "developmentControls.realDataE2EFreezeGate.completeNoLaterThan",
       "designRelease.publishNoLaterThan",
       "futureCorpus.creationInterval",
       "futureCorpus.firstCrawlNotBefore",
@@ -279,7 +292,7 @@
     "authorName": "Ivan Tyshchenko",
     "authorORCID": "https://orcid.org/0009-0000-7935-6090",
     "authorGitHubLogin": "ALLPROTO",
-    "authorDeclaration": "I am the author and experiment operator. I verified this exact implementation commit, its canonical schemas, zero-skip Linux and macOS arm64 CI, evidence packaging, and real-data development control. No independent human review was performed. This self-attestation is not peer review, operator blindness, independent replication, or independent validation.",
+    "authorDeclaration": "This declaration becomes effective only in a valid immutable design release. At that freeze, I am the author and experiment operator and attest that I verified the exact frozen implementation commit, its canonical schemas, zero-skip Linux and macOS arm64 CI, evidence packaging, and real-data development control. No independent human review was performed. This self-attestation is not peer review, operator blindness, independent replication, or independent validation.",
     "independentHumanReviewRequired": false,
     "independentHumanReviewPerformed": false,
     "claimBoundary": "Author-operated and author-self-verified prospective artifact. No independent human review, peer review, operator blindness, independent replication, or independent validation is claimed.",
@@ -615,13 +628,14 @@
     "allLaterRuns": "regression-only"
   },
   "freezeBlockers": [
-    "independently verify and pin the tracked NIST Beacon signing certificate chain, root, wire profile, and rotation/revocation policy for 2026-08-21T18:00:00.000Z; the tracked leaf is time-valid at the target but the exact trust commitments are not yet frozen",
-    "author-verify the archived UD English PUD CC BY-SA 3.0 license, README, attribution, and source-derived evidence handling on the exact implementation",
-    "complete and archive the untuned real UD English PUD producer-to-VTL5-to-independent-replay development control on the exact implementation and locked runtime",
-    "bind the repeated full-asset rehash, clean runtime manifest, CycloneDX SBOM, and exact implementation commit/tree into release artifacts",
-    "record the signed author self-verification and obtain a zero-skip Linux plus macOS arm64 CI receipt on that exact commit",
-    "publish the development-control release and archive exact-key annotated-tag verification with the already registered signing key",
-    "implement and zero-skip verify the signed public execution-reservation release and its server-timestamped receipt before the target pulse",
-    "publish the immutable design release and canonical GitHub CI receipt whose verified RFC3161 attestedAt is strictly before the registered deadline"
+    "historical unmet gate at checkpoint; not actionable for blind-v1: independently verify and pin the tracked NIST Beacon signing certificate chain, root, wire profile, and rotation/revocation policy for 2026-08-21T18:00:00.000Z; the tracked leaf is time-valid at the target but the exact trust commitments are not yet frozen",
+    "historical unmet gate at checkpoint; not actionable for blind-v1: author-verify the archived UD English PUD CC BY-SA 3.0 license, README, attribution, and source-derived evidence handling on the exact implementation",
+    "historical unmet gate at checkpoint; not actionable for blind-v1: complete and archive the untuned real UD English PUD producer-to-VTL5-to-independent-replay development control on the exact implementation and locked runtime",
+    "historical unmet gate at checkpoint; not actionable for blind-v1: bind the repeated full-asset rehash, clean runtime manifest, CycloneDX SBOM, and exact implementation commit/tree into release artifacts",
+    "historical unmet gate at checkpoint; not actionable for blind-v1: record the signed author self-verification and obtain a zero-skip Linux plus macOS arm64 CI receipt on that exact commit",
+    "historical unmet gate at checkpoint; not actionable for blind-v1: publish the development-control release and archive exact-key annotated-tag verification with the already registered signing key",
+    "historical unmet gate at checkpoint; not actionable for blind-v1: implement and zero-skip verify the signed public execution-reservation release and its server-timestamped receipt before the target pulse",
+    "historical unmet gate at checkpoint; not actionable for blind-v1: publish the immutable design release and canonical GitHub CI receipt whose verified RFC3161 attestedAt is strictly before the registered deadline",
+    "terminal schedule closeout: the 2026-08-08T12:00:00Z checkpoint elapsed without the required exact-commit gate; this suite must never be frozen, published as a preregistration, or scientifically executed, and only a new suite ID with a fully rescheduled timeline may continue the experiment"
   ]
 }

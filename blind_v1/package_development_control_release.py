@@ -49,6 +49,7 @@ from blind_v1.reproducibility import (  # noqa: E402
     sha256_bytes,
     with_content_digest,
 )
+from blind_v1.protocol import require_scientific_schedule_open  # noqa: E402
 
 
 ASSET_NAMES = (
@@ -342,6 +343,38 @@ def package_development_control_release(
 ) -> dict[str, Any]:
     """Create a new local package after re-verifying every real-data artifact."""
 
+    require_scientific_schedule_open(
+        operation="package Blind V1 development-control release"
+    )
+    return _historical_package_development_control_release(
+        report_path=report_path,
+        artifact_root=artifact_root,
+        runtime_manifest_path=runtime_manifest_path,
+        lab_repository=lab_repository,
+        lab_commit=lab_commit,
+        lab_tree=lab_tree,
+        codec_repository=codec_repository,
+        codec_commit=codec_commit,
+        codec_tree=codec_tree,
+        output_root=output_root,
+    )
+
+
+def _historical_package_development_control_release(
+    *,
+    report_path: Path,
+    artifact_root: Path,
+    runtime_manifest_path: Path,
+    lab_repository: str,
+    lab_commit: str,
+    lab_tree: str,
+    codec_repository: str,
+    codec_commit: str,
+    codec_tree: str,
+    output_root: Path,
+) -> dict[str, Any]:
+    """Retain the former package shape for offline structural fixtures."""
+
     runtime_raw = read_regular_bytes(
         runtime_manifest_path, maximum_bytes=MAX_RUNTIME_MANIFEST_BYTES
     )
@@ -459,6 +492,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
         if arguments.command == "package":
+            require_scientific_schedule_open(
+                operation="package Blind V1 development-control release from CLI"
+            )
             report = package_development_control_release(
                 report_path=arguments.report,
                 artifact_root=arguments.artifact_root,

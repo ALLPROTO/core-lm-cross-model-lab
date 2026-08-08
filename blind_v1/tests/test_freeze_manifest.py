@@ -17,9 +17,11 @@ from blind_v1 import development_model_replay
 from blind_v1 import freeze_manifest as subject
 from blind_v1 import run_real_e2e_control
 from blind_v1.build_frozen_nist_trust_bundle import (
-    build_frozen_nist_trust_bundle,
+    _historical_build_frozen_nist_trust_bundle as build_frozen_nist_trust_bundle,
 )
-from blind_v1.collect_github_gate_receipt import collect_github_gate_receipt_to_path
+from blind_v1.collect_github_gate_receipt import (
+    _historical_collect_github_gate_receipt_to_path as collect_github_gate_receipt_to_path,
+)
 from blind_v1.github_gate_receipt import (
     AUTHOR_GITHUB_LOGIN,
     AUTHOR_NAME,
@@ -625,7 +627,7 @@ class FreezeManifestTests(unittest.TestCase):
         return with_content_digest(payload)
 
     def build(self) -> dict[str, Any]:
-        return subject.build_freeze_manifest(
+        return subject._historical_build_freeze_manifest(
             runtime_manifest_path=self.runtime_path,
             asset_receipt_path=self.asset_path,
             ca_bundle_path=self.ca_path,

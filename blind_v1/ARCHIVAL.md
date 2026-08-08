@@ -1,4 +1,12 @@
-# Archival publication
+# Archival publication (retired Blind V1 specification)
+
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
 
 The GitHub release and the archival deposit have different evidentiary roles.
 GitHub provides signed Git objects, release identifiers, and release assets.
@@ -30,12 +38,13 @@ those bytes, checks each exact README license declaration, and cross-binds the
 ordered repository/revision/license identities to the frozen design. The
 historical seven-entry `source-evidence.json` remains unchanged.
 
-Before the design archive can be frozen, the 2,088-artifact UD English PUD
-development control is packaged into its three canonical assets, published
-from the signed annotated development tag, and bound by the canonical GitHub
-immutable-release attestation receipt. That development release is non-scientific and does not replace
-the later design, snapshot, public execution-reservation, or one-shot evidence
-releases.
+Under the retired counterfactual protocol, a design archive would have required
+the 2,088-artifact UD English PUD development control to be packaged into its
+three canonical assets, published from the signed annotated development tag,
+and bound by the canonical GitHub immutable-release attestation receipt. That
+historical development-release requirement was non-scientific and would not
+have replaced the later design, snapshot, public execution-reservation, or
+one-shot evidence releases.
 
 The V4 pilot-model E2E and all earlier V2/V3 controls are preserved only as
 prior non-scientific observations from superseded or failed-freeze contours.
@@ -50,7 +59,11 @@ it performs no inference and is not a scientific result. A design, snapshot,
 DOI reservation, local timestamp, or later evidence release cannot substitute
 for its verified RFC3161 publication window.
 
-## Release procedure
+## Historical counterfactual release procedure (do not execute)
+
+The numbered procedure below records the abandoned V1 design. Its imperative
+wording is quoted as specification history only and grants no authorization to
+create, publish, collect, or upload any Blind V1 artifact.
 
 1. Use one manual Zenodo draft created through the authenticated current Zenodo
    deposit interface or API. Do not enable the legacy GitHub-to-Zenodo release

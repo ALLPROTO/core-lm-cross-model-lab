@@ -9,7 +9,7 @@ from unittest import mock
 from blind_v1.collect_zenodo_receipt import (
     ZenodoReceiptCollectionError,
     _validate_exact_url,
-    collect_zenodo_receipt_to_path,
+    _historical_collect_zenodo_receipt_to_path as collect_zenodo_receipt_to_path,
     load_token_from_environment,
 )
 from blind_v1.tests.test_zenodo_archive import CREATED, DEPOSITION_ID, DOI, RECORD_ID, ZenodoFixture

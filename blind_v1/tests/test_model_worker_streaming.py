@@ -185,7 +185,7 @@ class ModelWorkerStreamingTests(unittest.TestCase):
             model_worker, "EvidenceWriter", FakeWriter
         ):
             output_root = Path(temporary) / "worker"
-            summary = model_worker.run(
+            summary = model_worker._historical_run(
                 Path("job.json"),
                 Path("snapshot"),
                 Path("codec"),

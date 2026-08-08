@@ -12,7 +12,10 @@ from email.utils import format_datetime
 from pathlib import Path
 
 from blind_v1 import nist_beacon as subject
-from blind_v1.mediawiki_snapshot import ArchivedHTTPResponse, archive_response
+from blind_v1.mediawiki_snapshot import (
+    ArchivedHTTPResponse,
+    _historical_archive_response as archive_response,
+)
 from blind_v1.protocol import canonical_json_bytes
 
 

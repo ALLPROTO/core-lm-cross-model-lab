@@ -148,7 +148,7 @@ class RunnerContractTests(unittest.TestCase):
                 runner_module.parse_arguments()
 
     def test_success_path_calls_registered_phases_once_in_exact_order(self) -> None:
-        inner = inspect.getsource(runner_module.execute_private_one_shot)
+        inner = inspect.getsource(runner_module._historical_execute_private_one_shot)
         outer = inspect.getsource(runner_module.reexec_private_one_shot)
         self.assertEqual(inner.count("verify_scientific_python_subprocess("), 1)
         self.assertNotIn("verify_scientific_python_subprocess(", outer)
@@ -191,7 +191,9 @@ class RunnerContractTests(unittest.TestCase):
         )
 
     def test_private_and_worker_publication_use_atomic_no_replace(self) -> None:
-        prepare_source = inspect.getsource(runner_module.prepare_private_snapshot)
+        prepare_source = inspect.getsource(
+            runner_module._historical_prepare_private_snapshot
+        )
         consolidate_source = inspect.getsource(
             runner_module._consolidate_worker_evidence
         )
@@ -285,7 +287,7 @@ class RunnerContractTests(unittest.TestCase):
         source = "\n".join(
             (
                 inspect.getsource(runner_module._run_workers),
-                inspect.getsource(runner_module.execute_private_one_shot),
+                inspect.getsource(runner_module._historical_execute_private_one_shot),
                 inspect.getsource(runner_module.reexec_private_one_shot),
             )
         )
@@ -770,7 +772,7 @@ print("SCOPED_GUARD_CONFIRMED")
                         "markerNoLaterThan": marker_deadline,
                     }
                 )
-        source = inspect.getsource(runner_module.execute_private_one_shot)
+        source = inspect.getsource(runner_module._historical_execute_private_one_shot)
         self.assertIn(
             "reserved_attempt_id = require_reserved_attempt_id(reservation_verification)",
             source,

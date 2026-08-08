@@ -34,6 +34,7 @@ from blind_v1.collect_snapshot import (  # noqa: E402
 from blind_v1.protocol import (  # noqa: E402
     canonical_json_bytes,
     load_json_strict_bytes,
+    require_scientific_schedule_open,
     sha256_bytes,
     validate_frozen_design_registration,
     validate_model_asset_manifest,
@@ -547,6 +548,36 @@ def build_snapshot_registration(
 ) -> bytes:
     """Return canonical registration bytes after replaying all committed corpus bytes."""
 
+    require_scientific_schedule_open(operation="build Blind V1 snapshot registration")
+    return _historical_build_snapshot_registration(
+        frozen_design_path=frozen_design_path,
+        corpus_root=corpus_root,
+        asset_root=asset_root,
+        design_release_asset_root=design_release_asset_root,
+        signing_public_key_path=signing_public_key_path,
+        design_publication_receipt_path=design_publication_receipt_path,
+        asset_source_manifest_path=asset_source_manifest_path,
+        full_asset_receipt_path=full_asset_receipt_path,
+        created_at=created_at,
+        cryptographic_attestation_verifier=cryptographic_attestation_verifier,
+    )
+
+
+def _historical_build_snapshot_registration(
+    *,
+    frozen_design_path: Path,
+    corpus_root: Path,
+    asset_root: Path,
+    design_release_asset_root: Path,
+    signing_public_key_path: Path,
+    design_publication_receipt_path: Path,
+    asset_source_manifest_path: Path,
+    full_asset_receipt_path: Path,
+    created_at: str,
+    cryptographic_attestation_verifier: ReleaseAttestationCryptographicVerifier,
+) -> bytes:
+    """Retain the former registration shape for offline structural fixtures."""
+
     design_raw = _read_regular(
         frozen_design_path, label="frozen design", maximum_bytes=MAXIMUM_JSON_BYTES
     )
@@ -737,6 +768,19 @@ def build_snapshot_registration(
 
 
 def build_snapshot_registration_to_path(*, output: Path, **inputs: Any) -> bytes:
+    require_scientific_schedule_open(
+        operation="publish Blind V1 snapshot registration"
+    )
+    return _historical_build_snapshot_registration_to_path(
+        output=output, **inputs
+    )
+
+
+def _historical_build_snapshot_registration_to_path(
+    *, output: Path, **inputs: Any
+) -> bytes:
+    """Publish a legacy registration only for isolated structural fixtures."""
+
     destination = Path(os.path.abspath(os.fspath(output)))
     implementation_root = PROJECT_ROOT.resolve(strict=True)
     try:
@@ -747,7 +791,7 @@ def build_snapshot_registration_to_path(*, output: Path, **inputs: Any) -> bytes
         raise SnapshotRegistrationBuildError(
             "snapshot output must remain outside the author-verified lab checkout"
         )
-    raw = build_snapshot_registration(**inputs)
+    raw = _historical_build_snapshot_registration(**inputs)
     try:
         write_new_bytes(output, raw)
     except (OSError, ValueError) as error:
@@ -774,6 +818,9 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = parse_arguments()
     try:
+        require_scientific_schedule_open(
+            operation="run Blind V1 snapshot-registration builder"
+        )
         build_snapshot_registration_to_path(
             output=arguments.output,
             frozen_design_path=arguments.frozen_design,

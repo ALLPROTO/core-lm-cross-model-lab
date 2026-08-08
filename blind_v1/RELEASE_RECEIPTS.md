@@ -1,4 +1,12 @@
-# Canonical signed GitHub release receipts for blind-v1
+# Canonical signed GitHub release receipts (retired Blind V1 specification)
+
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
 
 `collect_release_receipt.py` is the online collector for the offline contract in
 `release_receipt.py` and `schemas/release-receipt.schema.json`. A successful

@@ -41,7 +41,9 @@ PROJECT_ROOT = BLIND_V1_ROOT.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from blind_v1.create_asset_receipt import build_asset_receipt  # noqa: E402
+from blind_v1.create_asset_receipt import (  # noqa: E402
+    _historical_build_asset_receipt,
+)
 from blind_v1.development_model_replay import (  # noqa: E402
     CANDIDATE,
     CORPORA,
@@ -90,6 +92,7 @@ from blind_v1.protocol import (  # noqa: E402
     canonical_json_bytes,
     load_json_strict,
     load_json_strict_bytes,
+    require_scientific_schedule_open,
     sha256_bytes,
     validate_development_model_asset_manifest,
     validate_design_registration,
@@ -364,6 +367,13 @@ def _external_output_path(output: Path) -> tuple[Path, str]:
 
 def claim_output(output: Path) -> Path:
     """Exclusively claim a new external output root; never replace an old run."""
+
+    require_scientific_schedule_open(operation="claim Blind V1 development output")
+    return _historical_claim_output(output)
+
+
+def _historical_claim_output(output: Path) -> Path:
+    """Retain exclusive output creation for post-release regression runs."""
 
     parent, name = _external_output_path(output)
     descriptor = os.open(
@@ -1070,7 +1080,7 @@ def _load_fixed_inputs(
         verify_content_digest(receipt)
     except ValueError as error:
         raise DevelopmentControlError("tracked full asset receipt is invalid") from error
-    observed_receipt = build_asset_receipt(manifest_path, asset_root)
+    observed_receipt = _historical_build_asset_receipt(manifest_path, asset_root)
     if observed_receipt != receipt:
         raise DevelopmentControlError("local exact model assets differ from full rehash receipt")
     if tuple(design["developmentControls"]["modelAssets"]["modelKeys"]) != MODELS:
@@ -1258,6 +1268,28 @@ def build_plan(
     sentences: list[str],
     input_bindings: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, bytes]]:
+    require_scientific_schedule_open(operation="build Blind V1 development plan")
+    return _historical_build_plan(
+        design=design,
+        receipt=receipt,
+        asset_root=asset_root,
+        private_root=private_root,
+        sentences=sentences,
+        input_bindings=input_bindings,
+    )
+
+
+def _historical_build_plan(
+    *,
+    design: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+    asset_root: Path,
+    private_root: Path,
+    sentences: list[str],
+    input_bindings: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, bytes]]:
+    """Retain deterministic planning for regression and historical fixtures."""
+
     pages, record_inventory = _write_private_records(private_root, sentences)
     models, model_inventory = _link_model_assets(
         private_root=private_root,
@@ -1908,7 +1940,7 @@ def _run_control(
         )
     except DevelopmentRuntimeError as error:
         raise DevelopmentControlError("development host safety gate failed") from error
-    output_root = claim_output(arguments.output)
+    output_root = _historical_claim_output(arguments.output)
     host_safety_checks = [{"phase": "before-output-materialization", **initial_safety}]
     arguments._claimed_output_root = output_root
     arguments._control_phase = "materialize-archived-inputs"
@@ -1969,7 +2001,7 @@ def _run_control(
     ) as temporary:
         private_root = Path(temporary).resolve(strict=True)
         write_new_bytes(private_root / DATASET_EVIDENCE_PATH, dataset_raw)
-        plan, job_bytes = build_plan(
+        plan, job_bytes = _historical_build_plan(
             design=design,
             receipt=receipt,
             asset_root=arguments.asset_root,
@@ -2280,6 +2312,22 @@ def run_control(
 ) -> dict[str, Any]:
     if type(post_release_regression) is not bool:
         raise DevelopmentControlError("execution profile is invalid")
+    if not post_release_regression:
+        require_scientific_schedule_open(
+            operation="run Blind V1 development control"
+        )
+    return _historical_run_control(
+        arguments, post_release_regression=post_release_regression
+    )
+
+
+def _historical_run_control(
+    arguments: argparse.Namespace, *, post_release_regression: bool = False
+) -> dict[str, Any]:
+    """Run historical control mechanics; public use is regression-only."""
+
+    if type(post_release_regression) is not bool:
+        raise DevelopmentControlError("execution profile is invalid")
     started = _utc_now()
     prefix = (
         "post-release-regression-execution-"
@@ -2329,9 +2377,16 @@ def parse_arguments(
 
 
 def main(*, post_release_regression: bool = False) -> int:
+    arguments = parse_arguments(
+        post_release_regression=post_release_regression
+    )
     try:
+        if not post_release_regression:
+            require_scientific_schedule_open(
+                operation="run Blind V1 real-model development control CLI"
+            )
         report = run_control(
-            parse_arguments(post_release_regression=post_release_regression),
+            arguments,
             post_release_regression=post_release_regression,
         )
     except (

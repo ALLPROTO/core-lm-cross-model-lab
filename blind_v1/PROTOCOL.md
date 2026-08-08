@@ -2,9 +2,19 @@
 
 Status: **DRAFT — not frozen, not published, not preregistered, and not run**.
 
-This tracked file is the complete normative prose companion to
+Lifecycle outcome recorded after the checkpoint: the
+`2026-08-08T12:00:00Z` decision checkpoint elapsed before all P0 inputs,
+exact-commit CI, and immutable design publication existed. This suite identity
+is therefore permanently non-freezable under its own reschedule policy. It
+must not be repaired by a late release or a one-date edit; a successor requires
+a new suite ID and a jointly shifted corpus/NIST/execution/evidence timeline.
+No confirmatory model, future corpus, NIST pulse, reservation, or scientific
+attempt was opened for this draft.
+
+This tracked file is the complete historical normative prose record that
+accompanied
 `design-registration.draft.json`. It must not be represented as scientific
-evidence. The frozen author disclosure states that the confirmatory model pool
+evidence. The draft author disclosure states that the confirmatory model pool
 contains six exact revisions that have not undergone a forward pass, cache
 production, candidate scoring, or candidate comparison in this project. The
 public record makes the statement auditable but cannot prove the absence of an
@@ -12,20 +22,25 @@ undisclosed run. The prohibition applies to the whole
 pool before the target NIST pulse because the three selected revisions are not
 known in advance.
 
-Before the pulse, pool assets may only be downloaded, byte-counted, hashed,
-strict-parsed as configuration/tokenizer data, checked at the safetensors
-header level, and used for tokenizer-length eligibility. The real-data
-development E2E uses only previously observed pilot revisions excluded from
-the confirmatory pool. It exercises producer → VTL5 → independent fresh
-real-model replay on the byte-pinned UD English PUD r2.18 source, but it cannot
-screen a confirmatory model or count toward the scientific verdict.
+Before closeout, the draft would have permitted only byte-level pool-asset
+handling and a pilot E2E on excluded revisions. That conditional permission
+expired with the checkpoint. It does not authorize any current asset, corpus,
+model, NIST, reservation, or runner access under this suite ID.
 
-This document becomes a preregistration only when the fail-closed freeze
-validator binds it into a signed immutable public design release after every
-author-self-verification, exact-commit CI, pilot E2E, signing, packaging, and
-verifier gate is implemented and verifiable. The later public execution reservation is a
-separate pre-pulse lifecycle gate: it must use the already frozen design and
-cannot repair an incomplete design freeze.
+This document would have become a preregistration only if the fail-closed
+freeze validator had bound it into a signed immutable public design release
+after every required gate and strictly before the checkpoint. That never
+happened. It can no longer become a preregistration, and a late public
+execution reservation cannot repair it.
+
+Every procedure, requirement, date, imperative, state transition, and outcome
+below is retained solely as a historical counterfactual specification. None is
+operational authorization. The only executable actions retained in this tree
+are offline tests and structural audit, plus explicitly labelled
+non-scientific development-control or post-release regressions confined to
+excluded development inputs and non-scientific output roots. None may open a
+confirmatory model, future corpus, target NIST pulse, reservation, scientific
+attempt state, or create evidence that counts toward a scientific verdict.
 
 All earlier candidate, threshold, corpus, and model observations—including the
 negative Pythia-410M result and the V4 pilot-model E2E—are development lineage,
@@ -36,10 +51,10 @@ been run. This is an exact-revision holdout, not an architecture-blind claim.
 No V2, V3, V4, legacy-root report, tag, receipt, release, or source identity can
 satisfy a blind-v1 gate.
 
-## Normative authority and meaning of “blind”
+## Archived normative design and intended meaning of “blind”
 
-The frozen design JSON, canonical schemas, this protocol, and the exact frozen
-implementation form one contract; none may silently override another. For
+The proposed frozen design JSON, canonical schemas, this protocol, and the
+intended frozen implementation would have formed one contract. For
 overlapping requirements, the frozen design is authoritative for enumerated
 identities, fixed values, dates, and gates; the schemas are authoritative for
 serialized structure and types; and this protocol is authoritative for
@@ -212,19 +227,19 @@ not satisfy the freeze gate.
 The exact pilot identities and all earlier outcomes remain disclosed in
 `prior-observations.json`; they are not members of the confirmatory pool.
 
-## Two-stage future-corpus freeze
+## Archived two-stage future-corpus freeze design
 
 The tracked NIST leaf expires at `2026-09-04T23:59:59Z`, after the proposed
 `2026-08-21T18:00:00.000Z` pulse. Calendar validity alone is insufficient: the
 complete production leaf/intermediate/root chain, exact certificate ID,
 signature reconstruction, output construction, hostname, transport CA,
 offline manifest digest, and separately pinned root digest must all verify on
-the exact freeze candidate. This suite remains `DRAFT_NOT_PREREGISTERED` until
-those checks pass and every resulting commitment is propagated through the
-design, schemas, freeze manifest, and tests. Trust cannot change after design
-freeze or after the pulse is observed.
+the exact freeze candidate. Those checks were not completed before the
+checkpoint. This suite therefore remains `DRAFT_NOT_PREREGISTERED` permanently;
+finishing or replacing trust material later cannot reopen V1.
 
-The design registration must be published as an immutable GitHub release under
+Before the missed checkpoint, the design registration would have had to be
+published as an immutable GitHub release under
 the proposed tag `corelm-blind-crossmodel-v1-design` strictly before
 `2026-08-09T00:00:00Z`. The signed annotated tag must target the exact
 author-self-verified and CI-successful implementation commit/tree recorded in
@@ -261,8 +276,10 @@ The frozen design and freeze manifest must state
 `independentReplicationClaimed=false`. A GitHub account action, self-review, or
 second author-controlled account cannot upgrade these boundaries.
 
-The implementation gate is itself preregistered. The tracked workflow is
-`.github/workflows/blind-v1-development-controls.yml`: exactly 13,962 bytes with
+Had a valid pre-checkpoint design freeze occurred, the implementation gate
+would have become part of the preregistration. It did not. The tracked
+historical workflow is
+`.github/workflows/blind-v1-development-controls.yml`: exactly 14,012 bytes with
 SHA-256
 `6c0b54bc4c318a2b55069852e07ae3355686ffb49a72c3ca4542396cf5375e87`.
 The design, schema, collector, tests, and release evidence all bind those exact
@@ -741,18 +758,19 @@ comparison. The separate sampled 4 GiB process-group RSS watchdog remains the
 whole-process resource gate and supplies headroom/measurement independent of
 this static storage calculation.
 
-Preflight may verify and copy all frozen assets without resolving the future
-selection. The post-pulse scientific invocation must first reopen and
-byte-verify the exact public execution-reservation assets and canonical release
-receipt specified above. It rejects a missing, late, replaced, or second public
-reservation, but it does not recreate that public record inside the local state
-machine.
+Counterfactually, preflight would have verified and copied all frozen assets
+without resolving the future selection. The post-pulse scientific invocation
+would then have reopened and byte-verified the exact public
+execution-reservation assets and canonical release receipt specified above. It
+would have rejected a missing, late, replaced, or second public reservation
+without recreating that public record inside the local state machine.
 
-During the registered post-pulse execution window, the runner first reuses the
-exact public reservation `attemptId` and durably
-publishes the local `attempt-reservation.json`, committing the attempt identity
-and every frozen input binding with `retryPermitted: false`, and then durably
-publishes `attempt-marker.json`. Both local transitions use an exclusive pending
+Under the unexecuted design, during the registered post-pulse execution window,
+the runner would first have reused the
+exact public reservation `attemptId` and durably published the local
+`attempt-reservation.json`, committing the attempt identity and every frozen
+input binding with `retryPermitted: false`, and then durably published
+`attempt-marker.json`. Both local transitions would have used an exclusive pending
 inode, file `fsync`, no-overwrite hard-link publication, directory `fsync`,
 pending-name removal, and a final directory `fsync`; normal publication never
 exposes a partial final JSON file. The local reservation and marker precede
@@ -760,10 +778,13 @@ selected corpus resolution/open, confirmatory-model load, or NIST fetch. No
 confirmatory-model forward pass is permitted before the pulse or between the
 pulse and these registered post-marker workers.
 
-The registered operator procedure exposes the public `run-one-shot` entrypoint
-as its sole supported execution path. It validates the canonical result-root
-path and sealed snapshot, creates
-an anonymous pipe, starts one new-session child, and sends a one-use canonical
+The archived operator procedure would have exposed the public `run-one-shot`
+entrypoint as its sole supported execution path. The current CLI instead
+rejects both `prepare` and `run-one-shot` immediately with
+`CHECKPOINT_MISSED_TERMINAL_DRAFT`, before any scientific input is opened. The
+historical implementation would have validated the canonical result-root
+path and sealed snapshot, created an anonymous pipe, started one new-session
+child, and sent a one-use canonical
 handoff payload binding the private/result roots, parent and child PIDs,
 process group, hard deadline, poll interval, fresh nonce, and
 `retryPermitted: false`.
@@ -1123,9 +1144,10 @@ the applicable Wikipedia license information. Excluding MediaWiki revisions
 with the `bot` flag does not prove that an author is human and does not exclude
 AI-generated text; the suite makes neither claim.
 
-If any P0 design gate remains unproven at the registered checkpoint
-`2026-08-08T12:00:00Z`, this suite must remain an unfrozen draft. A replacement
-uses a new suite ID and moves the complete dependent timeline together: design
+The registered checkpoint `2026-08-08T12:00:00Z` elapsed with P0 design gates
+unproven. Therefore this suite is a terminal unfrozen draft. A replacement must
+use a new suite ID and move the complete dependent timeline together, including
+the decision checkpoint and real-data E2E completion deadline: design
 deadline, corpus interval, both crawls, snapshot release, NIST target, one-shot
 window, evidence deadline, and closeout deadline. It receives a new commit/tree,
 author self-verification record, green exact-commit CI, freeze manifest, signed
@@ -1134,10 +1156,8 @@ reusing a corpus or pulse that became observable before the replacement design,
 or freezing an incomplete protocol is forbidden. The operational checklist is
 [`FREEZE_READINESS.md`](FREEZE_READINESS.md).
 
-Before publication, the author must complete and archive the zero-skip tests and
-fail-closed verification of the canonical schemas, four-response GitHub CI
-collector, API pagination edge cases, model cache adapters, selection vectors,
-confidence arithmetic, and state-machine failure paths on one exact commit.
-This is author self-verification, not independent human review or peer review.
-Until that evidence and an immutable public freeze exist, this document is only
-a plan.
+Before the missed checkpoint, publication would have required archived
+zero-skip tests and fail-closed verification on one exact commit. That evidence
+and immutable public freeze did not exist in time. This document is now only a
+non-executable historical plan; no later completion may change its terminal
+status.

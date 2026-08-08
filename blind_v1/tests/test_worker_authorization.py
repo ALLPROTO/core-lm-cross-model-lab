@@ -15,7 +15,9 @@ from blind_v1.runner import (
     _worker_authorization,
 )
 import blind_v1.runner as runner_module
-from blind_v1.state_machine import create_attempt_marker
+from blind_v1.state_machine import (
+    _historical_create_attempt_marker as create_attempt_marker,
+)
 
 
 SUITE_ID = "corelm-blind-crossmodel-v1"
@@ -141,7 +143,7 @@ class ScientificWorkerAuthorizationTests(unittest.TestCase):
             mock.patch.object(model_worker, "load_frozen_inputs") as load_inputs,
             self.assertRaisesRegex(model_worker.WorkerError, "authorization FD"),
         ):
-            model_worker.run(
+            model_worker._historical_run(
                 Path("arbitrary-job.json"),
                 Path("arbitrary-snapshot"),
                 Path("arbitrary-codec"),

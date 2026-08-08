@@ -37,7 +37,12 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Mapping, Protocol, Sequence
 from urllib.parse import quote, urlencode, urlsplit
 
-from blind_v1.protocol import canonical_json_bytes, load_json_strict_bytes, sha256_bytes
+from blind_v1.protocol import (
+    canonical_json_bytes,
+    load_json_strict_bytes,
+    require_scientific_schedule_open,
+    sha256_bytes,
+)
 
 
 PROJECTS = ("de.wikipedia.org", "en.wikipedia.org", "fr.wikipedia.org")
@@ -1457,6 +1462,15 @@ def _read_committed(root: Path, commitment: Mapping[str, Any]) -> bytes:
 
 
 def archive_response(root: Path, prefix: str, response: ArchivedHTTPResponse) -> dict[str, Any]:
+    require_scientific_schedule_open(operation="archive Blind V1 HTTP response")
+    return _historical_archive_response(root, prefix, response)
+
+
+def _historical_archive_response(
+    root: Path, prefix: str, response: ArchivedHTTPResponse
+) -> dict[str, Any]:
+    """Retain deterministic archive serialization for historical fixtures."""
+
     _validate_response(response, expected_uri=response.request_uri)
     return {
         "requestURI": response.request_uri,
@@ -1539,6 +1553,26 @@ def collect_recentchanges_crawl(
     transport: Transport,
     clock: Callable[[], datetime],
 ) -> dict[str, Any]:
+    require_scientific_schedule_open(operation="collect Blind V1 RecentChanges crawl")
+    return _historical_collect_recentchanges_crawl(
+        project=project,
+        crawl_index=crawl_index,
+        root=root,
+        transport=transport,
+        clock=clock,
+    )
+
+
+def _historical_collect_recentchanges_crawl(
+    *,
+    project: str,
+    crawl_index: int,
+    root: Path,
+    transport: Transport,
+    clock: Callable[[], datetime],
+) -> dict[str, Any]:
+    """Retain the former crawl mechanics for isolated historical fixtures."""
+
     if project not in PROJECTS or crawl_index not in (0, 1):
         raise SnapshotError("crawl identity differs from the registered design")
     not_before = CRAWL_NOT_BEFORE[crawl_index]
@@ -1556,7 +1590,7 @@ def collect_recentchanges_crawl(
         _validate_response(response, expected_uri=uri)
         if response_date(response) < not_before:
             raise SnapshotError("HTTP Date precedes the crawl not-before time")
-        archive = archive_response(
+        archive = _historical_archive_response(
             root,
             f"archive/crawl-{crawl_index + 1}/{project}/page-{page_index:06d}",
             response,
@@ -1798,6 +1832,26 @@ def fetch_and_inventory_revision(
     transport: Transport,
     tokenizers: Mapping[str, TokenizerLike],
 ) -> dict[str, Any]:
+    require_scientific_schedule_open(operation="collect Blind V1 revision")
+    return _historical_fetch_and_inventory_revision(
+        project=project,
+        change=change,
+        root=root,
+        transport=transport,
+        tokenizers=tokenizers,
+    )
+
+
+def _historical_fetch_and_inventory_revision(
+    *,
+    project: str,
+    change: Mapping[str, Any],
+    root: Path,
+    transport: Transport,
+    tokenizers: Mapping[str, TokenizerLike],
+) -> dict[str, Any]:
+    """Retain revision replay mechanics for isolated historical fixtures."""
+
     if tuple(tokenizers) != MODEL_KEYS:
         raise SnapshotError("tokenizer order/set differs from the registered models")
     uri = revision_uri(project, change["revid"])
@@ -2392,6 +2446,24 @@ def collect_crawl_stage(
     failed stage has no completion manifest and must not be resumed in place.
     """
 
+    require_scientific_schedule_open(operation="collect Blind V1 crawl stage")
+    return _historical_collect_crawl_stage(
+        root=root,
+        crawl_index=crawl_index,
+        transport=transport,
+        clock=clock,
+    )
+
+
+def _historical_collect_crawl_stage(
+    *,
+    root: Path,
+    crawl_index: int,
+    transport: Transport,
+    clock: Callable[[], datetime],
+) -> dict[str, Any]:
+    """Retain durable crawl-stage mechanics for historical fixtures."""
+
     if crawl_index not in (0, 1):
         raise SnapshotError("crawl index differs from the registered design")
     if crawl_index == 0:
@@ -2421,7 +2493,7 @@ def collect_crawl_stage(
         _require_stage_layout(root, 1)
         load_crawl_stage(root, 0)
     crawls = {
-        project: collect_recentchanges_crawl(
+        project: _historical_collect_recentchanges_crawl(
             project=project,
             crawl_index=crawl_index,
             root=root,
@@ -2460,6 +2532,20 @@ def finalize_snapshot(
     only when their bytes are exactly the deterministic bytes recomputed from the
     two crawls and archived responses.
     """
+
+    require_scientific_schedule_open(operation="finalize Blind V1 corpus snapshot")
+    return _historical_finalize_snapshot(
+        root=root, transport=transport, tokenizers=tokenizers
+    )
+
+
+def _historical_finalize_snapshot(
+    *,
+    root: Path,
+    transport: Transport,
+    tokenizers: Mapping[str, TokenizerLike],
+) -> dict[str, Any]:
+    """Retain former finalization mechanics for historical fixtures."""
 
     if tuple(tokenizers) != MODEL_KEYS:
         raise SnapshotError("tokenizer order/set differs from the registered models")
@@ -2508,7 +2594,7 @@ def finalize_snapshot(
         crawls = [staged[index][project] for index in (0, 1)]
         union = unions[project]
         inventory = [
-            fetch_and_inventory_revision(
+            _historical_fetch_and_inventory_revision(
                 project=project,
                 change=change,
                 root=resolved_root,
@@ -2560,13 +2646,33 @@ def collect_snapshot(
 ) -> dict[str, Any]:
     """Post-25-Aug convenience wrapper around the two durable crawl stages."""
 
-    collect_crawl_stage(
+    require_scientific_schedule_open(operation="collect complete Blind V1 snapshot")
+    return _historical_collect_snapshot(
+        root=root,
+        transport=transport,
+        tokenizers=tokenizers,
+        clock=clock,
+    )
+
+
+def _historical_collect_snapshot(
+    *,
+    root: Path,
+    transport: Transport,
+    tokenizers: Mapping[str, TokenizerLike],
+    clock: Callable[[], datetime],
+) -> dict[str, Any]:
+    """Retain the complete historical collection sequence for fixtures."""
+
+    _historical_collect_crawl_stage(
         root=root, crawl_index=0, transport=transport, clock=clock
     )
-    collect_crawl_stage(
+    _historical_collect_crawl_stage(
         root=root, crawl_index=1, transport=transport, clock=clock
     )
-    return finalize_snapshot(root=root, transport=transport, tokenizers=tokenizers)
+    return _historical_finalize_snapshot(
+        root=root, transport=transport, tokenizers=tokenizers
+    )
 
 
 def load_record_bytes(

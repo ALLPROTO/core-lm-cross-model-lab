@@ -1,13 +1,22 @@
-# Post-one-shot evidence release
+# Post-one-shot evidence release (retired Blind V1 specification)
 
-This release is produced under `AUTHOR_SELF_VERIFICATION`. The repository
-owner is the author, experiment operator, and release operator. Packaging,
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+
+This abandoned release design would have operated under
+`AUTHOR_SELF_VERIFICATION`. The repository owner would have been the author,
+experiment operator, and release operator. Packaging,
 signed publication, the separate verifier, and a DOI do not constitute
 independent human review, peer review, operator blindness, or independent
 replication. They preserve and verify the exact author-operated attempt.
 
-`package_evidence_release.py` creates the sealed evidence directory.
-`package_evidence_assets.py` then converts that already verified directory and
+`package_evidence_release.py` would have created the sealed evidence directory.
+`package_evidence_assets.py` would then have converted that already verified directory and
 its external package-verifier report into the exact four assets attached to the
 separate post-one-shot evidence release. Both tools use only the Python
 standard library and perform no network access, model loading, tokenization,

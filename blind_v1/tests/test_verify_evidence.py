@@ -18,7 +18,10 @@ from blind_v1.evidence import (
 from blind_v1.create_sbom import build_sbom
 from blind_v1.protocol import canonical_json_bytes
 from blind_v1.reproducibility import with_content_digest
-from blind_v1.state_machine import RESERVATION_FILENAME, create_attempt_marker
+from blind_v1.state_machine import (
+    RESERVATION_FILENAME,
+    _historical_create_attempt_marker as create_attempt_marker,
+)
 from blind_v1.verify_evidence import (
     PRIVATE_SNAPSHOT_MANIFEST_PATH,
     canonical_scientific_result,

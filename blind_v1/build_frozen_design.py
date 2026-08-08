@@ -49,6 +49,7 @@ from blind_v1.protocol import (  # noqa: E402
     NIST_CANDIDATE_TRUST_BUNDLE_SHA256,
     NIST_FROZEN_TRUST_BUNDLE_SHA256,
     load_json_strict_bytes,
+    require_scientific_schedule_open,
     validate_design_registration,
     validate_frozen_design_registration,
 )
@@ -394,6 +395,24 @@ def construct_frozen_design(
     *,
     trust_manifest_path: Path,
 ) -> dict[str, Any]:
+    require_scientific_schedule_open(operation="construct frozen Blind V1 design")
+    return _historical_construct_frozen_design(
+        draft,
+        manifest,
+        manifest_raw,
+        trust_manifest_path=trust_manifest_path,
+    )
+
+
+def _historical_construct_frozen_design(
+    draft: Mapping[str, Any],
+    manifest: Mapping[str, Any],
+    manifest_raw: bytes,
+    *,
+    trust_manifest_path: Path,
+) -> dict[str, Any]:
+    """Retain the former lifecycle transformation for structural fixtures."""
+
     require_nist_trust_blocker_discharge(
         draft, manifest, trust_manifest_path
     )
@@ -484,6 +503,70 @@ def build_frozen_design(
 ) -> dict[str, Any]:
     """Re-open every freeze input and publish one new canonical design asset."""
 
+    require_scientific_schedule_open(operation="build frozen Blind V1 design")
+    return _historical_build_frozen_design(
+        lab_root=lab_root,
+        expected_lab_commit=expected_lab_commit,
+        expected_lab_tree=expected_lab_tree,
+        expected_freeze_manifest_sha256=expected_freeze_manifest_sha256,
+        freeze_manifest_path=freeze_manifest_path,
+        runtime_manifest_path=runtime_manifest_path,
+        asset_receipt_path=asset_receipt_path,
+        transport_ca_bundle_path=transport_ca_bundle_path,
+        offline_trust_manifest_path=offline_trust_manifest_path,
+        github_gate_receipt_path=github_gate_receipt_path,
+        development_control_report_path=development_control_report_path,
+        development_control_artifact_root=development_control_artifact_root,
+        development_control_archive_receipt_path=(
+            development_control_archive_receipt_path
+        ),
+        development_control_archive_asset_root=(
+            development_control_archive_asset_root
+        ),
+        signing_public_key_path=signing_public_key_path,
+        output_path=output_path,
+        ca_verifier=ca_verifier,
+        trust_verifier=trust_verifier,
+        development_control_verifier=development_control_verifier,
+        development_archive_verifier=development_archive_verifier,
+        cryptographic_attestation_verifier=cryptographic_attestation_verifier,
+        require_running_checkout=require_running_checkout,
+    )
+
+
+def _historical_build_frozen_design(
+    *,
+    lab_root: Path,
+    expected_lab_commit: str,
+    expected_lab_tree: str,
+    expected_freeze_manifest_sha256: str,
+    freeze_manifest_path: Path,
+    runtime_manifest_path: Path,
+    asset_receipt_path: Path,
+    transport_ca_bundle_path: Path,
+    offline_trust_manifest_path: Path,
+    github_gate_receipt_path: Path,
+    development_control_report_path: Path,
+    development_control_artifact_root: Path,
+    development_control_archive_receipt_path: Path,
+    development_control_archive_asset_root: Path,
+    signing_public_key_path: Path,
+    output_path: Path,
+    ca_verifier: CAVerifier = default_ca_verifier,
+    trust_verifier: TrustVerifier = default_trust_verifier,
+    development_control_verifier: DevelopmentControlVerifier = (
+        verify_development_control_report
+    ),
+    development_archive_verifier: DevelopmentArchiveVerifier = (
+        verify_development_control_archive
+    ),
+    cryptographic_attestation_verifier: (
+        ReleaseAttestationCryptographicVerifier | None
+    ) = None,
+    require_running_checkout: bool = True,
+) -> dict[str, Any]:
+    """Retain the former frozen-design shape for offline structural fixtures."""
+
     _ensure_external_output(output_path, lab_root)
     manifest, manifest_raw = load_freeze_manifest(freeze_manifest_path)
     observed_manifest_sha256 = sha256_bytes(manifest_raw)
@@ -541,7 +624,7 @@ def build_frozen_design(
             "author-verified draft changed during freeze construction"
         )
 
-    frozen = construct_frozen_design(
+    frozen = _historical_construct_frozen_design(
         draft,
         manifest,
         manifest_raw,
@@ -602,6 +685,9 @@ def parse_arguments(argv: Sequence[str] | None = None) -> argparse.Namespace:
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = parse_arguments(argv)
     try:
+        require_scientific_schedule_open(
+            operation="run frozen Blind V1 design builder"
+        )
         report = build_frozen_design(
             lab_root=PROJECT_ROOT,
             expected_lab_commit=arguments.expected_lab_commit,

@@ -23,6 +23,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from blind_v1.protocol import require_scientific_schedule_open
+
 
 RESERVATION_FILENAME = "attempt-reservation.json"
 ATTEMPT_FILENAME = "attempt-marker.json"
@@ -368,7 +370,7 @@ def _load_canonical_object(raw: bytes, filename: str) -> dict[str, Any]:
     return value
 
 
-def create_attempt_marker(
+def _historical_create_attempt_marker(
     result_root: Path,
     *,
     suite_id: str,
@@ -506,6 +508,13 @@ def create_attempt_marker(
     finally:
         os.close(directory)
     return marker
+
+
+def create_attempt_marker(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 attempt creation before clock or filesystem access."""
+
+    require_scientific_schedule_open(operation="create-attempt-marker")
+    return _historical_create_attempt_marker(*args, **kwargs)
 
 
 def _validate_reservation(
@@ -711,7 +720,7 @@ def _assert_reservation_matches_marker(
             )
 
 
-def create_terminal_outcome(
+def _historical_create_terminal_outcome(
     result_root: Path,
     *,
     terminal_state: str,
@@ -795,6 +804,13 @@ def create_terminal_outcome(
     finally:
         os.close(directory)
     return outcome
+
+
+def create_terminal_outcome(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    """Reject retired V1 outcome creation before reading or writing state."""
+
+    require_scientific_schedule_open(operation="create-terminal-outcome")
+    return _historical_create_terminal_outcome(*args, **kwargs)
 
 
 def _validate_outcome(

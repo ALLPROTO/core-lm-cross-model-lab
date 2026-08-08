@@ -1,5 +1,13 @@
 # Notices for code, models, and data
 
+> **TERMINAL STATUS — DO NOT EXECUTE BLIND V1**
+>
+> Blind V1 is `CHECKPOINT_MISSED_TERMINAL_DRAFT`. It was retired without a
+> scientific run and is not freezable, publishable, or executable. Every
+> command and procedure in this document is preserved only as a historical,
+> counterfactual specification and **MUST NOT be executed for Blind V1**. Any
+> successor experiment requires a new suite ID and a fully rescheduled timeline.
+
 Copyright 2026 Ivan Tyshchenko.
 
 Repository-authored source code is provided under the root MIT `LICENSE`.
@@ -7,9 +15,11 @@ That license does not replace licenses attached to downloaded model,
 tokenizer, dataset, Wikipedia, or third-party dependency assets.
 
 The Git checkout does not contain model weights or the real
-UD English PUD r2.18 corpus. Blind V1 downloads the three excluded development-control models
-and the six confirmatory-pool revisions from exact immutable upstream revisions
-into an ignored local directory. Model weights are not redistributed by this
+UD English PUD r2.18 corpus. The retired Blind V1 design specified three
+excluded development-control models and six confirmatory-pool revisions at
+exact immutable upstream revisions, with any downloaded bytes kept in an
+ignored local directory. That specification no longer authorizes downloads or
+use under the V1 suite identity. Model weights are not redistributed by this
 project. The separately published development-control evidence release does
 include the exact UD English PUD source and source-derived evidence under CC
 BY-SA 3.0, together with the preserved upstream license, README, attribution,
@@ -27,13 +37,14 @@ extraction and partitioning changes, remain under CC BY-SA 3.0 or a compatible
 license, and impose no additional effective restrictions. The exact upstream
 README, license, and repository revision are retained as source evidence.
 
-The Blind V1 future Wikipedia snapshot is not present in this development
-draft. If it is lawfully published, it must preserve per-revision attribution,
-source links, history links, and the applicable CC BY-SA terms. Removing a MediaWiki bot flag
-does not establish human authorship and the project makes no claim that future
-text is free of AI-generated material.
+The proposed Blind V1 Wikipedia snapshot was never collected or published.
+The counterfactual snapshot would have had to preserve per-revision
+attribution, source links, history links, and the applicable CC BY-SA terms.
+Removing a MediaWiki bot flag would not have established human authorship, and
+the project makes no claim that the proposed text would have been free of
+AI-generated material.
 
-The Blind V1 confirmatory pool comprises exact Pythia-160M, Pythia-70M,
+The retired Blind V1 confirmatory-pool proposal comprised exact Pythia-160M, Pythia-70M,
 SmolLM-135M, SmolLM-360M, GPT-2, and DistilGPT2 revisions. Their pinned
 upstream license declarations, immutable revision URLs, exact model-card bytes,
 byte counts, and SHA-256 hashes are recorded in
@@ -43,6 +54,12 @@ byte counts, and SHA-256 hashes are recorded in
 standalone `LICENSE*` or `NOTICE*` file; the project does not fabricate one or
 mislabel a generic license text as an exact upstream-revision file. These
 records do not relicense the upstream assets.
+
+No retained notice authorizes a Blind V1 model download, snapshot collection,
+NIST request, freeze, publication, or scientific execution. Any successor must
+use a new suite ID and a fully rescheduled corpus, snapshot, NIST, attempt,
+evidence, and closeout timeline while preserving all applicable upstream
+rights and attribution obligations.
 
 Python packages and native libraries retain their own licenses. The generated
 CycloneDX SBOM and runtime manifest inventory exact installed components but do

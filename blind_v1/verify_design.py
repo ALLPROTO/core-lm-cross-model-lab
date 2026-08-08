@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify the offline blind-v1 design draft and known-answer selector."""
+"""Audit the terminal blind-v1 draft offline without authorizing execution."""
 
 from __future__ import annotations
 
@@ -154,17 +154,27 @@ def main() -> int:
     if observed_draws != vector["expectedDrawsSHA256"]:
         raise ValueError("known-answer draw transcript mismatch")
 
-    # A concrete, fail-closed two-stage freeze validator now exists in
-    # freeze_manifest.py.  This draft still cannot become ready merely because
-    # the validator exists: every declared artifact and publication blocker
-    # must be discharged by independently reviewable inputs first.
+    # Structural freeze validators are retained only to audit the historical
+    # pre-checkpoint design.  The missed checkpoint is a permanent lifecycle
+    # closeout: satisfying any old blocker cannot make this suite freezable.
     ready_to_freeze = False
+    schedule_closeout = registration["scheduleCloseout"]
     result = {
         "schemaVersion": "corelm-blind-crossmodel-v1-design-check-v1",
-        "status": "DRAFT_VERIFIED_NOT_PREREGISTERED",
+        "status": "FAILED_SCHEDULE_DRAFT_DO_NOT_RUN",
         "readyToFreeze": ready_to_freeze,
         "freezeValidatorImplemented": True,
+        "structuralValidationPurpose": "HISTORICAL_AUDIT_ONLY",
         "countsTowardScientificVerdict": False,
+        "scheduleCloseout": schedule_closeout,
+        "freezeAllowed": schedule_closeout["freezeAllowed"],
+        "publicationAllowed": schedule_closeout["publicationAllowed"],
+        "scientificExecutionAllowed": schedule_closeout[
+            "scientificExecutionAllowed"
+        ],
+        "successorSuiteIdRequired": schedule_closeout[
+            "successorSuiteIdRequired"
+        ],
         "designRegistrationFileSHA256": sha256_bytes(registration_bytes),
         "canonicalDesignSHA256": sha256_bytes(canonical_json_bytes(registration)),
         "modelAssetManifestFileSHA256": sha256_bytes(asset_manifest_bytes),
@@ -190,8 +200,10 @@ def main() -> int:
     print(json.dumps(result, indent=2, sort_keys=True))
     if arguments.require_freezable and not ready_to_freeze:
         print(
-            f"NOT FREEZABLE: {len(blockers)} explicit blockers remain; the "
-            "freeze validator cannot waive them",
+            "NOT FREEZABLE: CHECKPOINT_MISSED_TERMINAL_DRAFT permanently "
+            "closed this suite; old blockers cannot be discharged into a V1 "
+            "freeze and a new suite ID with a fully rescheduled timeline is "
+            "required",
             file=sys.stderr,
         )
         return 2
