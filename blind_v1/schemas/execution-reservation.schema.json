@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blob/main/blind_v1/schemas/execution-reservation.schema.json",
+  "title": "Core LM blind cross-model v1 public execution reservation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "status",
+    "reservedAt",
+    "targetPulseTimestamp",
+    "targetPulseEndpoint",
+    "oneShotNotBefore",
+    "markerNoLaterThan",
+    "hardDeadline",
+    "designRegistration",
+    "snapshotRegistration",
+    "snapshotPublicationReceipt",
+    "codecSource",
+    "labSource",
+    "candidateRuleSHA256",
+    "confirmatoryModels",
+    "outcomeObligation",
+    "retryPermitted",
+    "countsTowardScientificVerdict",
+    "attemptId",
+    "reservationContentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-blind-crossmodel-v1-execution-reservation-v1"
+    },
+    "suiteId": {"const": "corelm-blind-crossmodel-v1"},
+    "status": {"const": "PUBLIC_EXECUTION_RESERVED"},
+    "reservedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^2026-08-(20|21)T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "targetPulseTimestamp": {"const": "2026-08-21T18:00:00.000Z"},
+    "targetPulseEndpoint": {
+      "const": "https://beacon.nist.gov/beacon/2.0/pulse/time/1787335200000"
+    },
+    "oneShotNotBefore": {"const": "2026-08-21T18:00:00Z"},
+    "markerNoLaterThan": {"const": "2026-08-21T18:15:00Z"},
+    "hardDeadline": {"const": "2026-08-22T18:00:00Z"},
+    "designRegistration": {"$ref": "#/$defs/fileBinding"},
+    "snapshotRegistration": {"$ref": "#/$defs/fileBinding"},
+    "snapshotPublicationReceipt": {"$ref": "#/$defs/fileBinding"},
+    "codecSource": {"$ref": "#/$defs/sourceBinding"},
+    "labSource": {"$ref": "#/$defs/sourceBinding"},
+    "candidateRuleSHA256": {"$ref": "#/$defs/sha256"},
+    "confirmatoryModels": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "repository", "revision", "weightSHA256"],
+        "properties": {
+          "key": {"type": "string", "minLength": 1},
+          "repository": {"type": "string", "minLength": 3},
+          "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "weightSHA256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
+    "outcomeObligation": {
+      "const": "PUBLISH_TERMINAL_EVIDENCE_OR_CLOSEOUT_BY_2026-08-30T18:00:00Z"
+    },
+    "retryPermitted": {"const": false},
+    "countsTowardScientificVerdict": {"const": false},
+    "attemptId": {
+      "type": "string",
+      "pattern": "^20260821T180000Z-[0-9a-f]{16}$"
+    },
+    "reservationContentSHA256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "fileBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "sha256"],
+      "properties": {
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "sourceBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "tree"],
+      "properties": {
+        "repository": {"type": "string", "minLength": 1},
+        "commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "tree": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    }
+  }
+}

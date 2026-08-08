@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/zenodo-deposit-receipt.schema.json",
+  "title": "Core LM archived Zenodo production-deposit receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "zenodoAPIProfile",
+    "evidenceBoundary",
+    "environment",
+    "depositionId",
+    "recordId",
+    "doi",
+    "recordURL",
+    "recordAPIURL",
+    "publication",
+    "manifest",
+    "files",
+    "expectedRights",
+    "observedRights",
+    "apiResponses",
+    "receiptCreatedAt",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-zenodo-deposit-receipt-v1"
+    },
+    "suiteId": {
+      "const": "corelm-blind-crossmodel-v1"
+    },
+    "zenodoAPIProfile": {
+      "const": "production-authenticated-read-only-v1"
+    },
+    "evidenceBoundary": {
+      "const": "DIRECT_TLS_VERIFIED_AT_COLLECTION;NO_ZENODO_RESPONSE_SIGNATURE;OFFLINE_STRUCTURAL_CONSISTENCY_ONLY"
+    },
+    "environment": {
+      "const": "production"
+    },
+    "depositionId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "recordId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "doi": {
+      "type": "string",
+      "pattern": "^10\\.5281/zenodo\\.[1-9][0-9]*$"
+    },
+    "recordURL": {
+      "type": "string",
+      "pattern": "^https://zenodo\\.org/records/[1-9][0-9]*$"
+    },
+    "recordAPIURL": {
+      "type": "string",
+      "pattern": "^https://zenodo\\.org/api/records/[1-9][0-9]*$"
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "status", "submitted", "publicationDate"],
+      "properties": {
+        "state": {
+          "const": "done"
+        },
+        "status": {
+          "const": "published"
+        },
+        "submitted": {
+          "const": true
+        },
+        "publicationDate": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "bytes", "sha256", "contentSHA256"],
+      "properties": {
+        "name": {
+          "const": "zenodo-deposit-manifest.json"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "contentSHA256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 100,
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    },
+    "expectedRights": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/rightsDeclaration"
+      }
+    },
+    "observedRights": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/observedRight"
+      }
+    },
+    "apiResponses": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/apiResponse"},
+            {"properties": {"role": {"const": "deposition"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/apiResponse"},
+            {"properties": {"role": {"const": "deposition-files"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/apiResponse"},
+            {"properties": {"role": {"const": "record"}}}
+          ]
+        }
+      ],
+      "items": false
+    },
+    "receiptCreatedAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "md5": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*//)[A-Za-z0-9](?:[A-Za-z0-9._/+ -]{0,510}[A-Za-z0-9._+ -])?$"
+    },
+    "rightsDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rightsId", "title", "uri", "zenodoIdentifier"],
+      "properties": {
+        "rightsId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "uri": {
+          "type": "string",
+          "pattern": "^https://\\S+$"
+        },
+        "zenodoIdentifier": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "observedRight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identifier", "title", "uri"],
+      "properties": {
+        "identifier": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "title": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "uri": {
+          "type": ["string", "null"],
+          "maxLength": 2048
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "bytes",
+        "localSHA256",
+        "localMD5",
+        "zenodoChecksumAlgorithm",
+        "zenodoChecksum"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/relativePath"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 50000000000
+        },
+        "localSHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "localMD5": {
+          "$ref": "#/$defs/md5"
+        },
+        "zenodoChecksumAlgorithm": {
+          "const": "md5"
+        },
+        "zenodoChecksum": {
+          "$ref": "#/$defs/md5"
+        }
+      }
+    },
+    "archivedBytes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["encoding", "bytes", "sha256", "dataBase64"],
+      "properties": {
+        "encoding": {
+          "const": "base64"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16777216
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "dataBase64": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        }
+      }
+    },
+    "apiResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "method",
+        "requestTarget",
+        "authentication",
+        "statusCode",
+        "serverDate",
+        "capturedAt",
+        "responseHeaders",
+        "responseBody"
+      ],
+      "properties": {
+        "role": {
+          "enum": ["deposition", "deposition-files", "record"]
+        },
+        "method": {
+          "const": "GET"
+        },
+        "requestTarget": {
+          "type": "string",
+          "pattern": "^https://zenodo\\.org/api/(?:deposit/depositions/[1-9][0-9]*(?:/files)?|records/[1-9][0-9]*)$"
+        },
+        "authentication": {
+          "const": "BEARER_HEADER_USED_NOT_ARCHIVED"
+        },
+        "statusCode": {
+          "const": 200
+        },
+        "serverDate": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "capturedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "responseHeaders": {
+          "$ref": "#/$defs/archivedBytes"
+        },
+        "responseBody": {
+          "$ref": "#/$defs/archivedBytes"
+        }
+      }
+    }
+  }
+}

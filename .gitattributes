@@ -2,3 +2,5 @@
 # intentionally contain trailing whitespace or conflict-marker text; treating
 # them as opaque evidence prevents Git from normalizing or linting those bytes.
 LICENSES/upstream/** -text -diff
+blind_v1/trust/nist/source/** -text -diff
+blind_v1/trust/nist/spec/** -text -diff

@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/closeout-basis.schema.json",
+  "title": "Core LM public closeout basis bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "classification",
+    "primaryDocument",
+    "supportingDocuments",
+    "externalEvidenceAssets",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-blind-crossmodel-v1-closeout-basis-v1"
+    },
+    "suiteId": {
+      "const": "corelm-blind-crossmodel-v1"
+    },
+    "classification": {
+      "enum": ["NO_ATTEMPT_EXPIRED", "LATE_PUBLICATION_INVALID"]
+    },
+    "primaryDocument": {
+      "$ref": "#/$defs/archivedDocument"
+    },
+    "supportingDocuments": {
+      "type": "array"
+    },
+    "externalEvidenceAssets": {
+      "type": "array"
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "classification": {"const": "NO_ATTEMPT_EXPIRED"}
+        },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "primaryDocument": {
+            "$ref": "#/$defs/emptyObservationDocument"
+          },
+          "supportingDocuments": {
+            "minItems": 3,
+            "maxItems": 3,
+            "prefixItems": [
+              {"$ref": "#/$defs/hostEnvironmentDocument"},
+              {"$ref": "#/$defs/auditReportDocument"},
+              {"$ref": "#/$defs/auditImplementationDocument"}
+            ],
+            "items": false
+          },
+          "externalEvidenceAssets": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "classification": {"const": "LATE_PUBLICATION_INVALID"}
+        },
+        "required": ["classification"]
+      },
+      "then": {
+        "properties": {
+          "primaryDocument": {
+            "$ref": "#/$defs/lateReceiptDocument"
+          },
+          "supportingDocuments": {
+            "maxItems": 0
+          },
+          "externalEvidenceAssets": {
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {"$ref": "#/$defs/externalAsset"}
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "archivedDocument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "name", "encoding", "bytes", "sha256", "dataBase64"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,190}[A-Za-z0-9])?$"
+        },
+        "encoding": {"const": "base64"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 134217728},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "dataBase64": {"type": "string", "pattern": "^[A-Za-z0-9+/]*={0,2}$"}
+      }
+    },
+    "emptyObservationDocument": {
+      "allOf": [
+        {"$ref": "#/$defs/archivedDocument"},
+        {
+          "properties": {
+            "role": {"const": "empty-result-root-observation"},
+            "name": {"const": "empty-result-root-observation.json"}
+          }
+        }
+      ]
+    },
+    "hostEnvironmentDocument": {
+      "allOf": [
+        {"$ref": "#/$defs/archivedDocument"},
+        {
+          "properties": {
+            "role": {"const": "host-environment"},
+            "name": {"const": "host-environment.json"}
+          }
+        }
+      ]
+    },
+    "auditReportDocument": {
+      "allOf": [
+        {"$ref": "#/$defs/archivedDocument"},
+        {
+          "properties": {
+            "role": {"const": "empty-result-root-audit-report"},
+            "name": {"const": "empty-result-root-audit-report.json"}
+          }
+        }
+      ]
+    },
+    "auditImplementationDocument": {
+      "allOf": [
+        {"$ref": "#/$defs/archivedDocument"},
+        {
+          "properties": {
+            "role": {"const": "empty-result-root-audit-implementation"},
+            "name": {"const": "experiment_closeout.py"}
+          }
+        }
+      ]
+    },
+    "lateReceiptDocument": {
+      "allOf": [
+        {"$ref": "#/$defs/archivedDocument"},
+        {
+          "properties": {
+            "role": {"const": "late-evidence-release-receipt"},
+            "name": {"const": "late-evidence-release-receipt.json"}
+          }
+        }
+      ]
+    },
+    "externalAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "name", "bytes", "sha256"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,190}[A-Za-z0-9])?$"
+        },
+        "bytes": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

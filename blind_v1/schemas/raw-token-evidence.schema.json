@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/raw-token-evidence.schema.json",
+  "title": "Core LM blind multi-model blind-v1 raw token evidence record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "attemptId",
+    "modelKey",
+    "corpusProject",
+    "pageRevisionId",
+    "pageSelectionIndex",
+    "predictionIndex",
+    "targetTokenId",
+    "baselineLossF32Bits",
+    "candidateLossF32Bits",
+    "baselineTop1TokenId",
+    "candidateTop1TokenId"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-blind-crossmodel-v1-raw-token-evidence-v1"
+    },
+    "suiteId": {
+      "const": "corelm-blind-crossmodel-v1"
+    },
+    "attemptId": {
+      "type": "string",
+      "pattern": "^20260821T180000Z-[0-9a-f]{16}$"
+    },
+    "modelKey": {
+      "enum": [
+        "pythia-160m",
+        "pythia-70m",
+        "smollm-135m",
+        "smollm-360m",
+        "gpt2-124m",
+        "distilgpt2-82m"
+      ]
+    },
+    "corpusProject": {
+      "enum": [
+        "de.wikipedia.org",
+        "en.wikipedia.org",
+        "fr.wikipedia.org"
+      ]
+    },
+    "pageRevisionId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "pageSelectionIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 15
+    },
+    "predictionIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 127
+    },
+    "targetTokenId": {
+      "$ref": "#/$defs/tokenId"
+    },
+    "baselineLossF32Bits": {
+      "$ref": "#/$defs/f32Bits"
+    },
+    "candidateLossF32Bits": {
+      "$ref": "#/$defs/f32Bits"
+    },
+    "baselineTop1TokenId": {
+      "$ref": "#/$defs/tokenId"
+    },
+    "candidateTop1TokenId": {
+      "$ref": "#/$defs/tokenId"
+    }
+  },
+  "$defs": {
+    "tokenId": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "f32Bits": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}$"
+    }
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/development-control-archive-manifest.schema.json",
+  "title": "Core LM real-data development-control archive inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "executionId",
+    "status",
+    "countsTowardScientificVerdict",
+    "usedForCandidateSelectionOrTuning",
+    "scientificAttemptStateCreated",
+    "nistUsed",
+    "futureCorpusUsed",
+    "thresholdsApplied",
+    "artifactSetSHA256",
+    "artifactCount",
+    "rights",
+    "assets",
+    "excludedRole",
+    "selfReferencePolicy",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-blind-crossmodel-v1-real-e2e-development-archive-manifest-v1"
+    },
+    "suiteId": {
+      "const": "corelm-blind-crossmodel-v1-development-e2e"
+    },
+    "executionId": {
+      "type": "string",
+      "pattern": "^development-execution-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{16}$"
+    },
+    "status": {
+      "const": "COMPLETE_NON_SCIENTIFIC_DEVELOPMENT_ARCHIVE_INVENTORY"
+    },
+    "countsTowardScientificVerdict": {"const": false},
+    "usedForCandidateSelectionOrTuning": {"const": false},
+    "scientificAttemptStateCreated": {"const": false},
+    "nistUsed": {"const": false},
+    "futureCorpusUsed": {"const": false},
+    "thresholdsApplied": {"const": false},
+    "artifactSetSHA256": {"$ref": "#/$defs/sha256"},
+    "artifactCount": {"type": "integer", "const": 2088},
+    "rights": {"$ref": "#/$defs/rights"},
+    "assets": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/asset"},
+            {
+              "properties": {
+                "role": {"const": "development-control-report"},
+                "name": {"const": "development-control-report.json"}
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/asset"},
+            {
+              "properties": {
+                "role": {"const": "development-control-artifacts"},
+                "name": {"const": "development-control-artifacts.zip"}
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "excludedRole": {"const": "sha256-manifest"},
+    "selfReferencePolicy": {
+      "const": "MANIFEST_EXCLUDES_ONLY_ITS_OWN_FILE_BYTES;GITHUB_RELEASE_ATTESTATION_BINDS_ALL_THREE_ASSETS"
+    },
+    "contentSHA256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "developmentCorpusLicense",
+        "rightsStatus",
+        "rightsScope",
+        "sourceRepository",
+        "sourceRevision",
+        "sourceFile",
+        "corpusManifestPath",
+        "licensePath",
+        "readmePath",
+        "attributionPath",
+        "sourceDerivedEvidenceLicense",
+        "repositoryCodeLicense",
+        "noEndorsement"
+      ],
+      "properties": {
+        "developmentCorpusLicense": {"const": "CC-BY-SA-3.0"},
+        "rightsStatus": {"const": "CONSISTENT_UPSTREAM_LICENSE_DECLARATION"},
+        "rightsScope": {"const": "UPSTREAM_DECLARATION_ONLY_NO_OWNERSHIP_OR_CHAIN_OF_TITLE_CLAIM"},
+        "sourceRepository": {"const": "UniversalDependencies/UD_English-PUD"},
+        "sourceRevision": {"const": "e173a1be1b442faf34e7d5a502189ad5d9d1e197"},
+        "sourceFile": {"const": "en_pud-ud-test.conllu"},
+        "corpusManifestPath": {"const": "inputs/development-corpus.draft.json"},
+        "licensePath": {"const": "inputs/LICENSES/upstream/ud-english-pud-r2.18-LICENSE.txt"},
+        "readmePath": {"const": "inputs/LICENSES/upstream/ud-english-pud-r2.18-README.md"},
+        "attributionPath": {"const": "inputs/LICENSES/UD_ENGLISH_PUD_ATTRIBUTION.md"},
+        "sourceDerivedEvidenceLicense": {"const": "CC-BY-SA-3.0"},
+        "repositoryCodeLicense": {"const": "MIT"},
+        "noEndorsement": {"const": true}
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "name", "bytes", "sha256"],
+      "properties": {
+        "role": {"type": "string"},
+        "name": {"type": "string"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blob/main/blind_v1/schemas/nist-trust-bundle.schema.json",
+  "title": "Core LM blind-v1 offline NIST trust bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "status",
+    "fixtureOnly",
+    "trustPolicy",
+    "certificates"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-blind-crossmodel-v1-nist-trust-bundle-v2"
+    },
+    "status": {
+      "enum": [
+        "CANDIDATE_OFFLINE_TRUST_BUNDLE",
+        "FROZEN_OFFLINE_TRUST_BUNDLE",
+        "KNOWN_ANSWER_FIXTURE_ONLY"
+      ]
+    },
+    "fixtureOnly": {
+      "type": "boolean"
+    },
+    "trustPolicy": {
+      "$ref": "#/$defs/trustPolicy"
+    },
+    "certificates": {
+      "$ref": "#/$defs/certificateMap"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "fixtureOnly": {
+            "const": true
+          }
+        },
+        "required": [
+          "fixtureOnly"
+        ]
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "KNOWN_ANSWER_FIXTURE_ONLY"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {
+            "enum": [
+              "CANDIDATE_OFFLINE_TRUST_BUNDLE",
+              "FROZEN_OFFLINE_TRUST_BUNDLE"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sha512": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{128}$"
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._/-]+$",
+      "minLength": 1
+    },
+    "pemCommitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relativePath",
+        "bytes",
+        "sha256"
+      ],
+      "properties": {
+        "relativePath": {
+          "$ref": "#/$defs/path"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16777216
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "derCommitment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relativePath",
+        "bytes",
+        "sha256",
+        "sha512"
+      ],
+      "properties": {
+        "relativePath": {
+          "$ref": "#/$defs/path"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16777216
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sha512": {
+          "$ref": "#/$defs/sha512"
+        }
+      }
+    },
+    "certificate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chainPolicy",
+        "pem",
+        "chain"
+      ],
+      "properties": {
+        "chainPolicy": {
+          "enum": [
+            "offline-x509-rsa-pkcs1",
+            "fixture-leaf-pin-only"
+          ]
+        },
+        "pem": {
+          "$ref": "#/$defs/pemCommitment"
+        },
+        "chain": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/derCommitment"
+          }
+        }
+      }
+    },
+    "certificateMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 1,
+      "propertyNames": {
+        "$ref": "#/$defs/sha512"
+      },
+      "patternProperties": {
+        "^[0-9a-f]{128}$": {
+          "$ref": "#/$defs/certificate"
+        }
+      }
+    },
+    "trustPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowedCertificateIds",
+        "rotationPolicy",
+        "revocationPolicy",
+        "revocationChecked",
+        "revocationResidualRisk",
+        "acceptedLeafExtendedKeyUsages"
+      ],
+      "properties": {
+        "allowedCertificateIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/sha512"
+          }
+        },
+        "rotationPolicy": {
+          "const": "NO_ROTATION_AFTER_FREEZE"
+        },
+        "revocationPolicy": {
+          "const": "EXACT_CERTIFICATE_PIN_NO_REVOCATION_CHECK"
+        },
+        "revocationChecked": {
+          "const": false
+        },
+        "revocationResidualRisk": {
+          "const": "A pinned certificate that is revoked or compromised before the target pulse can still be accepted; no contemporaneous OCSP or CRL status is checked or claimed."
+        },
+        "acceptedLeafExtendedKeyUsages": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            {
+              "const": "1.3.6.1.5.5.7.3.1"
+            },
+            {
+              "const": "1.3.6.1.5.5.7.3.2"
+            }
+          ],
+          "items": false
+        }
+      }
+    }
+  }
+}

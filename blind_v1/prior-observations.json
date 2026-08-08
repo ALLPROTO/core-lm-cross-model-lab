@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "corelm-blind-crossmodel-v1-prior-observations-v1",
+  "suiteId": "corelm-blind-crossmodel-v1",
+  "status": "COMPLETE_DISCLOSED_PRIOR_LINEAGE",
+  "candidate": {
+    "backend": "voidtoken-v5",
+    "origin": "Qwen-derived fixed configuration 32 followed by public multi-model development and regression observations",
+    "thresholdLineage": "compression ratio 2.0, delta-NLL 0.01 nat/token, and top-1 agreement 0.99 were used before this suite and are not newly estimated from the confirmatory panel"
+  },
+  "observations": [
+    {
+      "modelKey": "qwen2.5-0.5b",
+      "repository": "Qwen/Qwen2.5-0.5B",
+      "revision": "060db6499f32faf8b98477b0a26969ef7d8b9987",
+      "role": "prior-public-validation-regression",
+      "outcome": "PASS",
+      "source": "https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/runs/30750087812"
+    },
+    {
+      "modelKey": "gpt2-medium",
+      "repository": "openai-community/gpt2-medium",
+      "revision": "6dcaa7a952f72f9298047fd5137cd6e4f05f41da",
+      "role": "prior-public-validation-regression",
+      "outcome": "PASS",
+      "source": "https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/runs/30750087812"
+    },
+    {
+      "modelKey": "pythia-410m-deduped",
+      "repository": "EleutherAI/pythia-410m-deduped",
+      "revision": "c4fc8d586d62df497f1f9b69d66d3ca419992d3e",
+      "role": "prior-public-validation-regression",
+      "outcome": "FAIL",
+      "source": "https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/runs/30750087812"
+    },
+    {
+      "modelKey": "bloom-560m",
+      "repository": "bigscience/bloom-560m",
+      "revision": "ac2ae5fab2ce3f9f40dc79b5ca9f637430d24971",
+      "role": "prior-public-validation-regression",
+      "outcome": "PASS",
+      "source": "https://github.com/ALLPROTO/core-lm-cross-model-lab/actions/runs/30750087812"
+    },
+    {
+      "modelKey": "gpt-neo-125m",
+      "repository": "EleutherAI/gpt-neo-125m",
+      "revision": "21def0189f5705e2521767faed922f1f15e7d7db",
+      "role": "prior-v4-real-model-development-control",
+      "outcome": "NON_SCIENTIFIC_PASS",
+      "source": "https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1"
+    },
+    {
+      "modelKey": "smollm2-360m",
+      "repository": "HuggingFaceTB/SmolLM2-360M",
+      "revision": "f8027fd0eaeea54caa13c31d31b9fdc459c38b49",
+      "role": "prior-v4-real-model-development-control",
+      "outcome": "NON_SCIENTIFIC_PASS",
+      "source": "https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1"
+    },
+    {
+      "modelKey": "tiny-starcoder-py",
+      "repository": "bigcode/tiny_starcoder_py",
+      "revision": "8547527bef0bc927268c1653cce6948c5c242dd1",
+      "role": "prior-v4-real-model-development-control",
+      "outcome": "NON_SCIENTIFIC_PASS",
+      "source": "https://github.com/ALLPROTO/core-lm-cross-model-lab/releases/tag/corelm-crossmodel-v4-post-release-macos-e2e-evidence-v1"
+    }
+  ],
+  "confirmatoryPoolPolicy": {
+    "exactRevisionOverlapForbidden": true,
+    "architectureFamilyOverlapDisclosed": true,
+    "prePulseForwardPassesForbidden": true,
+    "prePulseCandidateInferenceForbidden": true,
+    "allowedPrePulseOperations": [
+      "download",
+      "byte-count",
+      "sha256",
+      "strict-config-parse",
+      "tokenizer-length-eligibility",
+      "safetensors-header-validation"
+    ]
+  },
+  "claimBoundary": "The confirmatory pool contains exact revisions never previously run by this project, but some broad architecture families have prior observations. A future PASS therefore tests transfer to the NIST-selected exact revisions and future records; it is not architecture-blind or a population claim over all LLMs."
+}

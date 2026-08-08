@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blob/main/blind_v1/schemas/execution-reservation-release-manifest.schema.json",
+  "title": "Core LM blind cross-model v1 execution reservation release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "status",
+    "assets",
+    "selfExcluded",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-blind-crossmodel-v1-execution-reservation-release-manifest-v1"
+    },
+    "suiteId": {"const": "corelm-blind-crossmodel-v1"},
+    "status": {"const": "COMPLETE_EXECUTION_RESERVATION_RELEASE_ASSETS"},
+    "assets": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/asset"},
+            {
+              "properties": {
+                "role": {"const": "execution-reservation"},
+                "name": {"const": "execution-reservation.json"}
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/asset"},
+            {
+              "properties": {
+                "role": {"const": "snapshot-publication-receipt"},
+                "name": {"const": "snapshot-publication-receipt.json"}
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "selfExcluded": {"const": true},
+    "contentSHA256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "name", "bytes", "sha256"],
+      "properties": {
+        "role": {"type": "string"},
+        "name": {"type": "string"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

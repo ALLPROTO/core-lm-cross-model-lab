@@ -1,0 +1,706 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ALLPROTO/core-lm-cross-model-lab/blind_v1/schemas/release-receipt.schema.json",
+  "title": "Core LM signed immutable GitHub release receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "suiteId",
+    "githubAPIVersion",
+    "repository",
+    "kind",
+    "tag",
+    "release",
+    "source",
+    "annotatedTag",
+    "signatureVerification",
+    "githubReleaseAttestation",
+    "requiredAssets",
+    "githubAPIResponses",
+    "receiptCreatedAt",
+    "contentSHA256"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "corelm-github-release-receipt-v2"
+    },
+    "suiteId": {
+      "const": "corelm-blind-crossmodel-v1"
+    },
+    "githubAPIVersion": {
+      "const": "2026-03-10"
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "htmlURL", "apiURL"],
+      "properties": {
+        "slug": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}/[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$"
+        },
+        "htmlURL": {
+          "type": "string",
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "apiURL": {
+          "type": "string",
+          "pattern": "^https://api\\.github\\.com/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        }
+      }
+    },
+    "kind": {
+      "enum": ["development-control", "design", "snapshot", "reservation", "evidence", "closeout"]
+    },
+    "tag": {
+      "$ref": "#/$defs/tag"
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "apiURL", "htmlURL", "publishedAt", "deadline"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "apiURL": {
+          "type": "string",
+          "pattern": "^https://api\\.github\\.com/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/releases/[1-9][0-9]*$"
+        },
+        "htmlURL": {
+          "type": "string",
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/releases/tag/[A-Za-z0-9._-]+$"
+        },
+        "publishedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "deadline": {
+          "$ref": "#/$defs/utcSecond"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "tree", "commitObject"],
+      "properties": {
+        "commit": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "tree": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "commitObject": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["oid", "rawPayload"],
+          "properties": {
+            "oid": {
+              "$ref": "#/$defs/gitOID"
+            },
+            "rawPayload": {
+              "$ref": "#/$defs/archivedBytes"
+            }
+          }
+        }
+      }
+    },
+    "annotatedTag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objectOID", "targetType", "targetCommit", "rawPayload"],
+      "properties": {
+        "objectOID": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "targetType": {
+          "const": "commit"
+        },
+        "targetCommit": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "rawPayload": {
+          "$ref": "#/$defs/archivedBytes"
+        }
+      }
+    },
+    "signatureVerification": {
+      "description": "Archived result of the SSH verification that the offline release-receipt verifier independently repeats with /usr/bin/ssh-keygen.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "signatureType",
+        "method",
+        "toolVersion",
+        "exitCode",
+        "trustPolicy",
+        "keyFingerprint",
+        "publicKeySHA256",
+        "tagObjectOID",
+        "targetCommit",
+        "verifiedAt",
+        "transcript"
+      ],
+      "properties": {
+        "status": {
+          "const": "VERIFIED"
+        },
+        "signatureType": {
+          "const": "SSH"
+        },
+        "method": {
+          "const": "git verify-tag"
+        },
+        "toolVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "exitCode": {
+          "const": 0
+        },
+        "trustPolicy": {
+          "const": "FROZEN_KEY_FINGERPRINT_AND_SHA256_MATCH"
+        },
+        "keyFingerprint": {
+          "type": "string",
+          "pattern": "^SHA256:[A-Za-z0-9+/]{43}$"
+        },
+        "publicKeySHA256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "tagObjectOID": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "targetCommit": {
+          "$ref": "#/$defs/gitOID"
+        },
+        "verifiedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "transcript": {
+          "$ref": "#/$defs/archivedBytes"
+        }
+      }
+    },
+    "githubReleaseAttestation": {
+      "description": "Exact output of the pinned GitHub CLI Sigstore verification plus an independently recomputed, networkless pinned-Cosign verification of the archived bundle.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "method",
+        "trustPolicy",
+        "tool",
+        "offlineCryptographicVerification",
+        "rawVerificationOutput"
+      ],
+      "properties": {
+        "status": {"const": "VERIFIED"},
+        "method": {"const": "gh release verify --format json"},
+        "trustPolicy": {
+          "const": "PINNED_GH_SIGSTORE_VERIFICATION_AT_COLLECTION;OFFLINE_SEMANTIC_BINDING_REPLAY"
+        },
+        "tool": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "version",
+            "platform",
+            "binaryBytes",
+            "binarySHA256",
+            "distributionSHA256",
+            "distributionURL"
+          ],
+          "properties": {
+            "name": {"const": "gh"},
+            "version": {"const": "2.97.0"},
+            "platform": {"const": "macOS-arm64"},
+            "binaryBytes": {"const": 38857376},
+            "binarySHA256": {
+              "const": "0d17dddf96bcc1dc50f3420a064d593d64016b0be16286a6c26121f2a5cb8316"
+            },
+            "distributionSHA256": {
+              "const": "a58b8fd77b417a38f47a0b54d1370c59b0fcdb324ccc9ca002b0998f7c4c999e"
+            },
+            "distributionURL": {
+              "const": "https://github.com/cli/cli/releases/download/v2.97.0/gh_2.97.0_macOS_arm64.zip"
+            }
+          }
+        },
+        "offlineCryptographicVerification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "method",
+            "trustPolicy",
+            "tool",
+            "trustedRoot",
+            "verifiedAsset",
+            "bundleSHA256",
+            "attestedAt",
+            "transcript"
+          ],
+          "properties": {
+            "status": {"const": "VERIFIED"},
+            "method": {"const": "cosign verify-blob-attestation"},
+            "trustPolicy": {
+              "const": "PINNED_COSIGN_AND_GITHUB_TRUSTED_ROOT;DSSE_X509_RFC3161_AND_ASSET_DIGEST_VERIFIED;PRIVATE_INFRASTRUCTURE_WITHOUT_TLOG_OR_SCT"
+            },
+            "tool": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "version", "platform", "binaryBytes", "binarySHA256", "distributionURL"],
+                  "properties": {
+                    "name": {"const": "cosign"},
+                    "version": {"const": "v3.0.6"},
+                    "platform": {"const": "darwin/arm64"},
+                    "binaryBytes": {"const": 134320242},
+                    "binarySHA256": {"const": "5fadd012ae6381a6a29ff86a7d39aa873878852f1073fc90b15995961ecfb084"},
+                    "distributionURL": {"const": "https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-darwin-arm64"}
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "version", "platform", "binaryBytes", "binarySHA256", "distributionURL"],
+                  "properties": {
+                    "name": {"const": "cosign"},
+                    "version": {"const": "v3.0.6"},
+                    "platform": {"const": "linux/amd64"},
+                    "binaryBytes": {"const": 135178161},
+                    "binarySHA256": {"const": "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74"},
+                    "distributionURL": {"const": "https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64"}
+                  }
+                }
+              ]
+            },
+            "trustedRoot": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["bytes", "sha256"],
+              "properties": {
+                "bytes": {"const": 28886},
+                "sha256": {"const": "26b3382d5700afbcd84f980d1d5b6c52bff743dc2a8ee86b8b44c8e1245ce485"}
+              }
+            },
+            "verifiedAsset": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "sha256"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                },
+                "sha256": {"$ref": "#/$defs/sha256"}
+              }
+            },
+            "bundleSHA256": {"$ref": "#/$defs/sha256"},
+            "attestedAt": {"$ref": "#/$defs/utcSecond"},
+            "transcript": {"$ref": "#/$defs/archivedBytes"}
+          }
+        },
+        "rawVerificationOutput": {"$ref": "#/$defs/archivedBytes"}
+      }
+    },
+    "requiredAssets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/releaseAsset"
+      }
+    },
+    "githubAPIResponses": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/commitResponse"
+        },
+        {
+          "$ref": "#/$defs/releaseResponse"
+        },
+        {
+          "$ref": "#/$defs/tagObjectResponse"
+        },
+        {
+          "$ref": "#/$defs/tagRefResponse"
+        }
+      ],
+      "items": false
+    },
+    "receiptCreatedAt": {
+      "$ref": "#/$defs/utcSecond"
+    },
+    "contentSHA256": {
+      "$ref": "#/$defs/sha256"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {"const": "development-control"}
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "requiredAssets": {
+            "minItems": 3,
+            "maxItems": 3,
+            "prefixItems": [
+              {"$ref": "#/$defs/developmentControlReportAsset"},
+              {"$ref": "#/$defs/developmentControlArtifactsAsset"},
+              {"$ref": "#/$defs/sha256ManifestAsset"}
+            ],
+            "items": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "design"
+          }
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "requiredAssets": {
+            "minItems": 12,
+            "maxItems": 12,
+            "prefixItems": [
+              {"$ref": "#/$defs/assetSourceManifestAsset"},
+              {"$ref": "#/$defs/designRegistrationAsset"},
+              {"$ref": "#/$defs/developmentControlReportAsset"},
+              {"$ref": "#/$defs/developmentControlArchiveReceiptAsset"},
+              {"$ref": "#/$defs/freezeManifestAsset"},
+              {"$ref": "#/$defs/fullAssetReceiptAsset"},
+              {"$ref": "#/$defs/githubGateReceiptAsset"},
+              {"$ref": "#/$defs/linuxCIArtifactAsset"},
+              {"$ref": "#/$defs/macosArm64CIArtifactAsset"},
+              {"$ref": "#/$defs/runtimeManifestAsset"},
+              {"$ref": "#/$defs/sbomAsset"},
+              {"$ref": "#/$defs/sha256ManifestAsset"}
+            ],
+            "items": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "snapshot"
+          }
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "requiredAssets": {
+            "minItems": 5,
+            "maxItems": 5,
+            "prefixItems": [
+              {"$ref": "#/$defs/attributionAsset"},
+              {"$ref": "#/$defs/corpusBytesAsset"},
+              {"$ref": "#/$defs/designPublicationReceiptAsset"},
+              {"$ref": "#/$defs/sha256ManifestAsset"},
+              {"$ref": "#/$defs/snapshotRegistrationAsset"}
+            ],
+            "items": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "evidence"
+          }
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "requiredAssets": {
+            "minItems": 4,
+            "maxItems": 4,
+            "prefixItems": [
+              {"$ref": "#/$defs/evidencePackageAsset"},
+              {"$ref": "#/$defs/evidenceReleaseManifestAsset"},
+              {"$ref": "#/$defs/evidencePackageVerifierReportAsset"},
+              {"$ref": "#/$defs/sha256ManifestAsset"}
+            ],
+            "items": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "closeout"
+          }
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "requiredAssets": {
+            "minItems": 4,
+            "maxItems": 4,
+            "prefixItems": [
+              {"$ref": "#/$defs/closeoutStatementAsset"},
+              {"$ref": "#/$defs/closeoutBasisAsset"},
+              {"$ref": "#/$defs/closeoutVerifierReportAsset"},
+              {"$ref": "#/$defs/sha256ManifestAsset"}
+            ],
+            "items": false
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "utcSecond": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "gitOID": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "tag": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9])?$"
+    },
+    "archivedBytes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["encoding", "bytes", "sha256", "dataBase64"],
+      "properties": {
+        "encoding": {
+          "const": "base64"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "dataBase64": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/]*={0,2}$"
+        }
+      }
+    },
+    "releaseAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "assetId", "name", "apiURL", "downloadURL", "bytes", "sha256"],
+      "properties": {
+        "role": {
+          "enum": [
+            "asset-source-manifest",
+            "attribution",
+            "corpus-bytes",
+            "closeout-basis",
+            "closeout-statement",
+            "closeout-verifier-report",
+            "design-registration",
+            "development-control-report",
+            "development-control-artifacts",
+            "development-control-archive-receipt",
+            "design-publication-receipt",
+            "evidence-package",
+            "evidence-release-manifest",
+            "freeze-manifest",
+            "full-asset-receipt",
+            "github-gate-receipt",
+            "linux-ci-artifact",
+            "macos-arm64-ci-artifact",
+            "evidence-package-verifier-report",
+            "runtime-manifest",
+            "sbom",
+            "sha256-manifest",
+            "snapshot-registration"
+          ]
+        },
+        "assetId": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,190}[A-Za-z0-9])?$"
+        },
+        "apiURL": {
+          "type": "string",
+          "pattern": "^https://api\\.github\\.com/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/releases/assets/[1-9][0-9]*$"
+        },
+        "downloadURL": {
+          "type": "string",
+          "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/releases/download/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "apiResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "requestURL",
+        "statusCode",
+        "serverDate",
+        "capturedAt",
+        "responseHeaders",
+        "responseBody"
+      ],
+      "properties": {
+        "role": {
+          "enum": ["commit", "release", "tag-object", "tag-ref"]
+        },
+        "requestURL": {
+          "type": "string",
+          "pattern": "^https://api\\.github\\.com/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/.+$"
+        },
+        "statusCode": {
+          "const": 200
+        },
+        "serverDate": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "capturedAt": {
+          "$ref": "#/$defs/utcSecond"
+        },
+        "responseHeaders": {
+          "$ref": "#/$defs/archivedBytes"
+        },
+        "responseBody": {
+          "$ref": "#/$defs/archivedBytes"
+        }
+      }
+    },
+    "commitResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "commit"}}}
+      ]
+    },
+    "releaseResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "release"}}}
+      ]
+    },
+    "tagObjectResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "tag-object"}}}
+      ]
+    },
+    "tagRefResponse": {
+      "allOf": [
+        {"$ref": "#/$defs/apiResponse"},
+        {"properties": {"role": {"const": "tag-ref"}}}
+      ]
+    },
+    "assetSourceManifestAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "asset-source-manifest"}}}]
+    },
+    "attributionAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "attribution"}}}]
+    },
+    "corpusBytesAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "corpus-bytes"}}}]
+    },
+    "closeoutBasisAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "closeout-basis"}}}]
+    },
+    "closeoutStatementAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "closeout-statement"}}}]
+    },
+    "closeoutVerifierReportAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "closeout-verifier-report"}}}]
+    },
+    "designRegistrationAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "design-registration"}}}]
+    },
+    "developmentControlReportAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "development-control-report"}, "name": {"const": "development-control-report.json"}}}]
+    },
+    "developmentControlArtifactsAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "development-control-artifacts"}, "name": {"const": "development-control-artifacts.zip"}}}]
+    },
+    "developmentControlArchiveReceiptAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "development-control-archive-receipt"}, "name": {"const": "development-control-archive-receipt.json"}}}]
+    },
+    "designPublicationReceiptAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "design-publication-receipt"}}}]
+    },
+    "evidencePackageAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "evidence-package"}}}]
+    },
+    "evidenceReleaseManifestAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "evidence-release-manifest"}}}]
+    },
+    "freezeManifestAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "freeze-manifest"}}}]
+    },
+    "fullAssetReceiptAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "full-asset-receipt"}}}]
+    },
+    "githubGateReceiptAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "github-gate-receipt"}}}]
+    },
+    "linuxCIArtifactAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "linux-ci-artifact"}, "name": {"const": "linux-ci-artifact.zip"}}}]
+    },
+    "macosArm64CIArtifactAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "macos-arm64-ci-artifact"}, "name": {"const": "macos-arm64-ci-artifact.zip"}}}]
+    },
+    "evidencePackageVerifierReportAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "evidence-package-verifier-report"}}}]
+    },
+    "runtimeManifestAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "runtime-manifest"}}}]
+    },
+    "sbomAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "sbom"}}}]
+    },
+    "sha256ManifestAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "sha256-manifest"}}}]
+    },
+    "snapshotRegistrationAsset": {
+      "allOf": [{"$ref": "#/$defs/releaseAsset"}, {"properties": {"role": {"const": "snapshot-registration"}}}]
+    }
+  }
+}
