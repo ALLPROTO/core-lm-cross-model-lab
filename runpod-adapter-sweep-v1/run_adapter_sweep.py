@@ -879,6 +879,11 @@ def sanitized_environment() -> dict[str, str]:
         "TMPDIR",
         "XDG_CACHE_HOME",
         "HF_HOME",
+        "TRITON_CACHE_DIR",
+        "TORCHINDUCTOR_CACHE_DIR",
+        "TORCH_EXTENSIONS_DIR",
+        "CUDA_CACHE_PATH",
+        "PYTORCH_KERNEL_CACHE_PATH",
     }
     result = {key: value for key, value in os.environ.items() if key in allowed and value}
     result.update(FIXED_ENVIRONMENT)

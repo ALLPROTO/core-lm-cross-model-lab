@@ -107,6 +107,25 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertEqual(stat.S_IMODE(root.stat().st_mode), 0o700)
         return root
 
+    def test_sanitized_environment_forwards_exact_executable_cache_paths(self) -> None:
+        function = _function(PRODUCER, "sanitized_environment")
+        module = ast.Module(body=[function], type_ignores=[])
+        ast.fix_missing_locations(module)
+        namespace: dict[str, object] = {"os": os, "FIXED_ENVIRONMENT": {}}
+        exec(compile(module, str(PRODUCER), "exec"), namespace)
+        cache_values = {
+            "TRITON_CACHE_DIR": "/private/exec/triton",
+            "TORCHINDUCTOR_CACHE_DIR": "/private/exec/torchinductor",
+            "TORCH_EXTENSIONS_DIR": "/private/exec/torch-extensions",
+            "CUDA_CACHE_PATH": "/private/exec/cuda",
+            "PYTORCH_KERNEL_CACHE_PATH": "/private/exec/pytorch-kernels",
+        }
+        with mock.patch.dict(os.environ, {**cache_values, "UNSAFE_TOKEN": "secret"}, clear=True):
+            observed = namespace["sanitized_environment"]()
+        for name, value in cache_values.items():
+            self.assertEqual(observed[name], value)
+        self.assertNotIn("UNSAFE_TOKEN", observed)
+
     def _defer_process_cleanup(self, pid_path: Path, sentinel: str) -> None:
         """Register cleanup before launch and kill only our marked Linux child."""
 
@@ -927,7 +946,7 @@ class RuntimeContractTests(unittest.TestCase):
             "containerImageDigestAuthority=operator-supplied-control-plane-value",
             wrapper,
         )
-        self.assertEqual(wrapper.count('"$python_executable" -E -s -B'), 14)
+        self.assertEqual(wrapper.count('"$python_executable" -E -s -B'), 15)
         self.assertIn("gpuDriverVersion=$gpu_driver_version", wrapper)
         self.assertIn("cgroupVersion=$cgroup_version", wrapper)
         self.assertIn('"$script_dir/cgroup_contract.py" admission', wrapper)
@@ -943,6 +962,27 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertIn("/proc/self/mountinfo", CGROUP_CONTRACT.read_text(encoding="utf-8"))
         self.assertIn("pipBootstrapLockSHA256=", wrapper)
         self.assertIn("portableRuntimeLockSHA256=", wrapper)
+        for cache_name, subdirectory in (
+            ("TRITON_CACHE_DIR", "triton"),
+            ("TORCHINDUCTOR_CACHE_DIR", "torchinductor"),
+            ("TORCH_EXTENSIONS_DIR", "torch-extensions"),
+            ("CUDA_CACHE_PATH", "cuda"),
+            ("PYTORCH_KERNEL_CACHE_PATH", "pytorch-kernels"),
+        ):
+            self.assertIn(
+                f'export {cache_name}="$execution_cache_root/{subdirectory}"',
+                wrapper,
+            )
+            self.assertIn(f'"{cache_name}"', PRODUCER.read_text(encoding="utf-8"))
+        self.assertIn("the one-shot executable-cache root already exists", wrapper)
+        self.assertIn("STEP EXECUTABLE_CACHE_SMOKE", wrapper)
+        self.assertIn("bmm_outer_product(left, right)", wrapper)
+        self.assertIn('triton_root.rglob("cuda_utils*.so")', wrapper)
+        self.assertIn('--root "$execution_cache_root"', wrapper)
+        self.assertLess(
+            wrapper.index('execution_cache_root="$execution_cache_parent/'),
+            wrapper.index('mkdir -m 0700 -- "$run_root"'),
+        )
         checksum_grammar = (
             'rb"[0-9a-f]{64}  corelm-runpod-adapter-sweep-v1'
             '[.]tar[.]gz\\n"'
@@ -960,6 +1000,7 @@ class RuntimeContractTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r"^\s+--run-dir ", wrapper, re.MULTILINE)), 3)
         for pattern in (
             r"run_timed ASSET_DOWNLOAD 3600",
+            r"kill-after=60s 120s",
             r"run_timed OPT_CONVERSION 900",
             r"run_timed ASSET_VERIFY 900",
             r"run_timed SWEEP_PREFLIGHT 900",

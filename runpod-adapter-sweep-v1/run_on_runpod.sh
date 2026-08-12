@@ -93,7 +93,7 @@ unset input_path
 [[ ${#hf_token} -ge 20 && "$hf_token" == hf_* && "$hf_token" != *[$' \t\r\n']* ]] ||
   fail 'a non-blank Hugging Face fine-grained read token is required via the HF_TOKEN secret'
 
-for required_command in git ssh-keygen nvidia-smi timeout tar gzip sha256sum find grep readlink getconf df awk uname id dirname basename mkdir chmod stat tee; do
+for required_command in git ssh-keygen nvidia-smi timeout tar gzip sha256sum find grep readlink getconf df awk uname id dirname basename mkdir chmod stat tee rm; do
   command -v "$required_command" >/dev/null 2>&1 ||
     fail "required host command is absent: $required_command"
 done
@@ -315,6 +315,37 @@ CORELM_SWEEP_TEST_CODEC_ROOT="$codec_root" \
   -s "$script_dir" -p 'test_*.py' -v ||
   fail 'the model-free Linux sweep contract tests failed'
 
+execution_cache_parent=$(dirname -- "$runtime_root")
+[[ -d "$execution_cache_parent" && ! -L "$execution_cache_parent" && \
+   "$execution_cache_parent" = "$(readlink -f -- "$execution_cache_parent")" ]] ||
+  fail 'the executable-cache parent is not a canonical directory'
+[[ "$(stat -c '%u' -- "$execution_cache_parent")" -eq "$(id -u)" ]] ||
+  fail 'the executable-cache parent is not owned by the current user'
+execution_cache_parent_mode=$(stat -c '%a' -- "$execution_cache_parent")
+case "$execution_cache_parent_mode" in
+  *[2367][0-7]|*[0-7][2367]) fail 'the executable-cache parent is group/world writable' ;;
+esac
+execution_cache_id=$(builtin printf '%s' "$run_root" | sha256sum | awk '{print $1}') ||
+  fail 'cannot derive the one-shot executable-cache identity'
+[[ "$execution_cache_id" =~ ^[0-9a-f]{64}$ ]] ||
+  fail 'the executable-cache identity is invalid'
+execution_cache_root="$execution_cache_parent/.corelm-exec-cache-$execution_cache_id"
+[[ ! -e "$execution_cache_root" && ! -L "$execution_cache_root" ]] ||
+  fail 'the one-shot executable-cache root already exists'
+mkdir -m 0700 -- "$execution_cache_root"
+mkdir -m 0700 -- \
+  "$execution_cache_root/triton" \
+  "$execution_cache_root/torchinductor" \
+  "$execution_cache_root/torch-extensions" \
+  "$execution_cache_root/cuda" \
+  "$execution_cache_root/pytorch-kernels"
+export TRITON_CACHE_DIR="$execution_cache_root/triton"
+export TORCHINDUCTOR_CACHE_DIR="$execution_cache_root/torchinductor"
+export TORCH_EXTENSIONS_DIR="$execution_cache_root/torch-extensions"
+export CUDA_CACHE_PATH="$execution_cache_root/cuda"
+export PYTORCH_KERNEL_CACHE_PATH="$execution_cache_root/pytorch-kernels"
+unset execution_cache_parent execution_cache_parent_mode execution_cache_id
+
 mkdir -m 0700 -- "$run_root"
 mkdir -m 0700 -- \
   "$run_root/assets" \
@@ -327,6 +358,29 @@ export HOME="$run_root/home"
 export TMPDIR="$run_root/tmp"
 export XDG_CACHE_HOME="$run_root/xdg-cache"
 export HF_HOME="$run_root/home/huggingface"
+
+printf 'STEP EXECUTABLE_CACHE_SMOKE\n'
+/usr/bin/timeout --foreground --signal=TERM --kill-after=60s 120s \
+  "$python_executable" -E -s -B -c '
+import os
+from pathlib import Path
+
+import torch
+from torch._native.ops.bmm_outer_product.triton_kernels import bmm_outer_product
+
+left = torch.ones((1, 32, 1), device="cuda")
+right = torch.ones((1, 1, 32), device="cuda")
+observed = bmm_outer_product(left, right)
+torch.cuda.synchronize()
+assert observed.shape == (1, 32, 32)
+assert torch.equal(observed, torch.ones_like(observed))
+triton_root = Path(os.environ["TRITON_CACHE_DIR"]).resolve(strict=True)
+compiled = list(triton_root.rglob("cuda_utils*.so"))
+assert compiled and all(path.is_file() for path in compiled), compiled
+assert all(path.resolve().is_relative_to(triton_root) for path in compiled), compiled
+for name in ("HOME", "TMPDIR", "XDG_CACHE_HOME"):
+    assert not list(Path(os.environ[name]).rglob("*.so")), name
+' || fail 'the executable cache cannot compile and load the pinned Triton CUDA helper'
 
 prepare_assets="$script_dir/prepare_assets.py"
 runner="$script_dir/run_adapter_sweep.py"
@@ -372,9 +426,10 @@ builtin printf '%s' "$hf_token" | \
   --root "$run_root/tmp" \
   --root "$run_root/xdg-cache" \
   --root "$run_root/assets" \
-  --root "$run_root/evidence" ||
+  --root "$run_root/evidence" \
+  --root "$execution_cache_root" ||
   fail 'the downloader persisted a credential or created an unsafe scan tree'
-unset hf_token
+unset hf_token execution_cache_root
 
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1

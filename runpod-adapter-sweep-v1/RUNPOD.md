@@ -75,8 +75,18 @@ owner-private execution root. In that case keep source and runtime on the
 owner-private container disk. Put cache, run root, and evidence either there or
 on an owner-private child of a `nosuid,nodev,noexec` tmpfs that is charged to the
 admitted Pod memory cgroup and itself exposes at least 100 GiB free. No executable
-code may be loaded from that tmpfs. Prove enough free space for all registered
-assets and outputs before launch. Retain the encrypted Pod volume
+code may be loaded from that tmpfs. The launcher therefore creates fresh
+owner-private Triton, TorchInductor, PyTorch-extension, PyTorch Jiterator-kernel,
+and CUDA executable-cache directories beside the exact runtime on the container
+disk and passes only those fixed paths to model/replay children. Prove enough free space for all registered
+assets and outputs before launch. Before any model asset is downloaded, the
+launcher compiles and loads the pinned Triton CUDA helper with `HOME`, `TMPDIR`,
+and `XDG_CACHE_HOME` still on the no-exec run volume, and requires the resulting
+shared object to exist only below `TRITON_CACHE_DIR`. The executable caches are
+shared across fresh processes solely as compiler output; they carry no model
+cache, KV state, prompt state, or result state. They are ephemeral, excluded
+from evidence and the archive, and removed with the Pod.
+Retain the encrypted Pod volume
 only as an optional encrypted transport staging area after the launcher has completed;
 never weaken the mode checks to run directly on the permissive mount.
 
@@ -389,11 +399,12 @@ cleanup and manifest completion. A timeout, OOM, signal, digest failure, missing
 cell, or resource-bound cell makes the attempt incomplete. Never rerun into the
 same run root.
 
-The registered builder and launcher ceilings sum to **66,150 seconds
-(18:22:30)**: 7,200 seconds for the CUDA runtime builder, 41,400 for the
-orchestrator, and 17,550 for download, conversion, verification, preflight,
-structural verification, and the seven replays. The 20-hour provider fuse
-therefore leaves at most **5,850 seconds (1:37:30)** for clone/setup, packaging,
+The registered builder and launcher ceilings sum to **66,270 seconds
+(18:24:30)**: 7,200 seconds for the CUDA runtime builder, 41,400 for the
+orchestrator, 120 for the executable-cache CUDA smoke, and 17,550 for download,
+conversion, verification, preflight, structural verification, and the seven
+replays. The 20-hour provider fuse therefore leaves at most **5,730 seconds
+(1:35:30)** for clone/setup, packaging,
 retrieval, local transfer checks, and termination. This is operational reserve,
 not a promised transfer SLA, and it shrinks from the instant the Pod is created,
 not from the start of the builder. Begin retrieval immediately when the launcher
