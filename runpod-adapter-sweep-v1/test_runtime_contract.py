@@ -855,7 +855,10 @@ class RuntimeContractTests(unittest.TestCase):
             verifier._asset_snapshot(cache, fixture_profile, stale_receipt)
 
     def test_distilgpt2_legacy_attention_biases_accept_exact_real_tensors(self) -> None:
-        import torch
+        try:
+            import torch
+        except ModuleNotFoundError:
+            self.skipTest("PyTorch is optional in the model-free contract runtime")
         import run_adapter_sweep as producer
         import verify_adapter_sweep as verifier
 
