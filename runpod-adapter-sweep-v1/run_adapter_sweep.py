@@ -267,6 +267,64 @@ def load_tokenizer_and_config(
     return tokenizer, config, snapshot
 
 
+def discard_validated_distilgpt2_attention_biases(
+    state: dict[str, Any], profile: dict[str, Any], torch_module: Any
+) -> None:
+    """Remove only the pinned legacy causal-mask buffers after exact validation."""
+
+    require(
+        profile.get("modelId") == "distilgpt2",
+        "legacy GPT-2 attention-bias compatibility is DistilGPT2-only",
+    )
+    require(
+        profile.get("geometry", {}).get("layers") == 6
+        and profile.get("geometry", {}).get("contextTokens") == 1024,
+        "DistilGPT2 legacy attention-bias geometry differs",
+    )
+    expected_keys = {
+        f"transformer.h.{layer}.attn.bias" for layer in range(6)
+    }
+    observed_keys = {
+        key
+        for key in state
+        if isinstance(key, str) and key.endswith(".attn.bias")
+    }
+    require(
+        observed_keys == expected_keys,
+        "DistilGPT2 legacy attention-bias key set differs",
+    )
+
+    expected_shape = (1, 1, 1024, 1024)
+    expected_mask = torch_module.tril(
+        torch_module.ones(
+            expected_shape,
+            dtype=torch_module.float32,
+            device="cpu",
+        )
+    )
+    for key in sorted(expected_keys):
+        tensor = state[key]
+        require(
+            isinstance(tensor, torch_module.Tensor),
+            f"DistilGPT2 legacy attention-bias tensor {key} is invalid",
+        )
+        require(
+            tensor.dtype == torch_module.float32
+            and tuple(tensor.shape) == expected_shape
+            and tensor.device.type == "cpu"
+            and tensor.layout == torch_module.strided
+            and bool(tensor.is_contiguous()),
+            f"DistilGPT2 legacy attention-bias tensor {key} metadata differs",
+        )
+        require(
+            bool(torch_module.equal(tensor, expected_mask)),
+            f"DistilGPT2 legacy attention-bias tensor {key} is not the causal mask",
+        )
+
+    for key in sorted(expected_keys):
+        del state[key]
+
+
 def load_model(
     profile: dict[str, Any],
     snapshot: Path,
@@ -293,6 +351,9 @@ def load_model(
             require(
                 "lm_head.weight" not in state,
                 "pinned GPT-2 safetensors unexpectedly duplicate tied weights",
+            )
+            discard_validated_distilgpt2_attention_biases(
+                state, profile, torch_module
             )
             state["lm_head.weight"] = state["transformer.wte.weight"]
         incompatible = model.load_state_dict(state, strict=True, assign=False)

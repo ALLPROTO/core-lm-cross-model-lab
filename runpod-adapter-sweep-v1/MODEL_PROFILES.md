@@ -88,6 +88,19 @@ Transformers offline/local-files flags and disables implicit authentication.
 This is application/library-level offline behavior, not OS firewalling or proof
 that the managed Pod had no egress route.
 
+The pinned DistilGPT2 safetensors predate the Transformers 5.14.1 GPT-2
+implementation and contain one legacy `transformer.h.N.attn.bias` causal-mask
+buffer for each of its six layers. The current implementation derives that
+mask dynamically and does not register those buffers in the model state. The
+only compatibility exception therefore requires the exact keys for layers
+0 through 5, each a contiguous CPU `float32` tensor of shape
+`[1, 1, 1024, 1024]` exactly equal to a lower-triangular zero/one mask including
+the diagonal. All six are validated before any state mutation; only then are
+those six buffers removed. Tied input/output embeddings are restored next and
+the remaining state still uses `load_state_dict(..., strict=True)`. The replay
+loader performs the same validation independently and fails closed on any
+missing, additional, malformed, or non-causal attention-bias buffer.
+
 The Gemma repository is manually gated. Anonymous official tree metadata
 exposes exact paths, sizes, and Git blob IDs, while redacting its LFS OIDs. The
 SHA-256 values present in Hugging Face security metadata are recorded for the

@@ -796,6 +796,9 @@ class RuntimeContractTests(unittest.TestCase):
         ):
             source = _function_source(path, function_name)
             markers = (
+                "discard_validated_distilgpt2_attention_biases"
+                if function_name == "load_model"
+                else "_discard_validated_distilgpt2_attention_biases",
                 'state["lm_head.weight"] = state["transformer.wte.weight"]',
                 "model.load_state_dict(state, strict=True, assign=False)",
                 "model.tie_weights()",
@@ -805,6 +808,20 @@ class RuntimeContractTests(unittest.TestCase):
             positions = [source.index(marker) for marker in markers]
             self.assertEqual(positions, sorted(positions), function_name)
             self.assertIn('"lm_head.weight" not in state', source)
+
+        for path, function_name in (
+            (PRODUCER, "discard_validated_distilgpt2_attention_biases"),
+            (VERIFIER, "_discard_validated_distilgpt2_attention_biases"),
+        ):
+            source = _function_source(path, function_name)
+            self.assertIn('range(6)', source)
+            self.assertIn('key.endswith(".attn.bias")', source)
+            self.assertIn('expected_shape = (1, 1, 1024, 1024)', source)
+            self.assertIn('dtype=torch_module.float32', source)
+            self.assertIn('tensor.layout == torch_module.strided', source)
+            self.assertIn('tensor.is_contiguous()', source)
+            self.assertIn('torch_module.equal(tensor, expected_mask)', source)
+            self.assertLess(source.index("for key in sorted(expected_keys):"), source.rindex("del state[key]"))
 
         import verify_adapter_sweep as verifier
 
@@ -836,6 +853,151 @@ class RuntimeContractTests(unittest.TestCase):
             common.ContractError, "differs from the bound asset receipt"
         ):
             verifier._asset_snapshot(cache, fixture_profile, stale_receipt)
+
+    def test_distilgpt2_legacy_attention_biases_accept_exact_real_tensors(self) -> None:
+        import torch
+        import run_adapter_sweep as producer
+        import verify_adapter_sweep as verifier
+
+        profile = next(
+            item
+            for item in common.load_profiles()["profiles"]
+            if item["modelId"] == "distilgpt2"
+        )
+        expected_keys = {
+            f"transformer.h.{layer}.attn.bias" for layer in range(6)
+        }
+        causal_mask = torch.tril(
+            torch.ones((1, 1, 1024, 1024), dtype=torch.float32)
+        )
+        marker = torch.tensor([17.0], dtype=torch.float32)
+        for function in (
+            producer.discard_validated_distilgpt2_attention_biases,
+            verifier._discard_validated_distilgpt2_attention_biases,
+        ):
+            with self.subTest(function=function.__name__):
+                state = {key: causal_mask for key in expected_keys}
+                state["transformer.wte.weight"] = marker
+                function(state, profile, torch)
+                self.assertEqual(set(state), {"transformer.wte.weight"})
+                self.assertIs(state["transformer.wte.weight"], marker)
+
+                mutated = {key: causal_mask for key in expected_keys}
+                malformed = causal_mask.clone()
+                malformed[0, 0, 0, 1] = 1.0
+                mutated["transformer.h.0.attn.bias"] = malformed
+                original_keys = set(mutated)
+                with self.assertRaises(common.ContractError):
+                    function(mutated, profile, torch)
+                self.assertEqual(set(mutated), original_keys)
+
+    def test_distilgpt2_legacy_attention_biases_fail_closed_for_fake_tensors(self) -> None:
+        import run_adapter_sweep as producer
+        import verify_adapter_sweep as verifier
+
+        fake_float32 = object()
+        fake_strided = object()
+
+        class FakeTensor:
+            def __init__(
+                self,
+                *,
+                dtype: object = fake_float32,
+                shape: tuple[int, ...] = (1, 1, 1024, 1024),
+                device: str = "cpu",
+                layout: object | None = None,
+                contiguous: bool = True,
+                causal: bool = True,
+            ) -> None:
+                self.dtype = dtype
+                self.shape = shape
+                self.device = types.SimpleNamespace(type=device)
+                self.layout = fake_strided if layout is None else layout
+                self._contiguous = contiguous
+                self.causal = causal
+
+            def is_contiguous(self) -> bool:
+                return self._contiguous
+
+        def fake_ones(
+            shape: tuple[int, ...], *, dtype: object, device: str
+        ) -> FakeTensor:
+            return FakeTensor(dtype=dtype, shape=shape, device=device, causal=False)
+
+        def fake_tril(tensor: FakeTensor) -> FakeTensor:
+            return FakeTensor(
+                dtype=tensor.dtype,
+                shape=tensor.shape,
+                device=tensor.device.type,
+                layout=tensor.layout,
+                contiguous=tensor.is_contiguous(),
+                causal=True,
+            )
+
+        fake_torch = types.SimpleNamespace(
+            Tensor=FakeTensor,
+            float32=fake_float32,
+            strided=fake_strided,
+            ones=fake_ones,
+            tril=fake_tril,
+            equal=lambda left, right: left.causal == right.causal,
+        )
+        profile = {
+            "modelId": "distilgpt2",
+            "geometry": {"layers": 6, "contextTokens": 1024},
+        }
+        expected_keys = {
+            f"transformer.h.{layer}.attn.bias" for layer in range(6)
+        }
+
+        def valid_state() -> dict[str, object]:
+            return {key: FakeTensor() for key in expected_keys}
+
+        cases: dict[str, dict[str, object]] = {}
+        missing = valid_state()
+        del missing["transformer.h.5.attn.bias"]
+        cases["missing-key"] = missing
+        extra = valid_state()
+        extra["transformer.h.6.attn.bias"] = FakeTensor()
+        cases["extra-key"] = extra
+        not_tensor = valid_state()
+        not_tensor["transformer.h.0.attn.bias"] = object()
+        cases["not-tensor"] = not_tensor
+        wrong_dtype = valid_state()
+        wrong_dtype["transformer.h.0.attn.bias"] = FakeTensor(dtype=object())
+        cases["wrong-dtype"] = wrong_dtype
+        wrong_shape = valid_state()
+        wrong_shape["transformer.h.0.attn.bias"] = FakeTensor(
+            shape=(1, 1, 1023, 1024)
+        )
+        cases["wrong-shape"] = wrong_shape
+        wrong_device = valid_state()
+        wrong_device["transformer.h.0.attn.bias"] = FakeTensor(device="cuda")
+        cases["wrong-device"] = wrong_device
+        wrong_layout = valid_state()
+        wrong_layout["transformer.h.0.attn.bias"] = FakeTensor(layout=object())
+        cases["wrong-layout"] = wrong_layout
+        noncontiguous = valid_state()
+        noncontiguous["transformer.h.0.attn.bias"] = FakeTensor(contiguous=False)
+        cases["noncontiguous"] = noncontiguous
+        wrong_content = valid_state()
+        wrong_content["transformer.h.0.attn.bias"] = FakeTensor(causal=False)
+        cases["wrong-content"] = wrong_content
+
+        for function in (
+            producer.discard_validated_distilgpt2_attention_biases,
+            verifier._discard_validated_distilgpt2_attention_biases,
+        ):
+            for label, original in cases.items():
+                with self.subTest(function=function.__name__, case=label):
+                    state = dict(original)
+                    original_objects = dict(state)
+                    original_keys = set(state)
+                    with self.assertRaises(common.ContractError):
+                        function(state, profile, fake_torch)
+                    self.assertEqual(set(state), original_keys)
+                    for key, value in original_objects.items():
+                        self.assertIs(state[key], value)
 
     def test_cuda_runtime_lock_and_atomic_clean_build_are_frozen(self) -> None:
         lock = CUDA_LOCK.read_bytes()
