@@ -71,9 +71,12 @@ admitted here.
 RunPod may expose an encrypted Pod volume through a FUSE filesystem that forces
 all directories/files to appear as mode 0777/0666 and ignores `chmod`. Such a
 mount is useful for encrypted persistence but is **not** admitted as the
-owner-private execution root. In that case use the owner-private container disk
-for source, runtime, cache, run root, and evidence, after proving enough free
-space for all registered assets and outputs. Retain the encrypted Pod volume
+owner-private execution root. In that case keep source and runtime on the
+owner-private container disk. Put cache, run root, and evidence either there or
+on an owner-private child of a `nosuid,nodev,noexec` tmpfs that is charged to the
+admitted Pod memory cgroup and itself exposes at least 100 GiB free. No executable
+code may be loaded from that tmpfs. Prove enough free space for all registered
+assets and outputs before launch. Retain the encrypted Pod volume
 only as an optional encrypted transport staging area after the launcher has completed;
 never weaken the mode checks to run directly on the permissive mount.
 
