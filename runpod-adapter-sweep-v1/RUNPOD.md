@@ -78,8 +78,9 @@ admitted Pod memory cgroup and itself exposes at least 100 GiB free. No executab
 code may be loaded from that tmpfs. The launcher therefore creates fresh
 owner-private Triton, TorchInductor, PyTorch-extension, PyTorch Jiterator-kernel,
 and CUDA executable-cache directories beside the exact runtime on the container
-disk and passes only those fixed paths to model/replay children. Prove enough free space for all registered
-assets and outputs before launch. Before any model asset is downloaded, the
+disk and passes only those fixed paths to model/replay children. Prove enough
+free space for all registered assets and outputs before launch. Before any model
+asset is downloaded, the
 launcher compiles and loads the pinned Triton CUDA helper with `HOME`, `TMPDIR`,
 and `XDG_CACHE_HOME` still on the no-exec run volume, and requires the resulting
 shared object to exist only below `TRITON_CACHE_DIR`. The executable caches are

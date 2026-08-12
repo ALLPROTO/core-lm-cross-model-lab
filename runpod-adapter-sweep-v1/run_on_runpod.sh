@@ -93,7 +93,7 @@ unset input_path
 [[ ${#hf_token} -ge 20 && "$hf_token" == hf_* && "$hf_token" != *[$' \t\r\n']* ]] ||
   fail 'a non-blank Hugging Face fine-grained read token is required via the HF_TOKEN secret'
 
-for required_command in git ssh-keygen nvidia-smi timeout tar gzip sha256sum find grep readlink getconf df awk uname id dirname basename mkdir chmod stat tee rm; do
+for required_command in git ssh-keygen nvidia-smi timeout tar gzip sha256sum find grep readlink getconf df awk uname id dirname basename mkdir chmod stat tee; do
   command -v "$required_command" >/dev/null 2>&1 ||
     fail "required host command is absent: $required_command"
 done
