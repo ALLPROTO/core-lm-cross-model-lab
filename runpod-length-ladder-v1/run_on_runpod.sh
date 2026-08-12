@@ -298,7 +298,7 @@ ram_kib=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
 [[ "$ram_kib" =~ ^[0-9]+$ && "$ram_kib" -ge 33554432 ]] || fail 'at least 32 GiB system RAM is required'
 cgroup_admission=$(
   "$python_executable" -E -s -B "$cgroup_contract" admission \
-    --minimum-cpu-cores 8 \
+    --minimum-cpu-cores 7 \
     --minimum-memory-bytes 34359738368
 ) || fail 'current-process cgroup admission failed'
 [[ "$cgroup_admission" != *$'\n'* ]] || fail 'cgroup admission output is multiline'
@@ -519,7 +519,9 @@ verify_signed_commit \
   "$codec_root/signing/allowed_signers"
 
 printf '%s\n' \
-  'schemaVersion=corelm-runpod-length-ladder-source-v1' \
+  'schemaVersion=corelm-runpod-length-ladder-source-v2' \
+  'registrationSchemaVersion=corelm-runpod-length-ladder-registration-v2' \
+  'registrationProspectivelyAmended=true' \
   "sweepCommit=$expected_commit" \
   "sweepTree=$expected_tree" \
   'commitSignatureTrustRootSHA256=36fb4a170eee7664be32f2a5d562db209fa4f6f1f24667cf6a3ef0166d155c16' \
@@ -552,6 +554,9 @@ printf '%s\n' \
   "gpuName=$gpu_name" \
   "gpuMemoryMiB=$gpu_memory_mib" \
   "gpuDriverVersion=$gpu_driver_version" \
+  "cpuOnlineLogical=$cpu_count" \
+  'cpuLogicalMinimum=8' \
+  'cgroupCpuQuotaCoreMinimum=7' \
   "cgroupVersion=$cgroup_version" \
   "cgroupCpuQuota=$cgroup_cpu_quota" \
   "cgroupCpuPeriod=$cgroup_cpu_period" \

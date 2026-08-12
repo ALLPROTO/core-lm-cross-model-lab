@@ -29,6 +29,28 @@ sweep and codec checkouts; the exact locked CUDA runtime; one admitted GPU; and
 a previously nonexistent output root.  It neither provisions nor terminates a
 Pod.
 
+## Prospective CPU-quota amendment
+
+The signed preregistration commit
+`b0f3b207dcddcd19c921d52bd73871508e335e79` and signed provider-credential
+successor `28cfda0b32b9cb3f33a028b73b325a9e6751da5a` both preceded this operational
+amendment. Three later allocation/admission probes stopped before any model
+asset download: two at control-plane envelope readback and one at the
+current-process cgroup resource gate. None performed inference or exposed an
+experimental result. The amendment is therefore prospective to the first
+evidence-producing attempt.
+
+The Pod must still expose at least eight online logical CPUs. Separately, the
+minimum accepted finite current-process cgroup CPU quota ceiling is exactly
+seven core-equivalents: `quota >= 7 * period` for cgroup v2 `cpu.max`, or
+`cpu.cfs_quota_us >= 7 * cpu.cfs_period_us` for cgroup v1. An explicit unlimited
+quota remains admissible; a finite quota below this floor is not. The
+hypothesis, exact model assets, workload, six `P` values, codec, execution
+order, estimand, decision and publication rules, and all timeouts are
+unchanged. Because no timeout is relaxed, less CPU capacity can only make a
+stage visibly `INCOMPLETE`; it cannot change, filter, substitute, or silently
+retry a result.
+
 ## Provisioning envelope and cost fuse
 
 Use an on-demand **Secure Cloud** Pod with this minimum envelope:
@@ -36,7 +58,7 @@ Use an on-demand **Secure Cloud** Pod with this minimum envelope:
 | Item | Required value |
 |---|---|
 | GPU | exactly one NVIDIA CUDA GPU, at least 40,960 MiB visible VRAM, BF16 support |
-| CPU and RAM | at least 8 online CPUs and 32 GiB RAM, with matching current-process cgroup v1 or v2 limits |
+| CPU and RAM | at least 8 online logical CPUs; current-process cgroup v1/v2 CPU quota ceiling of at least 7 core-equivalents or explicit unlimited; at least 32 GiB RAM with a matching cgroup limit |
 | Userspace | Ubuntu 24.04, x86_64, GNU Bash 5 or newer |
 | Image | resolved and recorded as an immutable `sha256:<64-hex>` digest |
 | Runtime | only `runpod-adapter-sweep-v1/build_cuda_runtime.sh`; CPython 3.12.13, PyTorch 2.13.0+cu130 |

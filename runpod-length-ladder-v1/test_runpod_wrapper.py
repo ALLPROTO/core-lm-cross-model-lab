@@ -143,6 +143,10 @@ class RunPodWrapperStaticTests(unittest.TestCase):
         self.assertNotIn(
             "verify_run(", verifier_text[context_start:context_end]
         )
+        self.assertIn("cpu_count\" -ge 8", self.text)
+        self.assertIn("--minimum-cpu-cores 7", self.text)
+        self.assertIn("'cpuLogicalMinimum=8'", self.text)
+        self.assertIn("'cgroupCpuQuotaCoreMinimum=7'", self.text)
 
     def test_anonymous_then_application_offline_boundary(self) -> None:
         download = self.text.index("run_timed ASSET_DOWNLOAD")
@@ -188,7 +192,7 @@ class RunPodWrapperStaticTests(unittest.TestCase):
         fragments = re.findall(r"'([^']*)'", self.text[begin:end])
         self.assertGreaterEqual(len(fragments), 2)
         pattern = "".join(fragments)
-        allowed = b"schemaVersion=corelm-runpod-length-ladder-source-v1\nplatform=RunPod Pod\n"
+        allowed = b"schemaVersion=corelm-runpod-length-ladder-source-v2\nplatform=RunPod Pod\n"
         forbidden = b"podId=private\nHF_TOKEN=never-retain\n"
         admitted = subprocess.run(
             ["/usr/bin/grep", "-E", "-q", pattern],

@@ -27,6 +27,16 @@ def load_verifier():
     return module
 
 
+def load_cgroup_contract():
+    path = SUITE.parent / "runpod-adapter-sweep-v1" / "cgroup_contract.py"
+    spec = importlib.util.spec_from_file_location("length_cgroup_contract_tests", path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 class RegistrationTests(unittest.TestCase):
     def test_registration_is_closed_and_prior_record_is_bound(self) -> None:
         value = common.load_ladder()
@@ -35,6 +45,27 @@ class RegistrationTests(unittest.TestCase):
         self.assertEqual(value["timeoutPolicy"]["directSecondsByLevel"], common.DIRECT_TIMEOUT_BY_LEVEL)
         self.assertEqual(value["timeoutPolicy"]["secondarySecondsPerLevel"], 300)
         self.assertTrue(value["priorKnowledge"]["priorPromptAndTokenIdsDifferFromCurrentSourceTree"])
+        self.assertEqual(value["hardwarePolicy"]["cpuLogicalMinimum"], 8)
+        self.assertEqual(value["hardwarePolicy"]["cgroupCpuQuotaCoreMinimum"], 7)
+        self.assertEqual(value["amendment"]["cgroupCpuQuotaCoreMinimumOld"], 8)
+        self.assertFalse(value["amendment"]["modelAssetDownloadCompletedBeforeAmendment"])
+        self.assertFalse(value["amendment"]["modelInferenceStartedBeforeAmendment"])
+        self.assertFalse(value["amendment"]["resultObservedBeforeAmendment"])
+
+        contract = load_cgroup_contract()
+        memory = 32 * 1024**3
+        with self.assertRaises(contract.CgroupContractError):
+            contract.admit(
+                contract.CgroupObservation("v2", 699_999, 100_000, 1, 1, memory),
+                7,
+                memory,
+            )
+        for quota in (700_000, 765_000, None):
+            contract.admit(
+                contract.CgroupObservation("v2", quota, 100_000, 1, 1, memory),
+                7,
+                memory,
+            )
 
     def test_no_seventh_model_forward_or_generate_master_command(self) -> None:
         source = (SUITE / "run_length_ladder.py").read_text(encoding="utf-8")

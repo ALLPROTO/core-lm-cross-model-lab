@@ -36,7 +36,7 @@ for _NAME in dir(_BASE):
 LADDER_PATH = LENGTH_SUITE_ROOT / "ladder.json"
 LENGTH_PROTOCOL_PATH = LENGTH_SUITE_ROOT / "PROTOCOL.md"
 
-REGISTRATION_SCHEMA_VERSION = "corelm-runpod-length-ladder-registration-v1"
+REGISTRATION_SCHEMA_VERSION = "corelm-runpod-length-ladder-registration-v2"
 ASSET_SCHEMA_VERSION_LENGTH = "corelm-runpod-length-ladder-assets-v1"
 PREFLIGHT_SCHEMA_VERSION_LENGTH = "corelm-runpod-length-ladder-preflight-v1"
 INPUT_SCHEMA_VERSION_LENGTH = "corelm-runpod-length-ladder-input-v1"
@@ -75,6 +75,8 @@ DIRECT_TIMEOUT_BY_LEVEL = {
     "p008192": 1350,
 }
 SECONDARY_TIMEOUT_SECONDS = 300
+CPU_LOGICAL_MINIMUM = 8
+CGROUP_CPU_QUOTA_CORE_MINIMUM = 7
 
 
 def profile_object_sha256(profile: dict[str, Any]) -> str:
@@ -128,6 +130,7 @@ def load_ladder() -> dict[str, Any]:
         value,
         {
             "analysis",
+            "amendment",
             "classification",
             "codecConfiguration",
             "executionOrder",
@@ -160,9 +163,28 @@ def load_ladder() -> dict[str, Any]:
     )
     require(value["horizonTokens"] == HORIZON, "length ladder horizon differs")
     require(
+        value["amendment"]
+        == {
+            "amendedAtUTCDate": "2026-08-12",
+            "cgroupCpuQuotaCoreMinimumNew": CGROUP_CPU_QUOTA_CORE_MINIMUM,
+            "cgroupCpuQuotaCoreMinimumOld": 8,
+            "initialPreregistrationCommit": "b0f3b207dcddcd19c921d52bd73871508e335e79",
+            "modelAssetDownloadCompletedBeforeAmendment": False,
+            "modelInferenceStartedBeforeAmendment": False,
+            "predecessorCommit": "28cfda0b32b9cb3f33a028b73b325a9e6751da5a",
+            "providerAllocationProbesBeforeAmendment": 3,
+            "reason": "provider-control-plane-vcpu-count-did-not-match-current-process-cgroup-quota-and-no-minimum-ten-vcpu-offer-existed-under-the-preregistered-price-cap",
+            "resultObservedBeforeAmendment": False,
+            "scope": "prospective-operational-admission-only",
+            "unchanged": "model-workload-token-prefixes-codec-execution-order-estimand-decision-rules-materiality-timeouts-and-no-retry-policy",
+        },
+        "length ladder prospective amendment differs",
+    )
+    require(
         value["hardwarePolicy"]
         == {
-            "cpuLogicalMinimum": 8,
+            "cgroupCpuQuotaCoreMinimum": CGROUP_CPU_QUOTA_CORE_MINIMUM,
+            "cpuLogicalMinimum": CPU_LOGICAL_MINIMUM,
             "gpuCount": 1,
             "gpuMemoryMiBMinimum": 40960,
             "gpuRuntime": "nvidia-cuda-bf16",

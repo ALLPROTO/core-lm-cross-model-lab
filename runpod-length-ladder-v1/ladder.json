@@ -8,6 +8,20 @@
     "statisticalInference": "none-deterministic-single-execution-per-registered-length",
     "trendClaimScope": "registered-nested-prefixes-only"
   },
+  "amendment": {
+    "amendedAtUTCDate": "2026-08-12",
+    "cgroupCpuQuotaCoreMinimumNew": 7,
+    "cgroupCpuQuotaCoreMinimumOld": 8,
+    "initialPreregistrationCommit": "b0f3b207dcddcd19c921d52bd73871508e335e79",
+    "modelAssetDownloadCompletedBeforeAmendment": false,
+    "modelInferenceStartedBeforeAmendment": false,
+    "predecessorCommit": "28cfda0b32b9cb3f33a028b73b325a9e6751da5a",
+    "providerAllocationProbesBeforeAmendment": 3,
+    "reason": "provider-control-plane-vcpu-count-did-not-match-current-process-cgroup-quota-and-no-minimum-ten-vcpu-offer-existed-under-the-preregistered-price-cap",
+    "resultObservedBeforeAmendment": false,
+    "scope": "prospective-operational-admission-only",
+    "unchanged": "model-workload-token-prefixes-codec-execution-order-estimand-decision-rules-materiality-timeouts-and-no-retry-policy"
+  },
   "classification": "PREREGISTERED_PUBLIC_LENGTH_LADDER_ONLY",
   "codecConfiguration": "normalized-layer-0-and-one-third-9bit-rest-8bit-v1",
   "executionOrder": [
@@ -20,6 +34,7 @@
   ],
   "horizonTokens": 32,
   "hardwarePolicy": {
+    "cgroupCpuQuotaCoreMinimum": 7,
     "cpuLogicalMinimum": 8,
     "gpuCount": 1,
     "gpuMemoryMiBMinimum": 40960,
@@ -86,7 +101,7 @@
     "usePolicy": "disclose-only-current-source-tree-six-points-unknown-fresh-recompute-no-imported-result-bytes-or-metrics"
   },
   "scientificEvidence": false,
-  "schemaVersion": "corelm-runpod-length-ladder-registration-v1",
+  "schemaVersion": "corelm-runpod-length-ladder-registration-v2",
   "selection": {
     "addSpecialTokens": false,
     "nestedPrefixes": true,

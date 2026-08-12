@@ -64,6 +64,17 @@ bytes. The new contour discloses that prior knowledge and requires a fresh
 execution of all six exact current prefixes. No result is claimed here until a
 complete archive passes the committed structural verifier.
 
+The signed history before a prospective operational amendment consists of
+predecessor commits `b0f3b207dcddcd19c921d52bd73871508e335e79` and
+`28cfda0b32b9cb3f33a028b73b325a9e6751da5a`. The amendment follows three later
+allocation/admission probes: two stopped at control-plane envelope readback and
+one at the current-process cgroup gate. All three stopped before any model asset
+download, inference, or result observation. The Pod must still expose at least eight online logical
+CPUs; only the finite cgroup CPU-quota ceiling floor changes to exactly seven
+core-equivalents. The hypothesis, model, workload, `P` ladder, codec, execution
+order, estimand, rules, and timeouts are unchanged. With no timeout relaxation,
+lower CPU capacity can only yield a visible incomplete attempt.
+
 ## Blind V1 — retired, unrun terminal draft
 
 [`blind_v1/`](blind_v1/README.md) preserves the historical design for the

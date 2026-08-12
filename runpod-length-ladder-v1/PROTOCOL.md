@@ -30,6 +30,37 @@ and recomputes a fresh `P=8192` direct cell in its preregistered execution
 position. The five lower `P` points were not previously measured in this exact
 contour.
 
+## Prospective operational CPU-quota amendment
+
+The original signed preregistration commit
+`b0f3b207dcddcd19c921d52bd73871508e335e79` and its signed
+provider-credential-boundary successor
+`28cfda0b32b9cb3f33a028b73b325a9e6751da5a` required at least eight online
+logical CPUs and also admitted a finite current-process cgroup CPU ceiling only
+when it provided at least eight quota-equivalent cores. After those two public
+predecessors, three operational allocation/admission probes were terminated
+before asset acquisition. The first two stopped at control-plane envelope
+readback; the third reached and stopped at the current-process cgroup resource
+gate. No model asset was downloaded, no model inference was performed, and no
+experimental result or outcome was observed in any probe.
+
+Prospectively, before any evidence-producing attempt, the minimum number of
+online logical CPUs remains **eight**. The sole amendment is that the minimum
+accepted finite cgroup CPU quota ceiling is now exactly **seven
+core-equivalents**: for cgroup v2, `quota >= 7 * period` in `cpu.max`; for
+cgroup v1, `cpu.cfs_quota_us >= 7 * cpu.cfs_period_us`. An explicit unlimited
+quota remains admissible, and any finite quota below seven core-equivalents is
+rejected. This does not redefine the online-logical-CPU requirement as seven.
+
+The hypothesis, model and assets, workload bytes and tokenization, six `P`
+values, codec configuration, direct and secondary execution order, estimand,
+decision and publication rules, and every worker, stage, and provider timeout
+remain unchanged. No timeout is widened to compensate for the lower finite
+quota floor. If the lower quota has an operational effect, it can only cause an
+existing timeout or stage failure and therefore a visible `INCOMPLETE` attempt;
+it cannot authorize a retry, substitution, filtered cell, or changed result
+rule.
+
 ## Immutable experimental unit
 
 The only admitted tuple is:
@@ -59,10 +90,11 @@ This suite imports the selected profile object, its per-profile GPU admission,
 and exact assets; it does not silently inherit the adapter sweep's matrix-wide
 78 GiB device class. `ladder.json` registers a suite-specific envelope of one
 BF16-capable NVIDIA CUDA GPU with at least 40,960 MiB, at least eight logical
-CPUs, and at least 32 GiB host memory. The exact GPU identity and driver are
-fixed and recorded within one attempt. This envelope is an operational
-admission for the single Qwen model, not evidence that results transfer across
-hardware or runs.
+CPUs, a current-process cgroup CPU quota ceiling of at least seven
+core-equivalents (or an explicit unlimited quota), and at least 32 GiB host
+memory. The exact GPU identity and driver are fixed and recorded within one
+attempt. This envelope is an operational admission for the single Qwen model,
+not evidence that results transfer across hardware or runs.
 
 ## Exact nested input prefixes
 
