@@ -44,6 +44,26 @@ not scientific evidence or an independent replication. The large evidence
 archive is intentionally not committed; its digest and exact reproduction
 procedure accompany the audit.
 
+## Qwen prefill-length ladder
+
+The separate
+[`runpod-length-ladder-v1` protocol](runpod-length-ladder-v1/PROTOCOL.md)
+preregisters a six-point within-model diagnostic for the exact pinned
+Qwen2.5-0.5B checkpoint and one tracked technical-prose workload. It varies
+only the nested prefill length (`P = 256, 512, 1024, 2048, 4096, 8192`) while
+holding the model, tokenizer, workload source, cache adapter, codec, runtime,
+and 32-token diagnostic horizon fixed. Six fresh direct-prefill processes form
+the primary series; prefixes of the retained direct `P=8192` BF16 cache form a
+separate codec-only control.
+
+This public, post-hoc follow-up is not blind, independent, or scientific
+evidence and does not amend a frozen Core LM verdict. A `P=8192` outcome for
+the same model and tracked workload definition was already visible in the
+recorded adapter sweep, although this commit changes the Git-bound workload
+bytes. The new contour discloses that prior knowledge and requires a fresh
+execution of all six exact current prefixes. No result is claimed here until a
+complete archive passes the committed structural verifier.
+
 ## Blind V1 — retired, unrun terminal draft
 
 [`blind_v1/`](blind_v1/README.md) preserves the historical design for the

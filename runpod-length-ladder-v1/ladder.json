@@ -1,0 +1,132 @@
+{
+  "analysis": {
+    "aggregation": "within-exact-model-workload-codec-only",
+    "decisionArithmetic": "exact-integer-cross-products",
+    "endpointCriterion": "directDense8192*directContainer256-directDense256*directContainer8192>0",
+    "primaryCriterion": "all-five-adjacent-direct-prefill-exact-cross-product-numerators-are-strictly-positive",
+    "ratioDefinition": "complete-dense-bf16-cache-bytes-divided-by-complete-container-bytes",
+    "statisticalInference": "none-deterministic-single-execution-per-registered-length",
+    "trendClaimScope": "registered-nested-prefixes-only"
+  },
+  "classification": "PREREGISTERED_PUBLIC_LENGTH_LADDER_ONLY",
+  "codecConfiguration": "normalized-layer-0-and-one-third-9bit-rest-8bit-v1",
+  "executionOrder": [
+    "p004096",
+    "p000512",
+    "p008192",
+    "p000256",
+    "p001024",
+    "p002048"
+  ],
+  "horizonTokens": 32,
+  "hardwarePolicy": {
+    "cpuLogicalMinimum": 8,
+    "gpuCount": 1,
+    "gpuMemoryMiBMinimum": 40960,
+    "gpuRuntime": "nvidia-cuda-bf16",
+    "hostMemoryGiBMinimum": 32,
+    "identityRequirement": "exact-device-and-driver-fixed-and-recorded-within-attempt",
+    "scope": "suite-specific-single-qwen-operational-envelope",
+    "upstreamMatrixWideExecutionPolicyApplies": false
+  },
+  "isolation": {
+    "freshModelLoadPerCell": true,
+    "freshOperatingSystemProcessPerCell": true,
+    "masterCacheSource": "registered-primary-direct-cell-p008192",
+    "primaryStateReuseAcrossLengths": false,
+    "secondaryControlProcesses": "post-direct-codec-only-fresh-process-per-length",
+    "secondaryControlStateReuseAcrossLengths": "verified-immutable-p008192-direct-bf16-prefix-bytes-only"
+  },
+  "lengths": [
+    {
+      "levelId": "p000256",
+      "prefillTokens": 256
+    },
+    {
+      "levelId": "p000512",
+      "prefillTokens": 512
+    },
+    {
+      "levelId": "p001024",
+      "prefillTokens": 1024
+    },
+    {
+      "levelId": "p002048",
+      "prefillTokens": 2048
+    },
+    {
+      "levelId": "p004096",
+      "prefillTokens": 4096
+    },
+    {
+      "levelId": "p008192",
+      "prefillTokens": 8192
+    }
+  ],
+  "masterCache": {
+    "canonicalDtype": "bfloat16-little-endian",
+    "masterPrefillTokens": 8192,
+    "role": "secondary-codec-length-control-and-direct-prefix-diagnostic",
+    "sliceRule": "first-P-rows-of-every-canonical-master-layer",
+    "sourceLevelId": "p008192",
+    "sourceSeries": "primary-direct"
+  },
+  "model": {
+    "adapterId": "qwen2-dynamic-cache-v1",
+    "modelId": "qwen2.5-0.5b",
+    "profileId": "qwen2.5-0.5b-runpod-sweep-v1"
+  },
+  "priorKnowledge": {
+    "artifactPath": "runpod-adapter-sweep-v1/recorded-runs/2026-08-12-attempt-04",
+    "recordSHA256": "5d1d65f310387d0e438ba6ff000646c966e08528ab21b2e55076355dd71a89a7",
+    "selectedResultSHA256": "a15c73d5e868b60da11d363481ad14eafe089ec4434448ca28eb7fd622e78802",
+    "priorPromptAndTokenIdsDifferFromCurrentSourceTree": true,
+    "sameModelWorkloadDefinitionAndLengthOutcomeKnownBeforeDesign": true,
+    "selectedTuplePrefillTokens": 8192,
+    "usePolicy": "disclose-only-current-source-tree-six-points-unknown-fresh-recompute-no-imported-result-bytes-or-metrics"
+  },
+  "scientificEvidence": false,
+  "schemaVersion": "corelm-runpod-length-ladder-registration-v1",
+  "selection": {
+    "addSpecialTokens": false,
+    "nestedPrefixes": true,
+    "promptFinalInputTokens": 1,
+    "selectedTokenRange": "first-prefillTokens-plus-one",
+    "truncation": false
+  },
+  "supportDecision": {
+    "indeterminatePrecedence": true,
+    "noPositiveSupport": "complete-and-endpoint-direct-ratio-does-not-increase-with-equal-or-decrease-subtype",
+    "onePercentMaterialityRole": "reported-separately-never-changes-support-class",
+    "strongDirectionalSupport": "complete-and-all-five-adjacent-direct-ratios-strictly-increase",
+    "weakDirectionalSupport": "complete-and-endpoint-direct-ratio-increases-but-at-least-one-adjacent-direct-ratio-does-not-strictly-increase"
+  },
+  "timeoutPolicy": {
+    "directSecondsByLevel": {
+      "p000256": 600,
+      "p000512": 600,
+      "p001024": 600,
+      "p002048": 600,
+      "p004096": 900,
+      "p008192": 1350
+    },
+    "failurePolicy": "visible-incomplete-no-silent-retry-within-attempt",
+    "profileExecutionTimeoutSecondsIsMaximum": 1350,
+    "secondarySecondsPerLevel": 300
+  },
+  "series": {
+    "primary": "fresh-direct-prefill-cache-at-each-P",
+    "secondary": "exact-prefix-slices-of-one-8192-token-master-cache"
+  },
+  "sourceBinding": {
+    "allowWorkingTreeBytes": false,
+    "requireCleanCheckout": true,
+    "revision": "HEAD",
+    "trackedBlobSource": "git-object-database",
+    "tree": "HEAD^{tree}"
+  },
+  "workload": {
+    "contentClass": "technical-prose",
+    "workloadId": "tracked-technical-prose-v1"
+  }
+}
