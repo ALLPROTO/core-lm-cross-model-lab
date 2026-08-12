@@ -49,14 +49,20 @@ FORBIDDEN_CREDENTIAL_NAME = re.compile(
     r"(?:^|_)(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|PRIVATE_KEY|ACCESS_KEY|REFRESH_TOKEN|CLIENT_SECRET|CREDENTIALS?)(?:$|_)",
     re.IGNORECASE,
 )
+SAFE_NONCREDENTIAL_CONTROL_VALUES = {
+    "HF_HUB_DISABLE_IMPLICIT_TOKEN": "1",
+}
 
 
 def require_clean_credentials() -> None:
     present = sorted(
         name
-        for name in os.environ
-        if name in FORBIDDEN_CREDENTIALS
-        or FORBIDDEN_CREDENTIAL_NAME.search(name) is not None
+        for name, value in os.environ.items()
+        if (
+            name in FORBIDDEN_CREDENTIALS
+            or FORBIDDEN_CREDENTIAL_NAME.search(name) is not None
+        )
+        and SAFE_NONCREDENTIAL_CONTROL_VALUES.get(name) != value
     )
     require(not present, f"asset process inherited forbidden credentials: {present}")
 

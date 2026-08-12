@@ -175,6 +175,20 @@ class SafetyTests(unittest.TestCase):
                     module.require_clean_credentials()
         with mock.patch.dict(os.environ, {"PATH": "/usr/bin", "LANG": "C"}, clear=True):
             module.require_clean_credentials()
+        with mock.patch.dict(
+            os.environ,
+            {"HF_HUB_DISABLE_IMPLICIT_TOKEN": "1"},
+            clear=True,
+        ):
+            module.require_clean_credentials()
+        for unsafe_value in ("", "0", "true", "hf_not_a_real_token_but_still_forbidden"):
+            with self.subTest(unsafe_value=unsafe_value), mock.patch.dict(
+                os.environ,
+                {"HF_HUB_DISABLE_IMPLICIT_TOKEN": unsafe_value},
+                clear=True,
+            ):
+                with self.assertRaises(Exception):
+                    module.require_clean_credentials()
 
     def test_timestamp_and_decimal_grammar_fail_closed(self) -> None:
         verifier = load_verifier()

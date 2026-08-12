@@ -61,6 +61,17 @@ existing timeout or stage failure and therefore a visible `INCOMPLETE` attempt;
 it cannot authorize a retry, substitution, filtered cell, or changed result
 rule.
 
+After the signed amendment commit
+`77353942a2d885e00bfc6c876d2ec666c50e0b35`, the first execution successor
+passed source, contract, cgroup, and executable-cache admission but stopped at
+the start of `ASSET_DOWNLOAD`, before any asset network request or model
+inference. The downloader's generic credential-name guard had classified the
+literal non-secret control `HF_HUB_DISABLE_IMPLICIT_TOKEN=1` as a credential.
+The operational correction admits only that exact name/value pair; a missing,
+empty, differently valued, or other token-shaped field remains rejected. No
+hypothesis, workload byte, token prefix, model, codec, order, estimand, decision
+rule, materiality rule, or timeout changes. The failed root is not reused.
+
 ## Immutable experimental unit
 
 The only admitted tuple is:

@@ -103,6 +103,13 @@ After the asset receipt is written, the launcher sets `HF_HUB_OFFLINE=1`,
 `TRANSFORMERS_OFFLINE=1`, and `HF_HUB_DISABLE_IMPLICIT_TOKEN=1` for all
 preflight, model, codec, verifier, and replay work.
 
+The downloader credential guard treats
+`HF_HUB_DISABLE_IMPLICIT_TOKEN=1` as an exact non-secret control exception even
+though its name ends in `TOKEN`. No other value for that name is admitted, and
+all actual token/secret names remain terminal failures. A prior post-amendment
+execution stopped at this guard before the first asset request or inference;
+its partial root is not reusable and is not result evidence.
+
 This is application/library-level offline behavior.  The launcher does not
 install a firewall or prove that the managed container lacks an egress route.
 
@@ -392,6 +399,11 @@ exec /usr/bin/env -i \
   "$RUNTIME_ROOT/bin/python" -I -B \
   ./runpod-length-ladder-v1/launch_runpod.py
 ```
+
+The command above intentionally uses `exec` for a direct interactive launch.
+If an operator adds an outer shell with an `EXIT` trap to publish an atomic
+status file, that outer shell must run and wait for this command without
+`exec`; replacing the supervisor would also discard its trap.
 
 The entrypoint requires only RunPod's documented Pod-scoped key name in PID 1,
 rejects every credential in its own entry environment and every other PID 1
