@@ -19,6 +19,23 @@ mocked, or beacon input is accepted by that legacy runner. The separate
 archived v4 development contour retains a read-only fail-closed beacon runner
 and protocol, but its scientific path is no longer active.
 
+## Exploratory seven-adapter RunPod contour
+
+The separate
+[`runpod-adapter-sweep-v1` operator runbook](runpod-adapter-sweep-v1/RUNPOD.md)
+defines a 28-cell RunPod Pod-container sweep: one pinned checkpoint for each of
+the Qwen2, Llama, Mistral, GPT-NeoX, GPT-2, OPT, and Gemma adapters across four
+tracked-source workloads. It is classified
+`EXPLORATORY_PUBLIC_REGRESSION_ONLY`; it is not a virtual-machine test,
+independent replication, scientific evidence, or support for every model in an
+architecture family.
+
+For this contour, default pull-request and push CI runs only the 21 model-free
+contract tests. It downloads no model assets, receives no Hugging Face
+credential, requires no GPU, performs no model inference, and produces no
+benchmark evidence. The real CUDA/model execution remains an explicit operator
+action under the linked runbook.
+
 ## Blind V1 — retired, unrun terminal draft
 
 [`blind_v1/`](blind_v1/README.md) preserves the historical design for the

@@ -1,0 +1,162 @@
+{
+  "adapterTargets": [
+    {
+      "adapterId": "gemma-dynamic-cache-v1",
+      "cachePolicy": "full-context",
+      "contextTargetTokens": 8192,
+      "maxCompressedPrefillTokens": 4096
+    },
+    {
+      "adapterId": "gpt-neox-dynamic-cache-v1",
+      "cachePolicy": "full-context",
+      "contextTargetTokens": 2048,
+      "maxCompressedPrefillTokens": 2015
+    },
+    {
+      "adapterId": "gpt2-dynamic-cache-v1",
+      "cachePolicy": "full-context",
+      "contextTargetTokens": 1024,
+      "maxCompressedPrefillTokens": 991
+    },
+    {
+      "adapterId": "llama-dynamic-cache-v1",
+      "cachePolicy": "full-context",
+      "contextTargetTokens": 8192,
+      "maxCompressedPrefillTokens": 5461
+    },
+    {
+      "adapterId": "mistral-dynamic-cache-v1",
+      "cachePolicy": "sliding-window-effective",
+      "contextTargetTokens": 4096,
+      "maxCompressedPrefillTokens": 1024
+    },
+    {
+      "adapterId": "opt-dynamic-cache-v1",
+      "cachePolicy": "full-context",
+      "contextTargetTokens": 2048,
+      "maxCompressedPrefillTokens": 1365
+    },
+    {
+      "adapterId": "qwen2-dynamic-cache-v1",
+      "cachePolicy": "full-context",
+      "contextTargetTokens": 32768,
+      "maxCompressedPrefillTokens": 8192
+    }
+  ],
+  "classification": "EXPLORATORY_PUBLIC_REGRESSION_ONLY",
+  "concatenation": {
+    "algorithm": "corelm-tracked-utf8-file-frames-v1",
+    "beginFrame": "===== BEGIN CORELM TRACKED FILE: {path} =====\n",
+    "contentBytes": "exact-git-head-blob",
+    "contentEncoding": "utf-8-strict",
+    "endFrame": "\n===== END CORELM TRACKED FILE: {path} =====\n",
+    "instructionBeginFrame": "===== BEGIN OPERATOR REQUEST =====\n",
+    "instructionEndFrame": "\n===== END OPERATOR REQUEST =====\n",
+    "normalization": "none",
+    "pathEncoding": "utf-8",
+    "pathOrder": "ascending-posix-bytewise"
+  },
+  "horizonTokens": 32,
+  "schemaVersion": "corelm-runpod-adapter-sweep-workloads-v1",
+  "scientificEvidence": false,
+  "selection": {
+    "addSpecialTokens": false,
+    "generationTokens": 32,
+    "prefillTokens": "maxCompressedPrefillTokens",
+    "promptFinalInputTokens": 1,
+    "selectedTokenRange": "first-maxCompressedPrefillTokens-plus-one",
+    "truncation": false
+  },
+  "sourceBinding": {
+    "allowWorkingTreeBytes": false,
+    "requireCleanCheckout": true,
+    "revision": "HEAD",
+    "trackedBlobSource": "git-object-database",
+    "tree": "HEAD^{tree}"
+  },
+  "targetSemantics": "maximum-codec-bounded-prefill-plus-greedy-horizon-v1",
+  "workloads": [
+    {
+      "contentClass": "legal-and-protocol",
+      "instruction": "Analyze the following legal and protocol material. Identify obligations, security invariants, contradictions, and unresolved risks. Return a concise risk register without inventing facts outside the supplied material.",
+      "minimumTrackedUtf8Bytes": 131072,
+      "paths": [
+        "AGENTS.md",
+        "LICENSE",
+        "LICENSES/ASSET_LICENSES.md",
+        "LICENSES/README.md",
+        "LICENSES/UD_ENGLISH_PUD_ATTRIBUTION.md",
+        "LICENSES/upstream/blind-v1-distilgpt2-82m-README.md",
+        "LICENSES/upstream/blind-v1-gpt2-124m-README.md",
+        "LICENSES/upstream/gpt-neo-125m-README.md",
+        "LICENSES/upstream/tiny-starcoder-py-README.md",
+        "LICENSES/upstream/ud-english-pud-r2.18-README.md",
+        "LICENSES/upstream/voidtoken-LICENSE",
+        "NOTICE.md",
+        "v4/PROTOCOL.md",
+        "v4/REPRODUCIBILITY.md",
+        "v4/signing/README.md",
+        "v4/trust/README.md"
+      ],
+      "workloadId": "tracked-legal-protocol-v1"
+    },
+    {
+      "contentClass": "source-code",
+      "instruction": "Review the following source code as one system. Explain its architecture, trace the critical execution path, identify correctness and security defects, and propose the smallest testable fixes.",
+      "minimumTrackedUtf8Bytes": 131072,
+      "paths": [
+        "run_cross_model.py",
+        "security/scan_repository_secrets.py",
+        "v4/cache_adapter.py",
+        "v4/development_artifact_verifier.py",
+        "v4/development_model_replay.py",
+        "v4/freeze_manifest.py",
+        "v4/independent_verifier_core.py",
+        "v4/model_worker.py",
+        "v4/run_real_e2e_control.py",
+        "v4/runner.py",
+        "v4/verify_evidence.py"
+      ],
+      "workloadId": "tracked-source-code-v1"
+    },
+    {
+      "contentClass": "structured-json",
+      "instruction": "Validate the following structured specifications and records. Reconstruct their cross-file invariants, flag schema or identity inconsistencies, and summarize the exact reproducibility contract.",
+      "minimumTrackedUtf8Bytes": 131072,
+      "paths": [
+        "LICENSES/source-evidence.json",
+        "models.json",
+        "v4/design-registration.draft.json",
+        "v4/schemas/design.schema.json",
+        "v4/schemas/evidence-release-manifest.schema.json",
+        "v4/schemas/experiment-closeout.schema.json",
+        "v4/schemas/freeze-manifest.schema.json",
+        "v4/schemas/github-gate-receipt.schema.json",
+        "v4/schemas/release-receipt.schema.json",
+        "v4/schemas/zenodo-deposit-manifest.schema.json",
+        "v4/test-vectors/github-release-attestation-v1/gh-release-verify-v2.97.0.json",
+        "v4/trust/github/trusted_root.json"
+      ],
+      "workloadId": "tracked-structured-json-v1"
+    },
+    {
+      "contentClass": "technical-prose",
+      "instruction": "Synthesize the following technical documents into an evidence-grounded engineering memo. Separate demonstrated results, limitations, historical state, and the next reproducible experiment.",
+      "minimumTrackedUtf8Bytes": 131072,
+      "paths": [
+        "README.md",
+        "REPRODUCE.md",
+        "RESULTS.md",
+        "v4/ARCHIVAL.md",
+        "v4/CLOSEOUT.md",
+        "v4/COLLECTOR_AND_BEACON_API.md",
+        "v4/EVIDENCE_RELEASE.md",
+        "v4/FREEZE_READINESS.md",
+        "v4/GITHUB_GATE_RECEIPTS.md",
+        "v4/README.md",
+        "v4/RELEASE_RECEIPTS.md"
+      ],
+      "workloadId": "tracked-technical-prose-v1"
+    }
+  ]
+}
