@@ -84,6 +84,16 @@ class RunPodEntryTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.entry.reject_credentials(names, label="fixture")
 
+    def test_pid1_admits_only_the_exact_provider_scoped_key(self) -> None:
+        self.entry.validate_pid1_credentials(("HOME", "RUNPOD_API_KEY"))
+        for names in (
+            ("HOME",),
+            ("HOME", "RUNPOD_API_KEY", "HF_TOKEN"),
+            ("HOME", "RUNPOD_TOKEN"),
+        ):
+            with self.subTest(names=names), self.assertRaises(SystemExit):
+                self.entry.validate_pid1_credentials(names)
+
     def test_pid1_parser_is_bounded_and_strict(self) -> None:
         with self.assertRaises(SystemExit):
             self.entry.parse_environment_names(b"HOME=/root", label="fixture")

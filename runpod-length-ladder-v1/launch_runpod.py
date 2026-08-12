@@ -21,10 +21,12 @@ INPUT_NAMES = (
 )
 PID1_ENVIRON = Path("/proc/1/environ")
 MAX_PID1_ENVIRON_BYTES = 1024 * 1024
+PROVIDER_PID1_CREDENTIAL = "RUNPOD_API_KEY"
 
-# A Pod for this public-model contour must not receive any model, source-host,
-# cloud-provider, or forwarded-login credential.  Match names only: values are
-# never retained or printed.
+# The application entry must not receive any model, source-host, cloud, or
+# forwarded-login credential. RunPod nevertheless injects one Pod-scoped API
+# key into PID 1. We admit that exact provider field only at the PID 1 boundary;
+# its value is never returned, logged, or propagated to the clean execve.
 EXACT_FORBIDDEN_NAMES = frozenset(
     {
         "HF_TOKEN",
@@ -109,7 +111,19 @@ def reject_credentials(names: tuple[str, ...], *, label: str) -> None:
         fail(f"{label} contains forbidden credential fields: {','.join(rejected)}")
 
 
+def validate_pid1_credentials(names: tuple[str, ...]) -> None:
+    credentials = sorted(name for name in names if credential_name(name))
+    if credentials != [PROVIDER_PID1_CREDENTIAL]:
+        fail(
+            "PID 1 credential fields differ from the exact provider exception: "
+            + ",".join(credentials)
+        )
+
+
 def main() -> None:
+    # Disable dumps before boundedly reading PID 1, whose provider-managed
+    # environment contains the Pod-scoped key value that we immediately drop.
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     if not sys.flags.ignore_environment or not sys.flags.no_user_site:
         fail("invoke this entrypoint with the exact runtime and -I -B")
     if not sys.dont_write_bytecode:
@@ -119,7 +133,7 @@ def main() -> None:
     pid1_names = parse_environment_names(
         read_bounded_proc_environment(), label="PID 1"
     )
-    reject_credentials(pid1_names, label="PID 1 environment")
+    validate_pid1_credentials(pid1_names)
 
     values = {name: os.environ.get(name) for name in INPUT_NAMES}
     if any(not isinstance(value, str) or not value for value in values.values()):
@@ -134,7 +148,6 @@ def main() -> None:
     script = Path(__file__).resolve(strict=True).with_name("run_on_runpod.sh")
     if not script.is_file() or script.is_symlink():
         fail("the Bash launcher is absent or unsafe")
-    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     clean_environment = {name: values[name] for name in INPUT_NAMES}
     clean_environment["HOME"] = home
     os.execve(

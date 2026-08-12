@@ -71,6 +71,7 @@ Authoritative platform references:
 - [Pod pricing and billing](https://docs.runpod.io/pods/pricing)
 - [Pod storage types](https://docs.runpod.io/pods/storage/types)
 - [Manage and terminate Pods](https://docs.runpod.io/pods/manage-pods)
+- [RunPod-provided environment variables](https://docs.runpod.io/pods/templates/environment-variables)
 
 ## Network and credential boundary
 
@@ -84,11 +85,16 @@ This is application/library-level offline behavior.  The launcher does not
 install a firewall or prove that the managed container lacks an egress route.
 
 Create no RunPod Secret and no Hugging Face token for this run.  Do not inject
-`HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`, a GitHub token, a RunPod API key, a cloud
-credential, a signing key, an SSH client private key, or an agent socket.  The
-Python entrypoint inspects credential **names**, never values, in both its own
-environment and bounded `/proc/1/environ`; any admitted credential field is a
-terminal failure.  Before asset access, Bash also rejects conventional
+`HF_TOKEN`, `HUGGING_FACE_HUB_TOKEN`, a GitHub token, an operator RunPod API
+key, a cloud credential, a signing key, an SSH client private key, or an agent
+socket.  RunPod automatically injects one Pod-scoped `RUNPOD_API_KEY` into PID
+1.  That unavoidable provider field is the sole credential-name exception at
+the PID 1 boundary: the entrypoint requires exactly that one credential name,
+disables core dumps before the bounded read, discards all values, and never
+copies the provider key into its own environment or the clean `execve`.
+Every credential field in the application entry environment, and every other
+credential name in PID 1, is a terminal failure.  Before asset access, Bash
+also rejects conventional
 Hugging Face, GitHub CLI, Git, AWS, Google, Docker, Kubernetes, and netrc
 credential files plus SSH client private-key filenames in both `/root` and the
 registered bootstrap home; it repeats the check in the fresh run home after
@@ -126,6 +132,9 @@ layout keeps source, codec, runtime, and attempt roots disjoint:
 ```bash
 set -eu
 set +x
+unset RUNPOD_API_KEY
+ulimit -c 0
+test "$(ulimit -c)" = 0
 umask 077
 PRIVATE_ROOT=/corelm-length
 BOOTSTRAP_HOME=$PRIVATE_ROOT/bootstrap-home
@@ -303,6 +312,9 @@ suite builder and its three exact locks at the same signed source identity:
 ```bash
 set -eu
 set +x
+unset RUNPOD_API_KEY
+ulimit -c 0
+test "$(ulimit -c)" = 0
 export CORELM_SWEEP_EXPECTED_COMMIT="$LENGTH_COMMIT"
 export CORELM_SWEEP_EXPECTED_TREE="$LENGTH_TREE"
 export CORELM_SWEEP_CODEC_ROOT="$CODEC_SOURCE"
@@ -335,6 +347,9 @@ non-secret inputs plus `HOME`:
 ```bash
 set -eu
 set +x
+unset RUNPOD_API_KEY
+ulimit -c 0
+test "$(ulimit -c)" = 0
 RUN_ROOT=$ATTEMPT_PARENT/attempt-01
 test ! -e "$RUN_ROOT"
 verify_source_checkout "$SWEEP_SOURCE" "$LENGTH_COMMIT" "$LENGTH_TREE" \
@@ -356,10 +371,11 @@ exec /usr/bin/env -i \
   ./runpod-length-ladder-v1/launch_runpod.py
 ```
 
-The entrypoint checks PID 1 for forbidden credentials, sets the core-dump limit
-to zero, and uses `execve` to enter exact `/bin/bash` with the same seven-field
-environment.  Bash then removes all inherited names and constructs the fixed
-runtime environment before any source or asset action.
+The entrypoint requires only RunPod's documented Pod-scoped key name in PID 1,
+rejects every credential in its own entry environment and every other PID 1
+credential name, and uses `execve` to enter exact `/bin/bash` with the same
+seven non-secret fields.  Bash then removes all inherited names and constructs
+the fixed runtime environment before any source or asset action.
 
 The admitted command sequence is:
 
@@ -434,6 +450,7 @@ SHA256SUMS
 Retrieve both over the host-key-pinned channel:
 
 ```bash
+REMOTE_EXPORT=/corelm-length/attempts/attempt-01/export
 LOCAL_EVIDENCE_DIR=$(mktemp -d \
   "${TMPDIR:-/tmp}/corelm-length-evidence.XXXXXX")
 LOCAL_EVIDENCE_DIR=$(cd "$LOCAL_EVIDENCE_DIR" && pwd -P)
