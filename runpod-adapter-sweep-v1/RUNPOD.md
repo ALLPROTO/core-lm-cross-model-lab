@@ -68,6 +68,15 @@ Pod volume survives **stop** and continues to incur storage charges, but it is
 deleted on **terminate**. A network volume survives Pod termination and is not
 admitted here.
 
+RunPod may expose an encrypted Pod volume through a FUSE filesystem that forces
+all directories/files to appear as mode 0777/0666 and ignores `chmod`. Such a
+mount is useful for encrypted persistence but is **not** admitted as the
+owner-private execution root. In that case use the owner-private container disk
+for source, runtime, cache, run root, and evidence, after proving enough free
+space for all registered assets and outputs. Retain the encrypted Pod volume
+only as an optional encrypted transport staging area after the launcher has completed;
+never weaken the mode checks to run directly on the permissive mount.
+
 Obtain the exact resolved container digest from the authenticated control
 plane. Supply it as `CORELM_SWEEP_IMAGE_DIGEST`; a mutable image tag is not an
 acceptable value. The launcher records the operator-supplied digest in the
