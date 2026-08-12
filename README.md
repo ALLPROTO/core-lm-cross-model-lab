@@ -30,11 +30,19 @@ tracked-source workloads. It is classified
 independent replication, scientific evidence, or support for every model in an
 architecture family.
 
-For this contour, default pull-request and push CI runs only the 30 model-free
+For this contour, default pull-request and push CI runs only the 41 model-free
 contract tests. It downloads no model assets, receives no Hugging Face
 credential, requires no GPU, performs no model inference, and produces no
 benchmark evidence. The real CUDA/model execution remains an explicit operator
 action under the linked runbook.
+
+The first complete recorded sweep is the compact
+[`2026-08-12 attempt-04 audit`](runpod-adapter-sweep-v1/recorded-runs/2026-08-12-attempt-04/RESULTS.md):
+28/28 cells completed and seven representative same-Pod model replays were
+verified. The retained record is still exploratory author self-verification,
+not scientific evidence or an independent replication. The large evidence
+archive is intentionally not committed; its digest and exact reproduction
+procedure accompany the audit.
 
 ## Blind V1 — retired, unrun terminal draft
 

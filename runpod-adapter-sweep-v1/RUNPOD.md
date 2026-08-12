@@ -520,6 +520,13 @@ archive intentionally excludes the model assets/cache needed by
 `verify-run`/`replay-cell`. The structural and seven replay receipts inside the
 archive were produced on the original Pod.
 
+After transfer verification, complete lifecycle cleanup, and revocation of all
+ephemeral credentials, use the model-free publication builder documented in
+[`recorded-runs/README.md`](recorded-runs/README.md) to generate the compact
+28-row audit, exact attempt history, and ordinary-user reproduction guide. It
+does not promote this same-Pod exploratory regression into scientific evidence
+or an independent replication.
+
 If a signed receipt is required, sign the already checked `SHA256SUMS` locally
 with an offline key that never entered the Pod:
 
