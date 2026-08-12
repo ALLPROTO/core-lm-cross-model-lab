@@ -252,25 +252,26 @@ gpu_driver_version=${gpu_driver_version//[[:space:]]/}
 cpu_count=$(getconf _NPROCESSORS_ONLN)
 [[ "$cpu_count" =~ ^[0-9]+$ && "$cpu_count" -ge 16 ]] ||
   fail 'at least 16 online CPUs are required'
-[[ -r /sys/fs/cgroup/cpu.max && -r /sys/fs/cgroup/memory.max ]] ||
-  fail 'cgroup v2 CPU and memory limits are required'
-read -r cgroup_cpu_quota cgroup_cpu_period </sys/fs/cgroup/cpu.max
-[[ "$cgroup_cpu_period" =~ ^[0-9]+$ && "$cgroup_cpu_period" -gt 0 ]] ||
-  fail 'cgroup CPU period is invalid'
-if [[ "$cgroup_cpu_quota" != max ]]; then
-  [[ "$cgroup_cpu_quota" =~ ^[0-9]+$ ]] || fail 'cgroup CPU quota is invalid'
-  (( cgroup_cpu_quota >= 16 * cgroup_cpu_period )) ||
-    fail 'cgroup CPU quota is below 16 cores'
-fi
 ram_kib=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
 [[ "$ram_kib" =~ ^[0-9]+$ && "$ram_kib" -ge 115343360 ]] ||
   fail 'at least 110 GiB system RAM is required'
-cgroup_memory_max=$(</sys/fs/cgroup/memory.max)
-if [[ "$cgroup_memory_max" != max ]]; then
-  [[ "$cgroup_memory_max" =~ ^[0-9]+$ ]] || fail 'cgroup memory limit is invalid'
-  (( cgroup_memory_max >= 118111600640 )) ||
-    fail 'cgroup memory limit is below 110 GiB'
-fi
+cgroup_admission=$(
+  "$python_executable" -E -s -B "$script_dir/cgroup_contract.py" admission \
+    --minimum-cpu-cores 16 \
+    --minimum-memory-bytes 118111600640
+) || fail 'current-process cgroup admission failed'
+[[ "$cgroup_admission" != *$'\n'* ]] || fail 'cgroup admission output is multiline'
+IFS=$'\t' read -r cgroup_version cgroup_cpu_quota cgroup_cpu_period cgroup_memory_max cgroup_extra \
+  <<<"$cgroup_admission"
+[[ -z "${cgroup_extra-}" && "$cgroup_version" =~ ^v[12]$ ]] ||
+  fail 'cgroup admission output differs'
+[[ "$cgroup_cpu_quota" = max || "$cgroup_cpu_quota" =~ ^[0-9]+$ ]] ||
+  fail 'cgroup CPU quota output is invalid'
+[[ "$cgroup_cpu_period" =~ ^[0-9]+$ && "$cgroup_cpu_period" -gt 0 ]] ||
+  fail 'cgroup CPU period output is invalid'
+[[ "$cgroup_memory_max" = max || "$cgroup_memory_max" =~ ^[0-9]+$ ]] ||
+  fail 'cgroup memory limit output is invalid'
+unset cgroup_admission cgroup_extra
 free_kib=$(df -Pk -- "$run_parent" | awk 'NR == 2 {print $4}')
 [[ "$free_kib" =~ ^[0-9]+$ && "$free_kib" -ge 104857600 ]] ||
   fail 'at least 100 GiB free space is required on the run volume'
@@ -489,6 +490,7 @@ printf '%s\n' \
   "gpuName=$gpu_name" \
   "gpuMemoryMiB=$gpu_memory_mib" \
   "gpuDriverVersion=$gpu_driver_version" \
+  "cgroupVersion=$cgroup_version" \
   "cgroupCpuQuota=$cgroup_cpu_quota" \
   "cgroupCpuPeriod=$cgroup_cpu_period" \
   "cgroupMemoryMax=$cgroup_memory_max" \

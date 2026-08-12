@@ -106,8 +106,9 @@ private cache named by its profile.
 Before loading weights, the worker verifies the profile, all asset hashes, the
 workload registration, source identity, token geometry, available disk, and the
 profile's registered hard GPU admission budget. Peak process RSS is sampled by
-the worker; cgroup-v2 current/limit and container-lifetime peak counters are
-recorded separately and are not mislabeled as a per-cell cgroup peak. Timeout,
+the worker; current-process cgroup v1 or v2 current/limit and container-lifetime
+peak counters are recorded separately and are not mislabeled as a per-cell
+cgroup peak. Timeout,
 signal, OOM, budget
 excess, or partial output becomes a terminal execution error for that cell; it
 must never be rewritten as a metric failure or silently retried under the same

@@ -28,25 +28,33 @@ Use an on-demand **Secure Cloud** Pod with this minimum envelope:
 | Item | Required value |
 |---|---|
 | GPU | exactly one NVIDIA CUDA GPU, any supported model name, at least 78,000 MiB visible VRAM, BF16 support |
-| CPU / RAM | at least 16 online CPUs and 110 GiB RAM, with matching cgroup v2 limits |
+| CPU / RAM | at least 16 online CPUs and 110 GiB RAM, with matching current-process cgroup v1 or v2 limits |
 | Container userspace | Ubuntu 24.04, x86_64; GNU Bash 5 or newer |
 | Container image | pinned by an immutable `sha256:<64-hex>` digest |
 | Runtime | produced only by `build_cuda_runtime.sh`; exact CPython 3.12.13 and PyTorch 2.13.0+cu130 |
 | Container disk | 50 GB |
 | Pod volume | 150 GB, encrypted, at least 100 GiB free at launch |
 | Exposure | SSH only; no public Jupyter or port 8888 |
-| Lifecycle | on demand, server-side terminate-after **22 hours** |
+| Lifecycle | on demand, server-side terminate-after **20 hours** |
 | Cost | operator hard ceiling **USD 35 total** |
 
 The launcher deliberately does not bind a GPU marketing name. The actual
 device name and memory are recorded, while admission is the generic single-GPU
-contract above. Choose an eligible current offer whose complete 22-hour
+contract above. Choose an eligible current offer whose complete 20-hour
 projection, including storage, is below USD 35. At the illustrative rate
-observed on 2026-08-12, USD 1.49/GPU-hour plus about USD 0.028/storage-hour,
-22 hours projects to about USD 33.40. Recheck the live price before creation;
-refuse any combined rate above USD 1.5909/hour or any projection above USD 35.
+admitted on 2026-08-12, USD 1.59/GPU-hour plus about USD 0.0274/storage-hour,
+20 hours projects to about USD 32.35. Recheck the live price before creation;
+refuse any combined rate above USD 1.75/hour or any projection above USD 35.
 RunPod's account spend limit is not a per-Pod cap, so the provider-side
-22-hour termination timer is the primary cost fuse.
+20-hour termination timer is the primary cost fuse.
+
+For cgroup v1, the launcher binds the `cpu,cpuacct` and `memory` controller
+paths from `/proc/self/cgroup` through each mount root and mount point in
+`/proc/self/mountinfo`; it never assumes that controller-root counters belong
+to the Pod. For cgroup v2 it applies the same current-process resolution. It
+requires at least 16 quota-equivalent cores and a 110 GiB memory limit (or an
+explicit unlimited form), and records `cgroupVersion`, quota, period, and
+memory limit in `source-identity.txt`.
 
 Authoritative service references:
 
@@ -103,6 +111,13 @@ Core dumps remain disabled throughout. Because the Pod mapping exists before the
 runtime build, the builder must be launched through the secret-stripping
 subshell shown below; `corelm`, pip, and runtime-verification subprocesses must
 never inherit `HF_TOKEN`.
+
+Some provider SSH sessions do not inherit a Pod-mapped secret even though PID 1
+does. If `HF_TOKEN` is absent (not merely empty), the exact Python entrypoint
+boundedly reads `/proc/1/environ`, requires one strict ASCII `HF_TOKEN` field,
+and copies only that value into the sterile launcher environment. It does not
+copy any other PID 1 variable. Operators must not read, export, or relay the
+token manually.
 
 Do not place a RunPod API key, cloud credential, SSH private material, or local
 signing private key in the Pod. Provisioning authority and execution authority
@@ -249,8 +264,10 @@ The output parent must already exist, be owner-controlled and non-writable by
 group/world, and live outside source, runtime, and the original home. The final
 run root must not exist. Use a new root for every attempt.
 
-Set only these non-secret inputs. `HF_TOKEN` must already be inherited from the
-RunPod Secret mapping and must not appear in the command block:
+Set only these non-secret inputs. `HF_TOKEN` must come from the RunPod Secret
+mapping; it may be absent from the SSH session because the exact entrypoint has
+the bounded PID 1 fallback described above. The token must not appear in the
+command block:
 
 ```bash
 set +x
@@ -266,14 +283,22 @@ unset HUGGING_FACE_HUB_TOKEN RUNPOD_API_KEY GITHUB_TOKEN \
   AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY SSH_AUTH_SOCK BASH_ENV ENV LD_PRELOAD
 ulimit -c 0
 test "$(ulimit -c)" = 0
-export -n HF_TOKEN
+if [[ ${HF_TOKEN+x} ]]; then
+  export -n HF_TOKEN
+  HF_TOKEN_WAS_INHERITED=1
+else
+  HF_TOKEN_WAS_INHERITED=0
+fi
 verify_source_checkout "$SWEEP_SOURCE" "$SWEEP_COMMIT" "$SWEEP_TREE" \
   "$SWEEP_SOURCE/v4/signing/allowed_signers"
 verify_source_checkout "$CODEC_SOURCE" \
   e7e0504b15769c925206ad1783d45a9ca0b62207 \
   924d3195122e3a486e2d26e4fbdfe574654ae6c8 \
   "$CODEC_SOURCE/signing/allowed_signers"
-export HF_TOKEN
+if [[ "$HF_TOKEN_WAS_INHERITED" = 1 ]]; then
+  export HF_TOKEN
+fi
+unset HF_TOKEN_WAS_INHERITED
 exec "$CORELM_SWEEP_PYTHON" -I -B \
   ./runpod-adapter-sweep-v1/launch_runpod.py
 ```
@@ -293,7 +318,7 @@ the launcher's clean child environments prevent those hooks from being
 forwarded into the admitted build/model subprocesses.
 
 The current executable command sequence, verified against each CLI's `--help`,
-starts by running both model-free contract test modules on Linux against the
+starts by running all three model-free contract test modules on Linux against the
 exact codec checkout. It then performs:
 
 1. `prepare_assets.py download --cache C --receipt ASSETS_DOWNLOAD`.
@@ -355,10 +380,11 @@ same run root.
 The registered builder and launcher ceilings sum to **66,150 seconds
 (18:22:30)**: 7,200 seconds for the CUDA runtime builder, 41,400 for the
 orchestrator, and 17,550 for download, conversion, verification, preflight,
-structural verification, and the seven replays. The 22-hour provider fuse
-therefore leaves **13,050 seconds (3:37:30)** for clone/setup, packaging,
+structural verification, and the seven replays. The 20-hour provider fuse
+therefore leaves at most **5,850 seconds (1:37:30)** for clone/setup, packaging,
 retrieval, local transfer checks, and termination. This is operational reserve,
-not a promised transfer SLA; begin retrieval immediately when the launcher
+not a promised transfer SLA, and it shrinks from the instant the Pod is created,
+not from the start of the builder. Begin retrieval immediately when the launcher
 finishes.
 
 ## Deterministic archive and retrieval
@@ -502,4 +528,4 @@ Only after checksum and inventory checks succeed:
 
 If retrieval or checksum verification fails, diagnose only through the pinned
 channel and never weaken SSH verification or expose a new port. The
-provider-side **22-hour** fuse and **USD 35** hard budget remain terminal limits.
+provider-side **20-hour** fuse and **USD 35** hard budget remain terminal limits.

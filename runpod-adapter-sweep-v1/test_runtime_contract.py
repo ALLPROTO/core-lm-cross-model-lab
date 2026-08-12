@@ -25,6 +25,7 @@ CODEC = Path(CODEC_ENV).resolve() if CODEC_ENV else None
 sys.path.insert(0, str(ROOT))
 
 import common  # noqa: E402
+import launch_runpod  # noqa: E402
 
 
 PRODUCER = ROOT / "run_adapter_sweep.py"
@@ -36,6 +37,7 @@ TOKEN_SCANNER = ROOT / "scan_token_persistence.py"
 CUDA_BUILDER = ROOT / "build_cuda_runtime.sh"
 CUDA_LOCK = ROOT / "torch-linux-cu130-py312.txt"
 RUNBOOK = ROOT / "RUNPOD.md"
+CGROUP_CONTRACT = ROOT / "cgroup_contract.py"
 
 
 def _syntax_tree(path: Path) -> ast.Module:
@@ -143,6 +145,37 @@ class RuntimeContractTests(unittest.TestCase):
                 return
             time.sleep(0.02)
         self.fail(f"process {pid} survived the cleanup deadline")
+
+    def test_pid1_hf_token_parser_is_bounded_exact_and_ascii(self) -> None:
+        token = "hf_" + "a" * 34
+        self.assertEqual(
+            launch_runpod.parse_pid1_hf_token(
+                b"PUBLIC_KEY=not-copied\0HF_TOKEN="
+                + token.encode("ascii")
+                + b"\0RUNPOD_API_KEY=not-copied\0"
+            ),
+            token,
+        )
+        rejected = (
+            b"PUBLIC_KEY=value\0",
+            b"HF_TOKEN=" + token.encode("ascii") + b"\0HF_TOKEN=" + token.encode("ascii") + b"\0",
+            b"HF_TOKEN=hf_" + b"a" * 20 + b"\xff\0",
+            b"HF_TOKEN=" + token.encode("ascii"),
+            b"HF_TOKEN=hf_short\0",
+            b"HF_TOKEN=hf_" + b"a" * 20 + b"\n\0",
+            b"HF_TOKEN=hf_" + b"a" * 20 + b"-\0",
+            b"X=" + b"a" * launch_runpod.MAX_PID1_ENVIRON_BYTES + b"\0",
+        )
+        for raw in rejected:
+            with self.subTest(raw_length=len(raw)):
+                with self.assertRaises(SystemExit):
+                    launch_runpod.parse_pid1_hf_token(raw)
+
+    def test_launcher_uses_pid1_only_when_hf_token_is_absent(self) -> None:
+        source = _function_source(ENTRY, "main")
+        self.assertIn('if values["HF_TOKEN"] is None:', source)
+        self.assertIn('values["HF_TOKEN"] = read_pid1_hf_token()', source)
+        self.assertNotIn("os.environ.update", ENTRY.read_text(encoding="utf-8"))
 
     def test_profiles_bind_codec_matrix_limit_exactly(self) -> None:
         profiles = common.load_profiles()["profiles"]
@@ -894,8 +927,20 @@ class RuntimeContractTests(unittest.TestCase):
             "containerImageDigestAuthority=operator-supplied-control-plane-value",
             wrapper,
         )
-        self.assertEqual(wrapper.count('"$python_executable" -E -s -B'), 13)
+        self.assertEqual(wrapper.count('"$python_executable" -E -s -B'), 14)
         self.assertIn("gpuDriverVersion=$gpu_driver_version", wrapper)
+        self.assertIn("cgroupVersion=$cgroup_version", wrapper)
+        self.assertIn('"$script_dir/cgroup_contract.py" admission', wrapper)
+        self.assertIn("--minimum-cpu-cores 16", wrapper)
+        self.assertIn("--minimum-memory-bytes 118111600640", wrapper)
+        self.assertNotIn("/sys/fs/cgroup/cpu.max", wrapper)
+        self.assertNotIn("/sys/fs/cgroup/memory.max", wrapper)
+        self.assertLess(
+            wrapper.index('assert_exact_checkout "$sweep_repo"'),
+            wrapper.index('"$script_dir/cgroup_contract.py" admission'),
+        )
+        self.assertIn("/proc/self/cgroup", CGROUP_CONTRACT.read_text(encoding="utf-8"))
+        self.assertIn("/proc/self/mountinfo", CGROUP_CONTRACT.read_text(encoding="utf-8"))
         self.assertIn("pipBootstrapLockSHA256=", wrapper)
         self.assertIn("portableRuntimeLockSHA256=", wrapper)
         checksum_grammar = (

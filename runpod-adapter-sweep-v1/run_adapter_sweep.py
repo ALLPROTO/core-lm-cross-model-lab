@@ -78,6 +78,7 @@ from common import (  # noqa: E402
     workload_text,
     write_canonical_json,
 )
+from cgroup_contract import memory_evidence as cgroup_memory_evidence  # noqa: E402
 
 
 np: Any = None
@@ -406,30 +407,15 @@ def cache_observation(
 
 
 def cgroup_memory_observation() -> dict[str, int | None]:
-    root = Path("/sys/fs/cgroup")
-
-    def read_counter(name: str, *, allow_max: bool = False) -> int | None:
-        path = root / name
-        require(path.is_file() and not path.is_symlink(), f"cgroup {name} is absent")
-        raw = path.read_text(encoding="ascii").strip()
-        if allow_max and raw == "max":
-            return None
-        require(raw.isascii() and raw.isdigit(), f"cgroup {name} is invalid")
-        return int(raw)
-
-    current = read_counter("memory.current")
-    peak = read_counter("memory.peak")
-    limit = read_counter("memory.max", allow_max=True)
-    require(
-        isinstance(current, int)
-        and isinstance(peak, int)
-        and peak >= current,
-        "cgroup memory counters differ",
-    )
+    evidence = cgroup_memory_evidence()
     return {
-        "cgroupMemoryCurrentBytesAtCompletion": current,
-        "cgroupMemoryPeakBytesAtCompletion": peak,
-        "cgroupMemoryLimitBytes": limit,
+        "cgroupMemoryCurrentBytesAtCompletion": evidence[
+            "cgroupMemoryCurrentBytesAtCompletion"
+        ],
+        "cgroupMemoryPeakBytesAtCompletion": evidence[
+            "cgroupMemoryPeakBytesAtCompletion"
+        ],
+        "cgroupMemoryLimitBytes": evidence["cgroupMemoryLimitBytes"],
     }
 
 
